@@ -1,29 +1,29 @@
 // eslint-disable-next-line import/prefer-default-export
 export const createStore = (defaultValue: any) => {
-  let value = defaultValue;
+  let value = defaultValue
 
-  const callbacks: ((newValue: any) => void)[] = [];
+  const callbacks: ((newValue: any) => void)[] = []
 
-  const getValue = () => value;
+  const getValue = () => value
 
   const setValue = (newValue: any) => {
-    value = newValue;
-    callbacks.forEach((cb) => cb(newValue));
-  };
+    value = newValue
+    callbacks.forEach((cb) => cb(newValue))
+  }
 
   const onChange = (cb: (newValue: any) => void) => {
-    callbacks.push(cb);
+    callbacks.push(cb)
     return () => {
-      const index = callbacks.indexOf(cb);
-      if (index === -1) return;
+      const index = callbacks.indexOf(cb)
+      if (index === -1) return
 
-      callbacks.splice(index, 1);
-    };
-  };
+      callbacks.splice(index, 1)
+    }
+  }
 
   return {
     getValue,
     setValue,
     onChange,
-  };
-};
+  }
+}

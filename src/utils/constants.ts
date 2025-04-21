@@ -3,7 +3,7 @@ export const CONTRACT_TYPE = {
   FARM: 'FARM',
   SEED_TOKEN: 'SEED_TOKEN', // Item and stable token
   PLOT: 'PLOT',
-  // DISH: 'DISH', // likely will be recipe instead
+  DISH: 'DISH', // likely will be recipe instead
 }
 
 export const SEED_TYPE = {

@@ -8,9 +8,9 @@ Farm game
 
 - Node v22.12.0 or higher
 
-- Rust v1.77.2 or higher
-- Anchor CLI 0.31.0 or higher
-- Solana CLI 1.18.17 or higher
+- Rust v1.79.0 or higher
+- Anchor CLI 0.31.0 or higher + proc-micro2 fix (defined.rs)
+- Solana CLI 2.1.0 or higher 
 
 ### Installation
 

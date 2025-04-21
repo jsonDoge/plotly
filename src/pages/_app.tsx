@@ -1,8 +1,8 @@
-// import React, { Suspense } from 'react'
+import React, { Suspense } from 'react'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 // eslint-disable-next-line import/no-extraneous-dependencies
 import 'tailwindcss/tailwind.css'
-// import dynamic from 'next/dynamic'
+import dynamic from 'next/dynamic'
 // import WalletContextProvider from '../context/wallet'
 import GameProvider from '../context/game'
 import BlockchainProvider from '../context/blockchain'
@@ -11,9 +11,9 @@ import { SolanaProvider } from '../context/solana'
 import { ReactQueryProvider } from '../context/react-query'
 import ErrorProvider from '../context/error'
 import Layout from '../components/layout'
-// import Spinner from '../components/spinner'
+import Spinner from '../components/spinner'
 
-// const Game = dynamic(() => import('../components/game'), { suspense: true, ssr: false })
+const Game = dynamic(() => import('../components/game'), { suspense: true, ssr: false })
 
 function MyApp() {
   return (
@@ -24,17 +24,17 @@ function MyApp() {
             {/*    <WalletContextProvider> */}
             <GameProvider>
               <>
-                {/* <div className="absolute z-10 h-screen w-screen">
-                 <Suspense
-                   fallback={
-                     <div className="flex items-center justify-center h-screen">
-                       <Spinner className="h-10 w-10" />
-                     </div>
-                   }
-                 >
-                   <Game />
-                 </Suspense>
-               </div> */}
+                <div className="absolute z-10 h-screen w-screen">
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center h-screen">
+                        <Spinner className="h-10 w-10" />
+                      </div>
+                    }
+                  >
+                    <Game />
+                  </Suspense>
+                </div>
                 <ErrorProvider>
                   <Layout />
                 </ErrorProvider>

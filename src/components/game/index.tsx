@@ -2,7 +2,7 @@
 import React, { MutableRefObject, useEffect, useRef } from 'react'
 import getConfig from 'next/config'
 import { debounce } from 'lodash'
-import { Contract } from 'ethers'
+// import { Contract } from 'ethers'
 import { useGame } from '../../context/game'
 import { getAllPlotCoordinatesAround } from './utils/plots'
 import { Coordinates, MappedPlotInfos } from './utils/interfaces'
@@ -12,7 +12,7 @@ import CanvasWrapper from './canvasWrapper'
 import { walletStore, mappedPlotInfosStore } from '../../stores'
 import { Wallet } from '../../utils/interfaces'
 import { getPlotIdFromCoordinates } from '../../services/utils'
-import { getContract } from '../../services/web3Utils'
+// import { getContract } from '../../services/web3Utils'
 import { CONTRACT_TYPE } from '../../utils/constants'
 import { useBlockchain } from '../../context/blockchain'
 
@@ -58,7 +58,25 @@ const Game = () => {
     const { x: cornerX, y: cornerY } = convertCenterToLowerLeftCorner(centerX, centerY)
     const cornerPlotId = getPlotIdFromCoordinates(cornerX, cornerY)
 
-    const farm: Contract = getContract(publicRuntimeConfig.C_FARM, CONTRACT_TYPE.FARM, { isSignerRequired: false })
+    let farm: any
+    if (publicRuntimeConfig.MOCK_CHAIN_MODE) {
+      farm = {
+        getPlotView: async (plotId: number) => {
+          const plotInfos = generateEmptyMappedPlotInfos(gridPlotCoordinates)
+          return plotInfos[plotId]
+        },
+        getSurroundingWaterLogs: async (plotId: number) => {
+          const surroundingWaterLogs = []
+          for (let i = 0; i < 7; i += 1) {
+            surroundingWaterLogs.push({ id: i, waterLog: 0 })
+          }
+          return surroundingWaterLogs
+        },
+      }
+    } else {
+      // redo in solana
+      // farm = getContract(publicRuntimeConfig.C_FARM, CONTRACT_TYPE.FARM, { isSignerRequired: false })
+    }
 
     // getPlotView returns array sorted as x + y * 7
     const contractPlots = await farm.getPlotView(cornerPlotId)
