@@ -4,4 +4,6 @@ use anchor_lang::prelude::*;
 pub enum ErrorCode {
     #[msg("Plot already owned")]
     PlotAlreadyOwned,
+    #[msg("Plot already minted")]
+    PlotAlreadyMinted,
 }
