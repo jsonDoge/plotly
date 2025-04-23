@@ -45,6 +45,7 @@
   "devDependencies": {
     "@metaplex-foundation/umi": "^1.2.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",
+    "@metaplex-foundation/umi-web3js-adapters": "^1.2.0",
     "@types/bn.js": "^5.1.0",
     "@types/jest": "^29.5.12",
     "@types/node": "22.14.0",

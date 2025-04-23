@@ -1,7 +1,15 @@
 import * as anchor from '@coral-xyz/anchor'
 import { PublicKey, sendAndConfirmTransaction } from '@solana/web3.js'
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo } from '@solana/spl-token'
-import { sendAndConfirmDurableNonceTransactionFactory } from '@solana/kit'
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
+import { createMetadataAccountV3 } from '@metaplex-foundation/mpl-token-metadata'
+import {
+  createSignerFromKeypair,
+  percentAmount,
+  signerIdentity,
+  PublicKey as umiPublicKey,
+} from '@metaplex-foundation/umi'
+import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters'
 import { Farm } from '../target/types/farm'
 
 const convertToSigner = (wallet: anchor.Wallet): anchor.web3.Signer => ({
@@ -14,7 +22,14 @@ export const setupMint = async (
   tokenProgramId: PublicKey,
   tokenMintDecimals: number = 6,
 ): Promise<PublicKey> => {
+  const umi = createUmi(provider.connection)
+
   const payer = provider.wallet as anchor.Wallet
+  const keypair = fromWeb3JsKeypair(payer.payer)
+
+  const umiSigner = createSignerFromKeypair(umi, keypair)
+
+  umi.use(signerIdentity(umiSigner))
 
   const airdropSignature = await provider.connection.requestAirdrop(payer.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL)
   await provider.connection.confirmTransaction(airdropSignature)
@@ -44,7 +59,27 @@ export const setupMint = async (
     undefined,
   )
 
-  await mintTo(provider.connection, signer, tokenMint, ata.address, signer, 1000000)
+  const metadataArgs = {
+    mint: tokenMint.toString() as umiPublicKey,
+    mintAuthority: umi.identity,
+    payer: umi.identity,
+    updateAuthority: umi.identity,
+    data: {
+      name: 'Token',
+      symbol: 'TKN',
+      uri: '',
+      sellerFeeBasisPoints: 0,
+      creators: null,
+      collection: null,
+      uses: null,
+    },
+    isMutable: true,
+    collectionDetails: null,
+  }
+
+  await createMetadataAccountV3(umi, metadataArgs).sendAndConfirm(umi)
+
+  await mintTo(provider.connection, signer, tokenMint, ata.address, signer, 100_000_000)
 
   return tokenMint
 }

@@ -1097,6 +1097,596 @@
           "type": "pubkey"
         }
       ]
+    },
+    {
+      "name": "mint_seeds",
+      "discriminator": [
+        87,
+        79,
+        182,
+        53,
+        29,
+        164,
+        233,
+        90
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "plant_mint"
+        },
+        {
+          "name": "farm",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "plot_currency"
+              }
+            ]
+          }
+        },
+        {
+          "name": "seed_mint_info",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  101,
+                  100,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  105,
+                  110,
+                  102,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "seed_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "seed_metadata_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "token_metadata_program"
+              },
+              {
+                "kind": "account",
+                "path": "seed_mint"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "token_metadata_program"
+            }
+          }
+        },
+        {
+          "name": "plant_metadata_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "token_metadata_program"
+              },
+              {
+                "kind": "account",
+                "path": "plant_mint"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "token_metadata_program"
+            }
+          }
+        },
+        {
+          "name": "seed_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  101,
+                  100,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              },
+              {
+                "kind": "account",
+                "path": "plant_mint"
+              },
+              {
+                "kind": "arg",
+                "path": "plant_tokens_per_seed"
+              },
+              {
+                "kind": "arg",
+                "path": "treasury"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_associated_seed_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "seed_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "user_associated_plant_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plant_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "farm_associated_plant_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "farm_associated_plant_token_authority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plant_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "seed_mint_authority",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  101,
+                  100,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              },
+              {
+                "kind": "account",
+                "path": "seed_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "farm_associated_plant_token_authority",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109,
+                  95,
+                  97,
+                  116,
+                  116,
+                  97,
+                  95,
+                  112,
+                  108,
+                  97,
+                  110,
+                  116,
+                  95,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              },
+              {
+                "kind": "account",
+                "path": "plant_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "token_metadata_program",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "plot_currency",
+          "type": "pubkey"
+        },
+        {
+          "name": "seeds_to_mint",
+          "type": "u64"
+        },
+        {
+          "name": "plant_tokens_per_seed",
+          "type": "u64"
+        },
+        {
+          "name": "growth_block_duration",
+          "type": "u32"
+        },
+        {
+          "name": "water_absorb_rate",
+          "type": "u32"
+        },
+        {
+          "name": "balance_absorb_rate",
+          "type": "u64"
+        },
+        {
+          "name": "treasury",
+          "type": "pubkey"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -1125,6 +1715,19 @@
         53,
         250
       ]
+    },
+    {
+      "name": "SeedMintInfo",
+      "discriminator": [
+        92,
+        39,
+        219,
+        86,
+        163,
+        44,
+        182,
+        104
+      ]
     }
   ],
   "errors": [
@@ -1137,6 +1740,16 @@
       "code": 6001,
       "name": "PlotAlreadyMinted",
       "msg": "Plot already minted"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidSeedWaterAmount",
+      "msg": "Growth block duration not divisible by water rate"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidSeedBalanceAmount",
+      "msg": "Growth block duration not divisible by balance rate"
     }
   ],
   "types": [
@@ -1163,6 +1776,46 @@
           },
           {
             "name": "plot_currency",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SeedMintInfo",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "plant_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "plant_mint_decimals",
+            "type": "u8"
+          },
+          {
+            "name": "plant_tokens_per_seed",
+            "type": "u64"
+          },
+          {
+            "name": "growth_block_duration",
+            "type": "u32"
+          },
+          {
+            "name": "water_absorb_rate",
+            "type": "u32"
+          },
+          {
+            "name": "balance_absorb_rate",
+            "type": "u64"
+          },
+          {
+            "name": "treasury",
             "type": "pubkey"
           },
           {

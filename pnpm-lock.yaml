@@ -99,6 +99,9 @@ importers:
       '@metaplex-foundation/umi-bundle-defaults':
         specifier: ^1.2.0
         version: 1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))
+      '@metaplex-foundation/umi-web3js-adapters':
+        specifier: ^1.2.0
+        version: 1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))
       '@types/bn.js':
         specifier: ^5.1.0
         version: 5.1.5

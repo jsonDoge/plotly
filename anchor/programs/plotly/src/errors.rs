@@ -6,4 +6,8 @@ pub enum ErrorCode {
     PlotAlreadyOwned,
     #[msg("Plot already minted")]
     PlotAlreadyMinted,
+    #[msg("Growth block duration not divisible by water rate")]
+    InvalidSeedWaterAmount,
+    #[msg("Growth block duration not divisible by balance rate")]
+    InvalidSeedBalanceAmount,
 }

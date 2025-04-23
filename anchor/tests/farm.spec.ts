@@ -71,7 +71,7 @@ describe('farm', () => {
   beforeEach(async () => {
     plotCurrency = await setupMint(provider, TOKEN_PROGRAM_ID)
     await setupFarm(provider, program, plotCurrency, userWallet.publicKey)
-  })
+  }, 10000000)
 
   it('Should mint the same plot NFT only ONCE', async () => {
     // Add your test here.
