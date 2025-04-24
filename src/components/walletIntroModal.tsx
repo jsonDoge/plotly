@@ -1,14 +1,14 @@
-import React from 'react';
+import React from 'react'
 
-import Button from './button';
+import Button from './button'
 
 interface Props {
-  walletAddress: string;
-  onConfirm: () => void;
+  walletAddress: string
+  onConfirm: () => void
 }
 
 const WalletIntroModal: React.FC<Props> = ({ walletAddress, onConfirm }) => {
-  const confirm = () => onConfirm && onConfirm();
+  const confirm = () => onConfirm && onConfirm()
 
   return (
     <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -53,7 +53,7 @@ const WalletIntroModal: React.FC<Props> = ({ walletAddress, onConfirm }) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default WalletIntroModal;
+export default WalletIntroModal

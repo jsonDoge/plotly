@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBars } from '@fortawesome/free-solid-svg-icons'
 
 // import { useWallet } from '../context/wallet'
+import { WalletButton } from '@/context/solana'
 import BlockCounter from './blockCounter'
 // import PlotActionModals from './plotActionModals'
 // import Barn from './barn'
@@ -98,6 +99,7 @@ const Layout: React.FC = () => {
         <div className="text-right">
           <div className="text-right text-white hidden lg:block">
             <ChainName />
+            <WalletButton className="bg-black mt-5" />
           </div>
         </div>
         {/* MOBILE MENU */}
@@ -195,6 +197,10 @@ const Layout: React.FC = () => {
               </div>
             </div>
             <div className="w-full my-1 h-[1px] bg-white" />
+            <div className="text-center">
+              <WalletButton className="bg-black mt-5" />
+            </div>
+            <div className="w-full my-1 h-[1px] bg-white" />
             <div className="text-left ml-3 text-white">Teleport to:</div>
             <div className="lg:hidden mx-3 pb-3">
               <CenterPlotNavigator isMobile />
@@ -204,7 +210,7 @@ const Layout: React.FC = () => {
       </header>
       <div className="z-20">{/* <PlotActionModals /> */}</div>
       <div
-        className={`z-10 grow bg-transparent ${isNavOpen || tab === 'plots' ? 'hidden' : 'flex flex-col'} lg:mx-0 overflow-y-auto items-center`}
+        className={`z-20 grow bg-transparent ${isNavOpen || tab === 'plots' ? 'hidden' : 'flex flex-col'} lg:mx-0 overflow-y-auto items-center`}
       >
         {/* {tab === 'barn' && (
           <div className="px-3 flex grow flex-col justify-center w-full lg:w-96 lg:justify-start">
@@ -212,7 +218,7 @@ const Layout: React.FC = () => {
           </div>
         )} */}
         {/* {tab === 'kitchen' && (
-          <div className="px-3 flex grow flex-col justify-center w-full lg:w-96 lg:justify-start">
+          <div className="px-3 flex grow flex-col justify-center w-full lg:aaw-96 lg:justify-start">
             <Kitchen />
           </div>
         )} */}
@@ -233,7 +239,7 @@ const Layout: React.FC = () => {
         )}
       </div>
       {tab === 'plots' && (
-        <div className="absolute grid grid-cols-2 z-10 lg:bottom-10 bottom-2 w-full">
+        <div className="absolute grid grid-cols-2 z-20 lg:bottom-10 bottom-2 w-full">
           <div className="flex flex-col text-left pl-5 lg:pl-0 lg:text-center justify-end items-start lg:items-center lg:col-span-2">
             <CenterPlotCoordsDisplay />
             <div className="hidden lg:block">

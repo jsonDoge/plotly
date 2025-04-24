@@ -34,11 +34,11 @@ function MyApp() {
                     }
                   > */}
                   {/* </Suspense> */}
-                  <div className="absolute z-10 h-screen w-screen">
-                    <ErrorProvider>
-                      <Layout />
-                    </ErrorProvider>
-                  </div>
+                  {/* <div className="z-10 h-screen w-screen"> */}
+                  <ErrorProvider>
+                    <Layout />
+                  </ErrorProvider>
+                  {/* </div> */}
                 </>
               </GameProvider>
               {/* </WalletContextProvider> */}
@@ -46,7 +46,7 @@ function MyApp() {
           </SolanaProvider>
         </ClusterProvider>
       </ReactQueryProvider>
-      <div className="z-10 h-screen w-screen">
+      <div className="absolute top-0 z-10 h-screen w-screen">
         <Game />
       </div>
     </>
