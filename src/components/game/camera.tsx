@@ -1,49 +1,49 @@
-import React, { useLayoutEffect, useRef } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
-import { PerspectiveCamera, Vector3Tuple } from 'three';
+import React, { useLayoutEffect, useRef } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
+import { PerspectiveCamera, Vector3Tuple } from 'three'
 
 interface Props {
-  centerRef: React.MutableRefObject<{ x: number; y: number }>;
+  centerRef: React.MutableRefObject<{ x: number; y: number }>
 }
 
 const perspectiveCameraOffset = {
   x: 9.2,
   y: -8.8,
   z: 10,
-};
+}
 
 const Camera: React.FC<Props> = ({ centerRef }) => {
-  console.info('Rendering camera');
+  console.info('Rendering camera')
 
-  const perspectiveCameraRef = useRef<PerspectiveCamera>(null);
+  const perspectiveCameraRef = useRef<PerspectiveCamera>(null)
 
-  const { size, set } = useThree();
+  const { size, set } = useThree()
 
   const cameraInitialPosition: Vector3Tuple = [
     perspectiveCameraOffset.x + centerRef.current.x,
     perspectiveCameraOffset.y + centerRef.current.y,
     perspectiveCameraOffset.z,
-  ];
+  ]
 
   useLayoutEffect(() => {
     if (!perspectiveCameraRef?.current) {
-      return;
+      return
     }
 
-    set({ camera: perspectiveCameraRef.current });
-  }, [perspectiveCameraRef?.current]);
+    set({ camera: perspectiveCameraRef.current })
+  }, [perspectiveCameraRef?.current])
 
   useFrame((state) => {
     // TODO: investigate if necessary
-    state.camera.updateProjectionMatrix();
+    state.camera.updateProjectionMatrix()
 
     if (!perspectiveCameraRef?.current) {
-      return;
+      return
     }
 
-    perspectiveCameraRef.current.position.x = centerRef.current.x + perspectiveCameraOffset.x;
-    perspectiveCameraRef.current.position.y = centerRef.current.y + perspectiveCameraOffset.y;
-  });
+    perspectiveCameraRef.current.position.x = centerRef.current.x + perspectiveCameraOffset.x
+    perspectiveCameraRef.current.position.y = centerRef.current.y + perspectiveCameraOffset.y
+  })
 
   return (
     <perspectiveCamera
@@ -56,7 +56,7 @@ const Camera: React.FC<Props> = ({ centerRef }) => {
       rotation={[30 * (Math.PI / 180), 30 * (Math.PI / 180), 40 * (Math.PI / 180)]}
       onUpdate={(self: any) => self.updateProjectionMatrix()}
     />
-  );
-};
+  )
+}
 
-export default Camera;
+export default Camera

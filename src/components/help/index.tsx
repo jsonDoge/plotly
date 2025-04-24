@@ -3,7 +3,7 @@ import React from 'react'
 const Help = () => (
   <div className="flex flex-col bg-black bg-opacity-50 px-1 py-1 text-white mb-5">
     <div className="text-left">
-      <div className="text-2xl">Welcome to T2 farm</div>
+      <div className="text-2xl">Welcome to Plotly</div>
     </div>
     <div className="mt-5 text-lg">What is this?</div>
 

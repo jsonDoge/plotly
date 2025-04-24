@@ -9,12 +9,12 @@ import { Coordinates, MappedPlotInfos } from './utils/interfaces'
 import { INITIAL_PLOT_CENTER_COORDS } from './utils/constants'
 import { generateEmptyMappedPlotInfos, reduceContractPlots } from './utils/mapPlots'
 import CanvasWrapper from './canvasWrapper'
-import { walletStore, mappedPlotInfosStore } from '../../stores'
+// import { walletStore, mappedPlotInfosStore } from '../../stores'
 import { Wallet } from '../../utils/interfaces'
 import { getPlotIdFromCoordinates } from '../../services/utils'
 // import { getContract } from '../../services/web3Utils'
-import { CONTRACT_TYPE } from '../../utils/constants'
-import { useBlockchain } from '../../context/blockchain'
+// import { CONTRACT_TYPE } from '../../utils/constants'
+// import { useBlockchain } from '../../context/blockchain'
 
 const { publicRuntimeConfig } = getConfig()
 
@@ -29,16 +29,19 @@ const Game = () => {
 
   const wallet: MutableRefObject<Wallet | undefined> = useRef()
 
-  const { subscribeToUiActionCompleted, centerChanged } = useGame()
-  const { currentBlock } = useBlockchain()
+  // const { subscribeToUiActionCompleted, centerChanged } = useGame()
+  // const { currentBlock } = useBlockchain()
+  const currentBlock = 0
+  const subscribeToUiActionCompleted = () => {}
+  const centerChanged = () => {}
   const plotCenterRef = useRef<Coordinates>(INITIAL_PLOT_CENTER_COORDS)
 
   const gridPlotCoordinates = getAllPlotCoordinatesAround(INITIAL_PLOT_CENTER_COORDS.x, INITIAL_PLOT_CENTER_COORDS.y)
 
   // TODO: show errors
-  const resetMappedPlotInfos = () => {
-    mappedPlotInfosStore.setValue(generateEmptyMappedPlotInfos(gridPlotCoordinates))
-  }
+  // const resetMappedPlotInfos = () => {
+  //   mappedPlotInfosStore.setValue(generateEmptyMappedPlotInfos(gridPlotCoordinates))
+  // }
 
   const convertCenterToLowerLeftCorner = (x: number, y: number) => ({
     x: x - 3 < 0 ? 0 : x - 3,
@@ -95,40 +98,42 @@ const Game = () => {
     return res
   }
 
-  const debouncedLoadPlotInfos = debounce(
-    (...args: Parameters<typeof loadPlotInfos>) => loadPlotInfos(...args).then(mappedPlotInfosStore.setValue),
-    2000,
-  )
+  // const debouncedLoadPlotInfos = debounce(
+  //   (...args: Parameters<typeof loadPlotInfos>) => loadPlotInfos(...args).then(mappedPlotInfosStore.setValue),
+  //   2000,
+  // )
 
   const reloadPlotInfos = (currentBlock_: number) => {
-    resetMappedPlotInfos()
-    debouncedLoadPlotInfos(wallet.current?.address, currentBlock_, plotCenterRef.current.x, plotCenterRef.current.y)
-    centerChanged(plotCenterRef.current.x, plotCenterRef.current.y)
+    // resetMappedPlotInfos()
+    // debouncedLoadPlotInfos(wallet.current?.address, currentBlock_, plotCenterRef.current.x, plotCenterRef.current.y)
+    // centerChanged(plotCenterRef.current.x, plotCenterRef.current.y)
   }
 
-  useEffect(() => {
-    if (!currentBlock) {
-      return () => {}
-    }
+  // useEffect(() => {
+  //   console.log('called')
+  //   if (!currentBlock) {
+  //     return () => {}
+  //   }
+  //   console.error('console', currentBlock)
 
-    wallet.current = walletStore.getValue()
+  //   wallet.current = walletStore.getValue()
 
-    subscribeToUiActionCompleted(() => reloadPlotInfos(currentBlock))
+  //   subscribeToUiActionCompleted(() => reloadPlotInfos(currentBlock))
 
-    const cleanUp = walletStore.onChange((newWallet) => {
-      if (wallet.current?.address === newWallet?.address) {
-        return
-      }
+  //   const cleanUp = walletStore.onChange((newWallet) => {
+  //     if (wallet.current?.address === newWallet?.address) {
+  //       return
+  //     }
 
-      wallet.current = { ...newWallet }
-      reloadPlotInfos(currentBlock)
-    })
+  //     wallet.current = { ...newWallet }
+  //     reloadPlotInfos(currentBlock)
+  //   })
 
-    return () => {
-      subscribeToUiActionCompleted(() => {})
-      cleanUp()
-    }
-  }, [currentBlock])
+  //   return () => {
+  //     subscribeToUiActionCompleted(() => {})
+  //     cleanUp()
+  //   }
+  // }, [])
 
   return <CanvasWrapper plotCenterChanged={() => reloadPlotInfos(currentBlock)} />
 }

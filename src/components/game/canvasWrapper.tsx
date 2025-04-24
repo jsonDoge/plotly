@@ -1,14 +1,15 @@
 /* eslint-disable no-param-reassign */
 import React, { useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
-import dynamic from 'next/dynamic'
+// import dynamic from 'next/dynamic'
 import Camera from './camera'
 import CenterControl from './centerControl'
-import { useGame } from '../../context/game'
+// import { useGame } from '../../context/game'
 import { Coordinates } from './utils/interfaces'
-import { INITIAL_PLOT_CENTER_COORDS } from './utils/constants'
+import { INITIAL_PLOT_CENTER_COORDS, PLOT_SIZE } from './utils/constants'
+import Grid from './grid'
 
-const Grid = dynamic(() => import('./grid'), { suspense: true, ssr: false })
+// const Grid = dynamic(() => import('./grid'), { suspense: true, ssr: false })
 
 interface Props {
   plotCenterChanged: () => void
@@ -17,7 +18,11 @@ interface Props {
 const CanvasWrapper: React.FC<Props> = ({ plotCenterChanged }) => {
   console.info('Rendering canvasWrapper')
 
-  const { centerRef } = useGame()
+  // const { centerRef } = useGame()
+  const centerRef = useRef({
+    x: INITIAL_PLOT_CENTER_COORDS.x * PLOT_SIZE,
+    y: INITIAL_PLOT_CENTER_COORDS.y * PLOT_SIZE,
+  })
   const plotCenterRef = useRef<Coordinates>(INITIAL_PLOT_CENTER_COORDS)
 
   return (
@@ -26,6 +31,7 @@ const CanvasWrapper: React.FC<Props> = ({ plotCenterChanged }) => {
       <Camera centerRef={centerRef} />
       <Grid plotCenterRef={plotCenterRef} />
     </Canvas>
+    // <div> </div>
   )
 }
 

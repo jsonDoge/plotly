@@ -31,15 +31,19 @@ const Layout: React.FC = () => {
   //   setIsWalletIntroModalShown(!walletIntroShown)
   // }, [walletIntroShown])
 
+  useEffect(() => {
+    // setIsWalletIntroModalShown(!walletIntroShown)
+  }, [])
+
   return (
     <div className="flex flex-col h-screen">
       <Head>
-        <title>T2 Farm</title>
+        <title>Plotly</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <header className="grid grid-cols-2 lg:grid-cols-3 z-20 px-6 py-3 border-bottom bg-transparent">
         <div className="text-left">
-          <h1 className="text-3xl font-bold text-white">T2 farm</h1>
+          <h1 className="text-3xl font-bold text-white">Plotly</h1>
           <div className="text-left text-white hidden lg:block">
             <BlockCounter />
             {/* <div className="font-bold">
