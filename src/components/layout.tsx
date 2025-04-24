@@ -69,11 +69,11 @@ const Layout: React.FC = () => {
               Plots
             </span>
           </div>
-          <div className={`px-2 rounded-sm ${tab === 'shop' && 'bg-green-200 text-black'}`}>
+          {/* <div className={`px-2 rounded-sm ${tab === 'shop' && 'bg-green-200 text-black'}`}>
             <span role="button" onClick={() => setTab('shop')} tabIndex={0} className="text-bold">
               Shop
             </span>
-          </div>
+          </div> */}
           {/* <div className={`px-2 rounded-sm ${tab === 'barn' && 'bg-green-200 text-black'}`}>
             <span role="button" onClick={() => setTab('barn')} tabIndex={0} className="text-bold">
               Barn
@@ -86,7 +86,7 @@ const Layout: React.FC = () => {
           </div>
           <div className={`px-2 rounded-sm ${tab === 'bank' && 'bg-green-200 text-black'}`}>
             <span role="button" onClick={() => setTab('bank')} tabIndex={0} className="text-bold">
-              Bank
+              Market
             </span>
           </div>
           <div className={`px-2 rounded-sm ${tab === 'help' && 'bg-green-200 text-black'}`}>
