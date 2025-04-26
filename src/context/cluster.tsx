@@ -22,7 +22,7 @@ export enum ClusterNetwork {
   //   Mainnet = 'mainnet-beta',
   //   Testnet = 'testnet',
   Devnet = 'devnet',
-  Custom = 'custom',
+  // Custom = 'custom',
 }
 
 // By default, we don't configure the mainnet-beta cluster
@@ -31,10 +31,10 @@ export enum ClusterNetwork {
 export const defaultClusters: Cluster[] = [
   {
     name: 'devnet',
-    endpoint: publicRuntimeConfig.SOLANA_DEVNET_URL,
+    endpoint: publicRuntimeConfig.SOLANA_CLUSTER_URL,
     network: ClusterNetwork.Devnet,
   },
-  { name: 'local', endpoint: publicRuntimeConfig.SOLANA_LOCALNET_URL },
+  // { name: 'local', endpoint: publicRuntimeConfig.SOLANA_CLUSTER_URL },
 ]
 
 const clusterAtom = atomWithStorage<Cluster>('solana-cluster', defaultClusters[0])

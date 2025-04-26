@@ -2,7 +2,9 @@ import getConfig from 'next/config'
 // import { BigNumber } from 'ethers'
 // import { getGrowthBlockDuration, getPlantState } from '../../../services/farm'
 // import { SEED_TYPE } from '../../../utils/constants'
-import { Coordinates, MappedPlotInfos } from './interfaces'
+import { mapRawPlotToPlotInfo } from '@/services/web3Utils'
+import { PublicKey } from '@solana/web3.js'
+import { Coordinates, MappedPlotInfos, RawPlot } from './interfaces'
 import { getDefaultPlotColor, getPlotColor } from './plotColors'
 
 const { publicRuntimeConfig } = getConfig()
@@ -117,17 +119,19 @@ const getNeighborPlots = (
 }
 
 // TODO: function is growing too big, refactor
+// TODO: move this to blockchain once water is implemented
 export const reduceContractPlots = (
-  contractPlots: any[], // 49 plots
+  farmRawPlots: RawPlot[], // 49 plots
+  userRawPlots: RawPlot[], // 49 plots
   surroundingWaterLogs: any[], // 28 plots (line on each side of the 7x7 grid - look in contracts for more info)
   currentBlock: number,
-  walletAddress: string,
+  walletAddress: PublicKey,
 
   // actual plot coordinates
   absoluteCornerX: number,
   absoluteCornerY: number,
 ): MappedPlotInfos =>
-  contractPlots.reduce((mp: MappedPlotInfos, plot: any, i) => {
+  farmRawPlots.reduce((mp: MappedPlotInfos, farmRawPlots: RawPlot, i) => {
     const plotCoords = { x: i % 7, y: Math.floor(i / 7) }
 
     const updatedMp = {
@@ -137,41 +141,70 @@ export const reduceContractPlots = (
       },
     }
 
-    const lastKnownPlotWaterLevel = plot.waterLog?.level?.toNumber() || parseInt(publicRuntimeConfig.PLOT_MAX_WATER, 10)
-    const lastKnownPlotWaterChange = plot.waterLog?.changeRate?.toNumber() || 0
+    // TODO: water not yet implemented
 
-    const centerPlotBlockDiff = currentBlock - (plot.waterLog?.blockNumber?.toNumber() || 0)
-    // if block diff is negative, it means the game has not updated to the latest block yet
-    const centerPlotBlocksPassed = centerPlotBlockDiff < 0 ? 0 : centerPlotBlockDiff
+    // const lastKnownPlotWaterLevel = plot.waterLog?.level?.toNumber() || parseInt(publicRuntimeConfig.PLOT_MAX_WATER, 10)
+    // const lastKnownPlotWaterChange = plot.waterLog?.changeRate?.toNumber() || 0
 
-    const currentPlotWaterLevel = estimatePlotWaterLevel(
-      lastKnownPlotWaterLevel,
-      lastKnownPlotWaterChange,
-      centerPlotBlocksPassed,
-    )
+    // const centerPlotBlockDiff = currentBlock - (plot.waterLog?.blockNumber?.toNumber() || 0)
+    // // if block diff is negative, it means the game has not updated to the latest block yet
+    // const centerPlotBlocksPassed = centerPlotBlockDiff < 0 ? 0 : centerPlotBlockDiff
+
+    // const currentPlotWaterLevel = estimatePlotWaterLevel(
+    //   lastKnownPlotWaterLevel,
+    //   lastKnownPlotWaterChange,
+    //   centerPlotBlocksPassed,
+    // )
 
     // manual calculations until current block
     // if (plot.owner === '0x0000000000000000000000000000000000000000') {
+
+    const plotInfo = mapRawPlotToPlotInfo(walletAddress, rawPlot.owner, rawPlot.data)
+
     const isOwner = false
     const isPlantOwner = false
     const isUnminted = true
 
+    if (plotInfo.isUnminted) {
+      updatedMp[plotCoords.x][plotCoords.y] = {
+        isOwner: false,
+        isPlantOwner: false,
+        isUnminted: true,
+
+        // plant
+        seedType: undefined,
+        plantState: undefined,
+        waterAbsorbed: undefined,
+        plantedBlockNumber: undefined,
+        overgrownBlockNumber: undefined,
+
+        // plot
+        color: getPlotColor(isOwner, isPlantOwner, isUnminted),
+
+        // TODO: not yet implemented
+        lastStateChangeBlock: 0, // plot.waterLog?.blockNumber?.toNumber() || 0,
+        waterLevel: 0, // currentPlotWaterLevel,
+      }
+
+      return updatedMp
+    }
+
     updatedMp[plotCoords.x][plotCoords.y] = {
-      isOwner: false,
-      isPlantOwner: false,
-      isUnminted: true,
+      isOwner: plotInfo.isOwner,
+      isPlantOwner: plotInfo.isPlantOwner,
+      isUnminted: plotInfo.isUnminted,
 
       // plant
-      seedType: undefined,
-      plantState: undefined,
-      waterAbsorbed: undefined,
-      plantedBlockNumber: undefined,
-      overgrownBlockNumber: undefined,
+      seedType: plotInfo.seedType,
+      plantState: plotInfo.plantState,
+      waterAbsorbed: plotInfo.waterAbsorbed,
+      plantedBlockNumber: plotInfo.plantedBlockNumber,
+      overgrownBlockNumber: plotInfo.overgrownBlockNumber,
 
       // plot
-      color: getPlotColor(isOwner, isPlantOwner, isUnminted),
-      lastStateChangeBlock: plot.waterLog?.blockNumber?.toNumber() || 0,
-      waterLevel: currentPlotWaterLevel,
+      color: getPlotColor(plotInfo.isOwner, plotInfo.isPlantOwner, plotInfo.isUnminted),
+      lastStateChangeBlock: 0, // plot.waterLog?.blockNumber?.toNumber() || 0,
+      waterLevel: 0, // currentPlotWaterLevel,
     }
 
     return updatedMp

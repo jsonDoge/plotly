@@ -111,7 +111,8 @@ impl<'info> MintPlot<'info> {
         plot_y: u32,
         plot_currency: Pubkey,
         program_id: &Pubkey,
-    ) -> Result<()> {
+    // returns plot mint address
+    ) -> Result<(Pubkey)> {
 
         if self.plot_mint.supply != 0 {
             return Err(ErrorCode::PlotAlreadyMinted.into());
@@ -233,6 +234,6 @@ impl<'info> MintPlot<'info> {
 
         msg!("Plot minted x:{} y:{}", plot_x, plot_y);
 
-        Ok(())
+        Ok((self.plot_mint.key()))
     }
 }

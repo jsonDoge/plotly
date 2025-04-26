@@ -1,5 +1,12 @@
 // import { Contract, Wallet } from 'ethers'
 
+import { Connection, PublicKey } from '@solana/web3.js'
+import { PLOTLY_PROGRAM_ID as programId, toLeBytes } from '@project/anchor'
+import * as anchor from '@coral-xyz/anchor'
+import { getAssociatedTokenAddressSync } from '@solana/spl-token'
+import { PlotInfo } from '@/components/game/utils/interfaces'
+import { getPlotColor } from '@/components/game/utils/plotColors'
+
 // services
 // import getProvider from './provider'
 
@@ -58,5 +65,77 @@
 
 //   return provider.getBlockHeight().send()
 // }
+
+export const mapRawPlotToPlotInfo = (
+  user: PublicKey,
+  mintOwner: PublicKey | undefined,
+  data: any | undefined,
+): PlotInfo => {
+  const isOwner = !!mintOwner && mintOwner.toString() === user.toString()
+  const isPlantOwner = false
+  const isUnminted = data === undefined && mintOwner === undefined
+  return {
+    isOwner,
+    isPlantOwner,
+    isUnminted,
+    seedType: undefined,
+
+    // plant
+    plantState: undefined,
+    plantedBlockNumber: undefined,
+    overgrownBlockNumber: undefined,
+    waterAbsorbed: undefined,
+
+    // plot
+    color: getPlotColor(isOwner, isPlantOwner, isUnminted),
+    lastStateChangeBlock: undefined,
+    waterLevel: 0,
+  }
+}
+
+export const getFarmId = (plotCurrencyId: PublicKey): PublicKey => {
+  const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('farm'), plotCurrencyId.toBuffer()],
+    programId,
+  )
+  return farm
+}
+
+export const getFarmPlotMintAtaOwnerId = (farmId: PublicKey): PublicKey => {
+  const [ownerId] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('farm_associated_plot_authority'), farmId.toBuffer()],
+    programId,
+  )
+  return ownerId
+}
+
+export const getPlotMintId = (x: number, y: number, plotCurrencyId: PublicKey): PublicKey => {
+  if (x < 0 || y < 0 || x > 999 || y > 999) {
+    throw new Error('Invalid coordinates')
+  }
+  const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('farm'), plotCurrencyId.toBuffer()],
+    programId,
+  )
+
+  const [plotMint] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('plot_mint'), toLeBytes(x), toLeBytes(y), farm.toBuffer()],
+    programId,
+  )
+
+  return plotMint
+}
+
+export const getPlotMintAtaId = (
+  plotMintId: PublicKey,
+  plotOwnerId: PublicKey,
+  allowOwnerOffCurve: boolean = true,
+): PublicKey => {
+  return getAssociatedTokenAddressSync(plotMintId, plotOwnerId, allowOwnerOffCurve)
+}
+
+export const getAccountInfos = async (connection: Connection, accountIds: PublicKey[]): Promise<any> => {
+  return connection.getMultipleParsedAccounts(accountIds)
+}
 
 export const waitTx = async (tx: any): Promise<undefined> => (await tx).wait()

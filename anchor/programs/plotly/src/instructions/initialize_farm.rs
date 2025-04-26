@@ -105,11 +105,11 @@ impl<'info> InitializeFarm<'info> {
         farm_bump: u8,
         farm_associated_plot_authority_bump: u8,
         program_id: &Pubkey,
-    ) -> Result<()> {
+    ) -> Result<(Pubkey)> {
         msg!("Initializing farm...");
 
         if self.farm.plot_currency != Pubkey::default() {
-            return Ok(());
+            return Ok((self.farm.key()));
         }
 
         self.plot_mint_authority.bump = mint_authority_bump;
@@ -201,6 +201,6 @@ impl<'info> InitializeFarm<'info> {
 
         msg!("Farm initialized!");
 
-        Ok(())
+        Ok((self.farm.key()))
     }
 }

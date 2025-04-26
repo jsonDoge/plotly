@@ -6,6 +6,8 @@ import { faBars } from '@fortawesome/free-solid-svg-icons'
 
 // import { useWallet } from '../context/wallet'
 import { WalletButton } from '@/context/solana'
+import { useSnapshot } from 'valtio'
+import { walletStore } from '@/stores/wallet'
 import BlockCounter from './blockCounter'
 // import PlotActionModals from './plotActionModals'
 // import Barn from './barn'
@@ -26,7 +28,9 @@ const Layout: React.FC = () => {
   const [isBtnRightPressed, setIsBtnRightPressed] = useState(false)
   const [isBtnDownPressed, setIsBtnDownPressed] = useState(false)
   const [isBtnLeftPressed, setIsBtnLeftPressed] = useState(false)
-  const [isWalletIntroModalShown, setIsWalletIntroModalShown] = useState(false)
+  const [isWalletIntroModalShown, setIsWalletIntroModalShown] = useState(true)
+
+  const wallet = useSnapshot(walletStore)
 
   // useEffect(() => {
   //   setIsWalletIntroModalShown(!walletIntroShown)
@@ -99,7 +103,9 @@ const Layout: React.FC = () => {
         <div className="text-right">
           <div className="text-right text-white hidden lg:block">
             <ChainName />
-            <WalletButton className="bg-black mt-5" />
+            <div className="mt-3 text-black">
+              <WalletButton />
+            </div>
           </div>
         </div>
         {/* MOBILE MENU */}
@@ -315,12 +321,10 @@ const Layout: React.FC = () => {
         </div>
       )}
       {/* <Analytics /> */}
-      {isWalletIntroModalShown && (
+      {!wallet.address && isWalletIntroModalShown && (
         <WalletIntroModal
-          walletAddress={wallet?.address || ''}
           onConfirm={() => {
             setIsWalletIntroModalShown(false)
-            markWalletIntroAsShown()
           }}
         />
       )}

@@ -10,7 +10,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "tsc": "tsc",
+    "ts-node": "ts-node"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.31.0",

@@ -3,11 +3,10 @@ import React from 'react'
 import Button from './button'
 
 interface Props {
-  walletAddress: string
   onConfirm: () => void
 }
 
-const WalletIntroModal: React.FC<Props> = ({ walletAddress, onConfirm }) => {
+const WalletIntroModal: React.FC<Props> = ({ onConfirm }) => {
   const confirm = () => onConfirm && onConfirm()
 
   return (
@@ -23,27 +22,8 @@ const WalletIntroModal: React.FC<Props> = ({ walletAddress, onConfirm }) => {
             <div className="sm:flex sm:items-start">
               <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                 <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                  Your wallet
+                  Please &quot;select wallet&quot; to start playing
                 </h3>
-                <div className="mt-2 text-md">
-                  <p className="text-gray-500">
-                    Thank you for trying this game! To complete action you&apos;ll need a crypto wallet, currently the
-                    only option is our local generated wallet.
-                  </p>
-                  <p className="text-gray-500 mt-5">
-                    <span className="inline">
-                      Your address is <span className="font-semibold">{walletAddress}</span>, make sure you have enough
-                      currency to make transactions. You can always find it in the top left corner (or extended menu in
-                      mobile).
-                    </span>
-                  </p>
-                  <p className="text-gray-500 mt-5">
-                    <span className="font-semibold">BUT KNOW THAT THIS WALLET METHOD IS NOT SAFE</span> and currently
-                    used only for testing. The wallet is stored in browser&apos;s local storage and if cleared - will be
-                    lost forever.
-                  </p>
-                  <p className="text-gray-500 mt-5">Planning to add metamask.</p>
-                </div>
               </div>
             </div>
           </div>

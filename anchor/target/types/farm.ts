@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/farm.json`.
  */
 export type Farm = {
-  "address": "6z68wfurCMYkZG51s1Et9BJEd9nJGUusjHXNt4dGbNNF",
+  "address": "FQH8xLxebgWgTkxhyWDSfb4b68ZoW1newgSKMNXgQj4c",
   "metadata": {
     "name": "farm",
     "version": "0.1.0",
@@ -1102,7 +1102,8 @@ export type Farm = {
           "name": "plotCurrency",
           "type": "pubkey"
         }
-      ]
+      ],
+      "returns": "pubkey"
     },
     {
       "name": "mintSeeds",

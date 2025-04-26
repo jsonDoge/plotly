@@ -1,5 +1,6 @@
 import { BufferGeometry, Mesh, MeshStandardMaterial, Vector3Tuple } from 'three'
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader'
+import { PublicKey } from '@solana/web3.js'
 import { PlantState } from '../../../utils/enums'
 
 export interface GetAreNumbersEqualRoot {
@@ -11,6 +12,11 @@ export interface BackgroundModelParams {
   rotation: Vector3Tuple
   isVisible: boolean
   isSemiTransparent: boolean
+}
+
+export interface RawPlot {
+  data: any
+  owner: PublicKey
 }
 
 export interface MappedPlotInfos {

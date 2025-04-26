@@ -271,7 +271,7 @@ describe('farm', () => {
       commitment: 'confirmed',
     })
 
-    console.log('Metadata:', metadata)
+    // console.log('Metadata:', metadata)
 
     const collectionMintAddr = (metadata.metadata.collection as any)?.value?.key
 

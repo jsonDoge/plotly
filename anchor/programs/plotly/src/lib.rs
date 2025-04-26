@@ -6,13 +6,14 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("6z68wfurCMYkZG51s1Et9BJEd9nJGUusjHXNt4dGbNNF");
+declare_id!("FQH8xLxebgWgTkxhyWDSfb4b68ZoW1newgSKMNXgQj4c");
 
 #[program]
 pub mod farm {
     use super::*;
-
-    pub fn initialize_farm(ctx: Context<InitializeFarm>, plot_currency: Pubkey) -> Result<()> {
+    
+    // returns farm address
+    pub fn initialize_farm(ctx: Context<InitializeFarm>, plot_currency: Pubkey) -> Result<Pubkey> {
         ctx.accounts.initialize_farm(
             &plot_currency,
             ctx.bumps.plot_mint_authority,
@@ -24,12 +25,13 @@ pub mod farm {
 
     // PLOTS
 
+    // returns plot mint address
     pub fn mint_plot(
         ctx: Context<MintPlot>,
         plot_x: u32,
         plot_y: u32,
         plot_currency: Pubkey,
-    ) -> Result<()> {
+    ) -> Result<Pubkey> {
         ctx.accounts
             .mint_plot(plot_x, plot_y, plot_currency, ctx.program_id)
     }

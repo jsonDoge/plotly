@@ -5,13 +5,22 @@ import { debounce } from 'lodash'
 import { subscribeKey } from 'valtio/utils'
 // import { Contract } from 'ethers'
 import { subscribe } from 'valtio'
+import { PublicKey } from '@solana/web3.js'
 
 // stores
 
-import { mappedPlotInfosActions } from '@/stores/mappedPlotInfos'
+import { mappedPlotInfosActions, mappedPlotInfosStore, RawPlotsAtCenter } from '@/stores/mappedPlotInfos'
 import { uiActionCompletedStore } from '@/stores/uiActionCompleted'
 import { blockchainStore } from '@/stores/blockchain'
 import { teleportStore } from '@/stores/teleport'
+import {
+  getAccountInfos,
+  getFarmId,
+  getFarmPlotMintAtaOwnerId,
+  getPlotMintAtaId,
+  getPlotMintId,
+} from '@/services/web3Utils'
+import { reloadPlotsAtActions } from '@/stores/reloadPlotsAt'
 import { centerPlotCoordsStore, centerPlotCoordsActions } from '../../stores/centerPlotCoords'
 import { walletStore } from '../../stores/wallet'
 
@@ -19,7 +28,7 @@ import { walletStore } from '../../stores/wallet'
 import CanvasWrapper from './canvasWrapper'
 
 // interfaces
-import { Coordinates, MappedPlotInfos } from './utils/interfaces'
+import { Coordinates, MappedPlotInfos, RawPlot } from './utils/interfaces'
 import { Wallet } from '../../utils/interfaces'
 
 // utils
@@ -52,7 +61,7 @@ const Game = () => {
 
   // const { currentBlock } = useBlockchain()
   // const currentBlock = 0
-  const subscribeToUiActionCompleted = () => {}
+  // const subscribeToUiActionCompleted = () => {}
   // const centerChanged = () => {}
 
   // Follows cooradinates 0-999
@@ -82,8 +91,10 @@ const Game = () => {
     y: y - 3 < 0 ? 0 : y - 3,
   })
 
+  // should NOT load without wallet
   const loadPlotInfos = async (
-    walletAddress_: string | undefined,
+    rawPlots: RawPlot[],
+    walletAddress_: PublicKey,
     currentBlock_: number,
     centerX: number,
     centerY: number,
@@ -115,32 +126,20 @@ const Game = () => {
     }
 
     // getPlotView returns array sorted as x + y * 7
-    const contractPlots = await farm.getPlotView(cornerPlotId)
+    // const contractPlots = await farm.getPlotView(cornerPlotId)
     const surroundingPlotWaterLogs = await farm.getSurroundingWaterLogs(cornerPlotId)
 
-    console.log('contractPlots', contractPlots)
+    // console.log('contractPlots', contractPlots)
 
     // TODO: refactor to not fetch same data if coords didn't change
-    const res = reduceContractPlots(
-      contractPlots,
-      surroundingPlotWaterLogs,
-      currentBlock_,
-      walletAddress_ || '',
-      cornerX,
-      cornerY,
-    )
 
-    return res
+    mappedPlotInfosActions.setPlotInfos(
+      reduceContractPlots(rawPlots, surroundingPlotWaterLogs, currentBlock_, walletAddress_, cornerX, cornerY),
+    )
   }
 
   const debouncedLoadPlotInfos = debounce(
-    (...args: Parameters<typeof loadPlotInfos>) =>
-      loadPlotInfos(...args).then((mpi) => {
-        if (!mpi) {
-          return
-        }
-        mappedPlotInfosActions.setPlotInfos(mpi)
-      }),
+    (...args: Parameters<typeof reloadPlotsAtActions.reloadAtCenter>) => reloadPlotsAtActions.reloadAtCenter(...args),
     2000,
   )
 
@@ -150,7 +149,7 @@ const Game = () => {
       return
     }
     resetMappedPlotInfos()
-    debouncedLoadPlotInfos(walletAddress.current, currentBlock_, plotCenterRef.current.x, plotCenterRef.current.y)
+    debouncedLoadPlotInfos(plotCenterRef.current.x, plotCenterRef.current.y)
     // centerPlotCoordsActions.setCenterPlotCoords(plotCenterRef.current.x, plotCenterRef.current.y)
   }
 
@@ -218,13 +217,31 @@ const Game = () => {
       reloadPlotInfos(currentBlock.current)
     })
 
+    const unsubscribeMappedPlotInfos = subscribeKey(
+      mappedPlotInfosStore,
+      'rawPlotsAtCenter',
+      async (rawPlotsAtCenter: RawPlotsAtCenter) => {
+        if (walletAddress.current === undefined) {
+          return
+        }
+
+        loadPlotInfos(
+          rawPlotsAtCenter.rawPlots,
+          new PublicKey(walletAddress.current),
+          currentBlock.current,
+          rawPlotsAtCenter.centerX,
+          rawPlotsAtCenter.centerY,
+        )
+      },
+    )
+
     return () => {
-      // subscribeToUiActionCompleted(() => {})
       unsubscribeWallet()
       unsubscribeCenterChanged()
       unsubscribeUiActionCompleted()
       usubscribeBlockchain()
       unsubscribeTeleport()
+      unsubscribeMappedPlotInfos()
     }
   }, [])
 
@@ -233,7 +250,6 @@ const Game = () => {
       plotCenterRef={plotCenterRef}
       centerRef={centerRef}
       plotCenterChanged={(newX: number, newY: number) => {
-        // console.log('canvas center control override', plotCenterRef.current)
         centerPlotCoordsActions.setCenterPlotCoords(newX, newY)
         reloadPlotInfos(currentBlock.current)
       }}
