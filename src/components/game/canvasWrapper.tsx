@@ -12,22 +12,30 @@ import Grid from './grid'
 // const Grid = dynamic(() => import('./grid'), { suspense: true, ssr: false })
 
 interface Props {
-  plotCenterChanged: () => void
+  plotCenterChanged: (x: number, y: number) => void
+  plotCenterRef: React.MutableRefObject<{ x: number; y: number }>
+  centerRef: React.MutableRefObject<{ x: number; y: number }>
 }
 
-const CanvasWrapper: React.FC<Props> = ({ plotCenterChanged }) => {
+const CanvasWrapper: React.FC<Props> = ({ plotCenterChanged, plotCenterRef, centerRef }) => {
   console.info('Rendering canvasWrapper')
 
   // const { centerRef } = useGame()
-  const centerRef = useRef({
-    x: INITIAL_PLOT_CENTER_COORDS.x * PLOT_SIZE,
-    y: INITIAL_PLOT_CENTER_COORDS.y * PLOT_SIZE,
-  })
-  const plotCenterRef = useRef<Coordinates>(INITIAL_PLOT_CENTER_COORDS)
+  // const centerRef = useRef({
+  //   x: plotCenterRef.current.x * PLOT_SIZE,
+  //   y: plotCenterRef.current.y * PLOT_SIZE,
+  // })
+  // const plotCenterRef = useRef<Coordinates>(INITIAL_PLOT_CENTER_COORDS)
 
   return (
     <Canvas shadows className="min-h-screen w-screen">
-      <CenterControl centerRef={centerRef} plotCenterRef={plotCenterRef} plotCenterChanged={plotCenterChanged} />
+      {/* center control CHANGES centerRef */}
+      <CenterControl
+        centerRef={centerRef}
+        initialPlotCenter={plotCenterRef.current}
+        plotCenterChanged={plotCenterChanged}
+      />
+      {/* camera doesn't change centerRef */}
       <Camera centerRef={centerRef} />
       <Grid plotCenterRef={plotCenterRef} />
     </Canvas>

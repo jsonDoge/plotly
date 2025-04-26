@@ -20,8 +20,8 @@ const validKeyCodes = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', '
 
 interface Props {
   centerRef: React.MutableRefObject<{ x: number; y: number }>
-  plotCenterRef: React.MutableRefObject<{ x: number; y: number }>
-  plotCenterChanged: () => void
+  initialPlotCenter: { x: number; y: number }
+  plotCenterChanged: (x: number, y: number) => void
 }
 
 interface KeysDown {
@@ -31,10 +31,10 @@ interface KeysDown {
   d: boolean
 }
 
-const CenterControl = ({ centerRef, plotCenterRef, plotCenterChanged }: Props) => {
+const CenterControl = ({ centerRef, initialPlotCenter, plotCenterChanged }: Props) => {
   console.info('Rendering centerControl')
 
-  let previousPlotCenter: Coordinates
+  let previousPlotCenter: Coordinates = { ...initialPlotCenter }
   const keysDown = useRef<KeysDown>({
     w: false,
     a: false,
@@ -91,20 +91,19 @@ const CenterControl = ({ centerRef, plotCenterRef, plotCenterChanged }: Props) =
     if (!centerRef?.current) {
       return
     }
-    plotCenterRef.current.x = Math.floor(centerRef.current.x / PLOT_SIZE)
-    plotCenterRef.current.y = Math.floor(centerRef.current.y / PLOT_SIZE)
 
-    if (
-      previousPlotCenter &&
-      previousPlotCenter.x === plotCenterRef.current.x &&
-      previousPlotCenter.y === plotCenterRef.current.y
-    ) {
+    const newPlotCenterX = Math.floor(centerRef.current.x / PLOT_SIZE)
+    const newPlotCenterY = Math.floor(centerRef.current.y / PLOT_SIZE)
+    // plotCenterRef.current.x = Math.floor(centerRef.current.x / PLOT_SIZE)
+    // plotCenterRef.current.y = Math.floor(centerRef.current.y / PLOT_SIZE)
+
+    if (previousPlotCenter && previousPlotCenter.x === newPlotCenterX && previousPlotCenter.y === newPlotCenterY) {
       return
     }
 
-    previousPlotCenter = { ...plotCenterRef.current }
+    previousPlotCenter = { x: newPlotCenterX, y: newPlotCenterY }
 
-    plotCenterChanged()
+    plotCenterChanged(newPlotCenterX, newPlotCenterY)
   })
 
   useFrame(() => {

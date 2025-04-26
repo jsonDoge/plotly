@@ -2,16 +2,36 @@
 import React, { MutableRefObject, useEffect, useRef } from 'react'
 import getConfig from 'next/config'
 import { debounce } from 'lodash'
+import { subscribeKey } from 'valtio/utils'
 // import { Contract } from 'ethers'
-import { useGame } from '../../context/game'
-import { getAllPlotCoordinatesAround } from './utils/plots'
-import { Coordinates, MappedPlotInfos } from './utils/interfaces'
-import { INITIAL_PLOT_CENTER_COORDS } from './utils/constants'
-import { generateEmptyMappedPlotInfos, reduceContractPlots } from './utils/mapPlots'
+import { subscribe } from 'valtio'
+
+// stores
+
+import { mappedPlotInfosActions } from '@/stores/mappedPlotInfos'
+import { uiActionCompletedStore } from '@/stores/uiActionCompleted'
+import { blockchainStore } from '@/stores/blockchain'
+import { teleportStore } from '@/stores/teleport'
+import { centerPlotCoordsStore, centerPlotCoordsActions } from '../../stores/centerPlotCoords'
+import { walletStore } from '../../stores/wallet'
+
+// components
 import CanvasWrapper from './canvasWrapper'
-// import { walletStore, mappedPlotInfosStore } from '../../stores'
+
+// interfaces
+import { Coordinates, MappedPlotInfos } from './utils/interfaces'
 import { Wallet } from '../../utils/interfaces'
+
+// utils
+import { generateEmptyMappedPlotInfos, reduceContractPlots } from './utils/mapPlots'
+import { getAllPlotCoordinatesAround } from './utils/plots'
+
+// services
 import { getPlotIdFromCoordinates } from '../../services/utils'
+
+// import { useGame } from '../../context/game'
+import { INITIAL_PLOT_CENTER_COORDS, PLOT_SIZE } from './utils/constants'
+// import { walletStore, mappedPlotInfosStore } from '../../stores'
 // import { getContract } from '../../services/web3Utils'
 // import { CONTRACT_TYPE } from '../../utils/constants'
 // import { useBlockchain } from '../../context/blockchain'
@@ -27,21 +47,35 @@ const { publicRuntimeConfig } = getConfig()
 const Game = () => {
   console.info('Rendering game')
 
-  const wallet: MutableRefObject<Wallet | undefined> = useRef()
+  const walletAddress: MutableRefObject<string | undefined> = useRef()
+  const currentBlock: MutableRefObject<number> = useRef(0)
 
-  // const { subscribeToUiActionCompleted, centerChanged } = useGame()
   // const { currentBlock } = useBlockchain()
-  const currentBlock = 0
+  // const currentBlock = 0
   const subscribeToUiActionCompleted = () => {}
-  const centerChanged = () => {}
+  // const centerChanged = () => {}
+
+  // Follows cooradinates 0-999
   const plotCenterRef = useRef<Coordinates>(INITIAL_PLOT_CENTER_COORDS)
 
+  // Absolute camera position in Three.js x/y space
+  const centerRef = useRef<Coordinates>({
+    x: plotCenterRef.current.x * PLOT_SIZE,
+    y: plotCenterRef.current.y * PLOT_SIZE,
+  })
+
   const gridPlotCoordinates = getAllPlotCoordinatesAround(INITIAL_PLOT_CENTER_COORDS.x, INITIAL_PLOT_CENTER_COORDS.y)
+  const generateMockProgramPlots = (center: Coordinates) => {
+    const allPlots = generateEmptyMappedPlotInfos(getAllPlotCoordinatesAround(center.x, center.y))
+    const allPlotsArray = Object.values(allPlots).flatMap((row) => Object.values(row))
+    return allPlotsArray
+  }
 
   // TODO: show errors
-  // const resetMappedPlotInfos = () => {
-  //   mappedPlotInfosStore.setValue(generateEmptyMappedPlotInfos(gridPlotCoordinates))
-  // }
+  const resetMappedPlotInfos = () => {
+    mappedPlotInfosActions.setPlotInfos(generateEmptyMappedPlotInfos(gridPlotCoordinates))
+    // mappedPlotInfosStore.setValue(generateEmptyMappedPlotInfos(gridPlotCoordinates))
+  }
 
   const convertCenterToLowerLeftCorner = (x: number, y: number) => ({
     x: x - 3 < 0 ? 0 : x - 3,
@@ -49,7 +83,7 @@ const Game = () => {
   })
 
   const loadPlotInfos = async (
-    walletAddress: string | undefined,
+    walletAddress_: string | undefined,
     currentBlock_: number,
     centerX: number,
     centerY: number,
@@ -65,8 +99,7 @@ const Game = () => {
     if (publicRuntimeConfig.MOCK_CHAIN_MODE) {
       farm = {
         getPlotView: async (plotId: number) => {
-          const plotInfos = generateEmptyMappedPlotInfos(gridPlotCoordinates)
-          return plotInfos[plotId]
+          return generateMockProgramPlots(plotCenterRef.current)
         },
         getSurroundingWaterLogs: async (plotId: number) => {
           const surroundingWaterLogs = []
@@ -85,12 +118,14 @@ const Game = () => {
     const contractPlots = await farm.getPlotView(cornerPlotId)
     const surroundingPlotWaterLogs = await farm.getSurroundingWaterLogs(cornerPlotId)
 
+    console.log('contractPlots', contractPlots)
+
     // TODO: refactor to not fetch same data if coords didn't change
     const res = reduceContractPlots(
       contractPlots,
       surroundingPlotWaterLogs,
       currentBlock_,
-      walletAddress || '',
+      walletAddress_ || '',
       cornerX,
       cornerY,
     )
@@ -98,44 +133,112 @@ const Game = () => {
     return res
   }
 
-  // const debouncedLoadPlotInfos = debounce(
-  //   (...args: Parameters<typeof loadPlotInfos>) => loadPlotInfos(...args).then(mappedPlotInfosStore.setValue),
-  //   2000,
-  // )
+  const debouncedLoadPlotInfos = debounce(
+    (...args: Parameters<typeof loadPlotInfos>) =>
+      loadPlotInfos(...args).then((mpi) => {
+        if (!mpi) {
+          return
+        }
+        mappedPlotInfosActions.setPlotInfos(mpi)
+      }),
+    2000,
+  )
 
   const reloadPlotInfos = (currentBlock_: number) => {
-    // resetMappedPlotInfos()
-    // debouncedLoadPlotInfos(wallet.current?.address, currentBlock_, plotCenterRef.current.x, plotCenterRef.current.y)
-    // centerChanged(plotCenterRef.current.x, plotCenterRef.current.y)
+    console.log('reloadPlotInfos', currentBlock_)
+    if (currentBlock_ === 0) {
+      return
+    }
+    resetMappedPlotInfos()
+    debouncedLoadPlotInfos(walletAddress.current, currentBlock_, plotCenterRef.current.x, plotCenterRef.current.y)
+    // centerPlotCoordsActions.setCenterPlotCoords(plotCenterRef.current.x, plotCenterRef.current.y)
   }
 
-  // useEffect(() => {
-  //   console.log('called')
-  //   if (!currentBlock) {
-  //     return () => {}
-  //   }
-  //   console.error('console', currentBlock)
+  useEffect(() => {
+    console.log('== game useEffect block==', currentBlock)
 
-  //   wallet.current = walletStore.getValue()
+    const usubscribeBlockchain = subscribeKey(blockchainStore, 'currentBlock', (currentBlock_: number) => {
+      if (currentBlock_ === currentBlock.current) {
+        return
+      }
 
-  //   subscribeToUiActionCompleted(() => reloadPlotInfos(currentBlock))
+      const isFirstLoad = currentBlock.current === 0
+      currentBlock.current = currentBlock_
 
-  //   const cleanUp = walletStore.onChange((newWallet) => {
-  //     if (wallet.current?.address === newWallet?.address) {
-  //       return
-  //     }
+      console.log('game block subscription', currentBlock.current)
+      if (isFirstLoad) {
+        reloadPlotInfos(currentBlock.current)
+      }
+    })
 
-  //     wallet.current = { ...newWallet }
-  //     reloadPlotInfos(currentBlock)
-  //   })
+    const unsubscribeWallet = subscribeKey(walletStore, 'address', (newAddress: string) => {
+      if (!newAddress) {
+        return
+      }
 
-  //   return () => {
-  //     subscribeToUiActionCompleted(() => {})
-  //     cleanUp()
-  //   }
-  // }, [])
+      if (newAddress === walletAddress.current) {
+        return
+      }
 
-  return <CanvasWrapper plotCenterChanged={() => reloadPlotInfos(currentBlock)} />
+      walletAddress.current = newAddress
+
+      reloadPlotInfos(currentBlock.current)
+    })
+
+    const unsubscribeCenterChanged = subscribeKey(centerPlotCoordsStore, 'coords', (newCoords: Coordinates) => {
+      console.log('game center changed', newCoords)
+      if (newCoords.x === plotCenterRef.current.x && newCoords.y === plotCenterRef.current.y) {
+        return
+      }
+
+      console.log('game center changed ACCEPTED')
+
+      plotCenterRef.current = newCoords
+
+      reloadPlotInfos(currentBlock.current)
+    })
+
+    const unsubscribeTeleport = subscribeKey(teleportStore, 'coords', (newCoords: Coordinates) => {
+      console.log('teleported', newCoords)
+      if (newCoords.x === plotCenterRef.current.x && newCoords.y === plotCenterRef.current.y) {
+        return
+      }
+
+      console.log('teleport changed ACCEPTED')
+
+      centerRef.current = {
+        x: newCoords.x * PLOT_SIZE,
+        y: newCoords.y * PLOT_SIZE,
+      }
+
+      centerPlotCoordsActions.setCenterPlotCoords(newCoords.x, newCoords.y)
+    })
+
+    const unsubscribeUiActionCompleted = subscribe(uiActionCompletedStore, () => {
+      reloadPlotInfos(currentBlock.current)
+    })
+
+    return () => {
+      // subscribeToUiActionCompleted(() => {})
+      unsubscribeWallet()
+      unsubscribeCenterChanged()
+      unsubscribeUiActionCompleted()
+      usubscribeBlockchain()
+      unsubscribeTeleport()
+    }
+  }, [])
+
+  return (
+    <CanvasWrapper
+      plotCenterRef={plotCenterRef}
+      centerRef={centerRef}
+      plotCenterChanged={(newX: number, newY: number) => {
+        // console.log('canvas center control override', plotCenterRef.current)
+        centerPlotCoordsActions.setCenterPlotCoords(newX, newY)
+        reloadPlotInfos(currentBlock.current)
+      }}
+    />
+  )
 }
 
 export default Game

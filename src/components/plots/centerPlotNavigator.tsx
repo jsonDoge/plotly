@@ -1,33 +1,37 @@
-import React, { useState } from 'react';
-import { useGame } from '../../context/game';
-import { useError } from '../../context/error';
-import Input from '../input';
-import Button from '../button';
-import { PLOT_CENTER_AREA_LIMIT } from '../game/utils/constants';
+import React, { useState } from 'react'
+// import { useSnapshot } from 'valtio'
+// import { centerPlotCoordsActions } from '@/stores/centerPlotCoords'
+// import { useGame } from '../../context/game'
+import { teleportActions } from '@/stores/teleport'
+import { useError } from '../../context/error'
+import Input from '../input'
+import Button from '../button'
+import { PLOT_CENTER_AREA_LIMIT } from '../game/utils/constants'
 
 interface Props {
-  isMobile?: boolean;
+  isMobile?: boolean
 }
 
 const CenterPlotNavigator: React.FC<Props> = ({ isMobile = false }) => {
-  const { submitNewPlotCenter, centerChanged } = useGame();
-  const { error, setError } = useError();
+  // const centerCoords = useSnapshot(centerPlotCoordsStore)
+  // const { submitNewPlotCenter, centerChanged } = useGame()
+  const { error, setError } = useError()
 
-  const [centerX, setCenterX] = useState(3);
-  const [centerY, setCenterY] = useState(3);
+  const [centerX, setCenterX] = useState(3)
+  const [centerY, setCenterY] = useState(3)
 
   const validateInput = (input: number) => {
     if (!input && input !== 0) {
-      setError('Invalid center');
-      return false;
+      setError('Invalid center')
+      return false
     }
     if (input > PLOT_CENTER_AREA_LIMIT.x1 || input < PLOT_CENTER_AREA_LIMIT.x0) {
-      setError('Center exceeds limits [3, 996]');
-      return false;
+      setError('Center exceeds limits [3, 996]')
+      return false
     }
 
-    return true;
-  };
+    return true
+  }
 
   return (
     <div>
@@ -71,19 +75,19 @@ const CenterPlotNavigator: React.FC<Props> = ({ isMobile = false }) => {
         <div>
           <Button
             onClick={() => {
-              const isValidX = validateInput(centerX);
+              const isValidX = validateInput(centerX)
               if (!isValidX) {
-                return;
+                return
               }
 
-              const isValidY = validateInput(centerY);
+              const isValidY = validateInput(centerY)
               if (!isValidY) {
-                return;
+                return
               }
 
-              setError('');
-              submitNewPlotCenter(centerX, centerY);
-              centerChanged(centerX, centerY);
+              setError('')
+              // submitNewPlotCenter(centerX, centerY)
+              teleportActions.teleport(centerX, centerY)
             }}
           >
             Load
@@ -91,7 +95,7 @@ const CenterPlotNavigator: React.FC<Props> = ({ isMobile = false }) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default CenterPlotNavigator;
+export default CenterPlotNavigator

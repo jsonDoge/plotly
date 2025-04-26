@@ -1,22 +1,20 @@
-import React, { FC, useState } from 'react';
+import React, { FC } from 'react'
 
 // context
-import { useGame } from '../../context/game';
+// import { subscribeKey } from 'valtio/utils'
+import { centerPlotCoordsStore } from '@/stores/centerPlotCoords'
+import { useSnapshot } from 'valtio'
+// import { useGame } from '../../context/game'
 
 const CenterPlotCoordsDisplay: FC = () => {
-  const { subscribeToCenterChanged } = useGame();
-  const [centerPlot, setCenterPlot] = useState({ x: 0, y: 0 });
-
-  subscribeToCenterChanged((x, y) => {
-    setCenterPlot({ x, y });
-  });
+  const centerCoords = useSnapshot(centerPlotCoordsStore)
 
   return (
     <div className="font-bold text-white">
-      <span>{`X: ${centerPlot.x} | `}</span>
-      <span>{`Y: ${centerPlot.y}`}</span>
+      <span>{`X: ${centerCoords.coords.x} | `}</span>
+      <span>{`Y: ${centerCoords.coords.y}`}</span>
     </div>
-  );
-};
+  )
+}
 
-export default CenterPlotCoordsDisplay;
+export default CenterPlotCoordsDisplay

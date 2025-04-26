@@ -1,4 +1,4 @@
-import { createStore } from '../utils/store'
+import { createStore } from './store'
 
 const walletStore = createStore(undefined)
 const mappedPlotInfosStore = createStore(undefined)

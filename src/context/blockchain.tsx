@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
 import { useConnection } from '@solana/wallet-adapter-react'
+import { blockchainStoreActions } from '@/stores/blockchain'
 
 interface IBlockchainContext {
   currentBlock: number
@@ -18,7 +19,11 @@ const BlockchainContextProvider = ({ children }: { children: React.ReactNode }) 
   const loadBlockchainInfo = () => {
     connection.getBlockHeight().then((blockNumber) => {
       console.log(blockNumber)
+
+      // verify if we still need to use context at all
       setCurrentBlock(Number(blockNumber))
+
+      blockchainStoreActions.setBlockchain(Number(blockNumber))
     })
   }
 
