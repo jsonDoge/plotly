@@ -32,6 +32,9 @@ export type Farm = {
           "signer": true
         },
         {
+          "name": "plotCurrencyMint"
+        },
+        {
           "name": "farm",
           "pda": {
             "seeds": [
@@ -54,6 +57,27 @@ export type Farm = {
         {
           "name": "plotMint",
           "writable": true
+        },
+        {
+          "name": "plot",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  111,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plotMint"
+              }
+            ]
+          }
         },
         {
           "name": "plotMintAuthority",
@@ -318,6 +342,229 @@ export type Farm = {
           }
         },
         {
+          "name": "userAssociatedPlotCurrencyAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "plotCurrency"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "farmAssociatedPlotCurrencyAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "farmAssociatedPlotCurrencyAuthority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "plotCurrency"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "farmAssociatedPlotCurrencyAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109,
+                  95,
+                  97,
+                  116,
+                  97,
+                  95,
+                  112,
+                  108,
+                  111,
+                  116,
+                  95,
+                  99,
+                  117,
+                  114,
+                  114,
+                  101,
+                  110,
+                  99,
+                  121,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              }
+            ]
+          }
+        },
+        {
           "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
@@ -370,6 +617,9 @@ export type Farm = {
           "name": "user",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "plotCurrencyMint"
         },
         {
           "name": "plotCollectionMetadataAccount",
@@ -681,6 +931,140 @@ export type Farm = {
           }
         },
         {
+          "name": "farmAssociatedPlotCurrencyAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "farmAssociatedPlotCurrencyAuthority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plotCurrencyMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "farmAssociatedPlotCurrencyAuthority",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109,
+                  95,
+                  97,
+                  116,
+                  97,
+                  95,
+                  112,
+                  108,
+                  111,
+                  116,
+                  95,
+                  99,
+                  117,
+                  114,
+                  114,
+                  101,
+                  110,
+                  99,
+                  121,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              }
+            ]
+          }
+        },
+        {
           "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
@@ -705,8 +1089,13 @@ export type Farm = {
         {
           "name": "plotCurrency",
           "type": "pubkey"
+        },
+        {
+          "name": "plotPrice",
+          "type": "u64"
         }
-      ]
+      ],
+      "returns": "pubkey"
     },
     {
       "name": "mintPlot",
@@ -896,6 +1285,27 @@ export type Farm = {
         {
           "name": "plotMint",
           "writable": true
+        },
+        {
+          "name": "plot",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  111,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plotMint"
+              }
+            ]
+          }
         },
         {
           "name": "plotMintAuthority",
@@ -1724,6 +2134,19 @@ export type Farm = {
       ]
     },
     {
+      "name": "plot",
+      "discriminator": [
+        83,
+        82,
+        6,
+        254,
+        46,
+        4,
+        206,
+        230
+      ]
+    },
+    {
       "name": "seedMintInfo",
       "discriminator": [
         92,
@@ -1757,6 +2180,16 @@ export type Farm = {
       "code": 6003,
       "name": "invalidSeedBalanceAmount",
       "msg": "Growth block duration not divisible by balance rate"
+    },
+    {
+      "code": 6004,
+      "name": "insufficientPlotCurrencyToAcquirePlot",
+      "msg": "Insufficient plot currency to acquire plot"
+    },
+    {
+      "code": 6005,
+      "name": "invalidPlotCurrency",
+      "msg": "Invalid plot currency"
     }
   ],
   "types": [
@@ -1783,6 +2216,34 @@ export type Farm = {
           },
           {
             "name": "plotCurrency",
+            "type": "pubkey"
+          },
+          {
+            "name": "plotPrice",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "plot",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "water",
+            "type": "u32"
+          },
+          {
+            "name": "balance",
+            "type": "u64"
+          },
+          {
+            "name": "lastClaimer",
             "type": "pubkey"
           },
           {

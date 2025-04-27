@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
-import { useConnection } from '@solana/wallet-adapter-react'
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { blockchainStoreActions } from '@/stores/blockchain'
 import {
   getAccountInfos,
   getFarmId,
   getFarmPlotMintAtaOwnerId,
+  getPlotId,
   getPlotMintAtaId,
   getPlotMintId,
 } from '@/services/web3Utils'
@@ -15,15 +16,19 @@ import { getAllPlotCoordinatesAround } from '@/components/game/utils/plots'
 import { PublicKey } from '@solana/web3.js'
 import getConfig from 'next/config'
 import { useSnapshot } from 'valtio'
-import { walletStore } from '@/stores/wallet'
+import { walletActions, walletStore } from '@/stores/wallet'
 import { mappedPlotInfosActions } from '@/stores/mappedPlotInfos'
 import { reloadPlotsAtStore } from '@/stores/reloadPlotsAt'
+import { useAnchorProvider } from './solana'
+import { getFarmProgram } from '@project/anchor'
 
 const { publicRuntimeConfig } = getConfig()
 
 interface IBlockchainContext {
   currentBlock: number
 }
+
+
 
 // Currently subscription only supports one subscriber per event
 const BlockchainContext = createContext<IBlockchainContext>({
@@ -34,6 +39,18 @@ const BlockchainContextProvider = ({ children }: { children: React.ReactNode }) 
   const walletAddress = useSnapshot(walletStore).address
   const [currentBlock, setCurrentBlock] = useState<number>(0)
   const { connection } = useConnection()
+  const provider = useAnchorProvider()
+
+  // Store wallet to valtio
+  const wallet = useWallet()
+
+  useMemo(() => {
+    if (wallet.publicKey && walletAddress !== wallet.publicKey.toString()) {
+      walletActions.setAddress(wallet.publicKey.toString())
+    }
+  }, [wallet.publicKey])
+
+  // Store current block to valtio
 
   const loadBlockchainInfo = () => {
     connection.getBlockHeight().then((blockNumber) => {
@@ -46,7 +63,9 @@ const BlockchainContextProvider = ({ children }: { children: React.ReactNode }) 
     })
   }
 
+
   useEffect(() => {
+    // keep refreshing the block number
     loadBlockchainInfo()
 
     const intervalId = setInterval(() => {
@@ -58,62 +77,57 @@ const BlockchainContextProvider = ({ children }: { children: React.ReactNode }) 
       reloadPlotsAtStore,
       'centerCoords',
       async (centerCoords: Coordinates) => {
+        if (!walletAddress) {
+          return
+        }
+
+        const program = getFarmProgram(provider)
+
         const allCoords = getAllPlotCoordinatesAround(centerCoords.x, centerCoords.y)
 
         const allPlotMintIds = allCoords.map((coords) =>
           getPlotMintId(coords.x, coords.y, new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID)),
         )
 
-        console.log('allPlotMintIds', allPlotMintIds)
+        const allPlotIds = allPlotMintIds.map(getPlotId);
 
-        const farmId = getFarmId(new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID))
-        const farmPlotMintAtaOwnerId = getFarmPlotMintAtaOwnerId(farmId)
+        // const mint = await getAccountInfos(connection, [allPlotMintIds[24]])
+        // if (mint && mint.value && mint.value[0]) {
+        //   console.log('🚀 ~ mint:', mint.value[0])
+        //   console.log('🚀 ~ mint:', mint.value[0].owner.toString())
+        // }
+        const rawPlotInfos = await getAccountInfos(connection, [...allPlotIds]) // , ...allUserPlotMintAtas])
+        // console.log('🚀 ~ rawPlotInfos:', rawPlotInfos)
 
-        const allFarmPlotMintAtas = allPlotMintIds.map((plotMintId) =>
-          getPlotMintAtaId(plotMintId, farmPlotMintAtaOwnerId),
-        )
+        // const half = Math.ceil(ataInfos.value.length / 2)
+        // const farmPlotMintAtaInfos = {
+        //   value: ataInfos.value.slice(0, half),
+        // }
+        // const userPlotMintAtaInfos = {
+        //   value: ataInfos.value.slice(half),
+        // }
+        // console.log(program.account)
+        const plotAccountType = program?.account?.plot;
 
-        const allUserPlotMintAtas = allPlotMintIds.map((plotMintId) =>
-          getPlotMintAtaId(plotMintId, new PublicKey(walletAddress)),
-        )
-
-        console.log(
-          'allFarmPlotMintAtas',
-          allFarmPlotMintAtas.map((x) => x.toString()),
-        )
-
-        const ataInfos = await getAccountInfos(connection, [...allFarmPlotMintAtas, ...allUserPlotMintAtas])
-
-        const half = Math.ceil(ataInfos.value.length / 2)
-        const farmPlotMintAtaInfos = {
-          value: ataInfos.value.slice(0, half),
-        }
-        const userPlotMintAtaInfos = {
-          value: ataInfos.value.slice(half),
-        }
-
-        const farmRawPlots = farmPlotMintAtaInfos.value.map((rawPlot: any) => ({
-          owner: rawPlot?.owner,
-          data: rawPlot?.data,
+        const parsedPlotInfos = rawPlotInfos.value.map((rawPlot: any) => ({
+          data: rawPlot?.data ? plotAccountType.coder.accounts.decode('plot', rawPlot?.data) : null,
         }))
+        // console.log("🚀 ~ parsedPlotInfos ~ parsedPlotInfos:", parsedPlotInfos)
 
-        const userRawPlots = userPlotMintAtaInfos.value.map((rawPlot: any) => ({
-          owner: rawPlot?.owner,
-          data: rawPlot?.data,
-        }))
+        // const userRawPlots = userPlotMintAtaInfos.value.map((rawPlot: any) => ({
+        //   owner: rawPlot?.owner,
+        //   data: rawPlot?.data,
+        // }))
 
-        mappedPlotInfosActions.setRawPlots(centerCoords.x, centerCoords.y, farmRawPlots, userRawPlots)
+        mappedPlotInfosActions.setRawPlots(centerCoords.x, centerCoords.y, parsedPlotInfos)
       },
     )
 
     return () => {
       unsubscribeCenterChanged()
-    }
-
-    return () => {
       clearInterval(intervalId)
     }
-  }, [])
+  }, [walletAddress])
 
   const blockchainContextValue = useMemo(() => ({ currentBlock }), [currentBlock])
   // TODO: investigate if such value context doesn't cause performance issues

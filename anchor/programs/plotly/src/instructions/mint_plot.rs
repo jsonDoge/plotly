@@ -16,7 +16,7 @@ use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 // use mpl_token_metadata::types::DataV2;
 // use mpl_token_metadata::ID as TOKEN_METADATA_PROGRAM_ID;
 
-use crate::state::AccWithBump;
+use crate::state::{AccWithBump, Plot};
 use crate::{errors::ErrorCode, state::Farm};
 
 #[derive(Accounts)]
@@ -78,6 +78,15 @@ pub struct MintPlot<'info> {
     pub plot_mint: Account<'info, Mint>,
 
     #[account(
+        init_if_needed,
+        payer = user,
+        seeds = [b"plot", plot_mint.key().as_ref()],
+        bump,
+        space = 8 + std::mem::size_of::<Plot>(),
+    )]
+    pub plot: Account<'info, Plot>,
+
+    #[account(
         seeds = [b"plot_mint_authority", farm.key().as_ref()],
         bump,
     )]
@@ -111,6 +120,7 @@ impl<'info> MintPlot<'info> {
         plot_y: u32,
         plot_currency: Pubkey,
         program_id: &Pubkey,
+        plot_bump: u8,
     // returns plot mint address
     ) -> Result<(Pubkey)> {
 
@@ -200,6 +210,14 @@ impl<'info> MintPlot<'info> {
             ),
             None,
         )?;
+
+        // Decide on initial water and balance
+        self.plot.water = 100;
+        self.plot.water = 0;
+
+        // initial owner is plotly (can also be set to farm or program id)
+        self.plot.last_claimer = self.farm_associated_plot_authority.key();
+        self.plot.bump = plot_bump;
 
         // Confirm collection size
         // let data = &mut &**self.plot_collection_metadata_account.try_borrow_data()?; // borrow as &[u8]

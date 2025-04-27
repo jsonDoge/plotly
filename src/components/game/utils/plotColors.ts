@@ -40,6 +40,8 @@ const yellow = {
 const yellowHex = '#C1887B';
 
 export const getPlotColor = (isOwner: boolean, isPlantOwner: boolean, isUnminted: boolean): PlotColor => {
+
+  // light brown - current user owner
   if (isOwner || isPlantOwner) {
     return {
       rgb: yellow,
@@ -48,6 +50,7 @@ export const getPlotColor = (isOwner: boolean, isPlantOwner: boolean, isUnminted
     };
   }
 
+  // green - not minted
   if (isUnminted) {
     return {
       rgb: green,
@@ -56,6 +59,7 @@ export const getPlotColor = (isOwner: boolean, isPlantOwner: boolean, isUnminted
     };
   }
 
+  // blue - owned by someone else
   return {
     rgb: blue,
     rgbHover: blueHover,

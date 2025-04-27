@@ -10,4 +10,8 @@ pub enum ErrorCode {
     InvalidSeedWaterAmount,
     #[msg("Growth block duration not divisible by balance rate")]
     InvalidSeedBalanceAmount,
+    #[msg("Insufficient plot currency to acquire plot")]
+    InsufficientPlotCurrencyToAcquirePlot,
+    #[msg("Invalid plot currency")]
+    InvalidPlotCurrency,
 }

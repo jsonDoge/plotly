@@ -1,4 +1,5 @@
 use anchor_lang::{accounts::program, prelude::*};
+use anchor_spl::token_interface::Mint as MintInterface;
 use anchor_spl::{
     associated_token::AssociatedToken,
     metadata::{
@@ -20,7 +21,7 @@ use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 // use mpl_token_metadata::types::DataV2;
 // use mpl_token_metadata::ID as TOKEN_METADATA_PROGRAM_ID;
 
-use crate::state::AccWithBump;
+use crate::state::{AccWithBump, Plot};
 use crate::{errors::ErrorCode, state::Farm};
 
 #[derive(Accounts)]
@@ -28,6 +29,9 @@ use crate::{errors::ErrorCode, state::Farm};
 pub struct AcquirePlot<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
+
+    // value same as plot_currency
+    pub plot_currency_mint: InterfaceAccount<'info, MintInterface>,
 
     #[account(
         seeds = [b"farm", plot_currency.as_ref()],
@@ -46,6 +50,13 @@ pub struct AcquirePlot<'info> {
         bump,
     )]
     pub plot_mint: Account<'info, Mint>,
+
+    #[account(
+        mut,
+        seeds = [b"plot", plot_mint.key().as_ref()],
+        bump,
+    )]
+    pub plot: Account<'info, Plot>,
 
     #[account(
         seeds = [b"plot_mint_authority", farm.key().as_ref()],
@@ -79,6 +90,32 @@ pub struct AcquirePlot<'info> {
     )]
     pub farm_associated_plot_account: Account<'info, TokenAccount>,
 
+
+    // User plot currency account
+
+    #[account(
+        mut,
+        associated_token::mint = plot_currency,
+        associated_token::authority = user,
+    )]
+    pub user_associated_plot_currency_account: Account<'info, TokenAccount>,
+
+    // Farm plot currency TREASURY
+
+    #[account(
+        mut,
+        associated_token::mint = plot_currency,
+        associated_token::authority = farm_associated_plot_currency_authority,
+    )]
+    pub farm_associated_plot_currency_account: Account<'info, TokenAccount>,
+
+    #[account(
+        seeds = [b"farm_ata_plot_currency_auth", farm.key().as_ref()],
+        bump,
+    )]
+    pub farm_associated_plot_currency_authority: Account<'info, AccWithBump>,
+
+
     pub token_program: Program<'info, Token>,
     pub token_metadata_program: Program<'info, Metadata>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -104,6 +141,40 @@ impl<'info> AcquirePlot<'info> {
             return Err(ErrorCode::PlotAlreadyOwned.into());
         }
 
+        if self.user_associated_plot_currency_account.amount == 0 ||
+            self.user_associated_plot_currency_account.amount < self.farm.plot_price {
+            return Err(ErrorCode::InsufficientPlotCurrencyToAcquirePlot.into());
+        }
+
+        if self.farm.plot_currency != self.plot_currency_mint.key() {
+            return Err(ErrorCode::InvalidPlotCurrency.into());
+        }
+
+        // CHARGE USER FOR PLOT
+
+        let cpi_accounts = TransferChecked {
+            mint: self.plot_currency_mint.to_account_info(),
+            from: self.user_associated_plot_currency_account.to_account_info(),
+            to: self.farm_associated_plot_currency_account.to_account_info(),
+            authority: self.user.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+
+        // If authority is a PDA, you can pass seeds in a signer context here
+
+        msg!("Transferring plot currency to farm...");
+
+        // TODO: hardcoding decimals, but will update later
+        token::transfer_checked(CpiContext::new(
+            cpi_program,
+            cpi_accounts,
+        // price should be scaled to decimals
+        ), self.farm.plot_price, 6)?;
+
+
+        // TRANSFER PLOT
+
         // Cross Program Invocation (CPI)
         // Invoking the mint_to instruction on the token program
         let cpi_accounts = TransferChecked {
@@ -117,7 +188,7 @@ impl<'info> AcquirePlot<'info> {
 
         // If authority is a PDA, you can pass seeds in a signer context here
 
-        msg!("Transferring...");
+        msg!("Transferring plot NFT to user...");
 
         token::transfer_checked(CpiContext::new_with_signer(
             cpi_program,
@@ -129,7 +200,12 @@ impl<'info> AcquirePlot<'info> {
             ]],
         ), 1, 0)?;
 
+
+
         msg!("Plot minted x:{} y:{}", plot_x, plot_y);
+        msg!("New claimer {}", self.user.key());
+
+        self.plot.last_claimer = self.user.key();
 
         Ok(())
     }

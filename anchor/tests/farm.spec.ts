@@ -1,11 +1,11 @@
 import * as anchor from '@coral-xyz/anchor'
 // import { SystemProgram } from '@solana/web3.js'
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { CollectionDetails, fetchDigitalAsset, findMetadataPda } from '@metaplex-foundation/mpl-token-metadata'
+import { fetchDigitalAsset, findMetadataPda } from '@metaplex-foundation/mpl-token-metadata'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { PublicKey as umiPublicKey, some } from '@metaplex-foundation/umi'
 
-import { PublicKey, sendAndConfirmTransaction } from '@solana/web3.js'
+import { Connection, Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js'
 import assert from 'node:assert'
 import { Farm } from '../target/types/farm'
 import { setupFarm, setupMint } from './setup'
@@ -58,15 +58,24 @@ const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit(
   units: 400_000,
 })
 
+const increasedCUTxWrap = (connection: Connection, payer: Keypair) => async (rawTx: any) => {
+  const tx = await rawTx.transaction()
+  tx.add(modifyComputeUnits)
+  return sendAndConfirmTransaction(connection, tx, [payer])
+}
+
 describe('farm', () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env()
 
   const userWallet = provider.wallet as anchor.Wallet
+  const wrapTx = increasedCUTxWrap(provider.connection, userWallet.payer)
 
   const program = anchor.workspace.Farm as anchor.Program<Farm>
   const umi = createUmi('http://localhost:8899')
   let plotCurrency: PublicKey
+
+  console.log('Loading plotly outer at :', program.programId.toString())
 
   beforeEach(async () => {
     plotCurrency = await setupMint(provider, TOKEN_PROGRAM_ID)
@@ -74,6 +83,7 @@ describe('farm', () => {
   }, 10000000)
 
   it('Should mint the same plot NFT only ONCE', async () => {
+    console.log('Running test')
     // Add your test here.
     const plotX = 1
     const plotY = 1
@@ -93,27 +103,30 @@ describe('farm', () => {
     // )
 
     try {
-      await program.methods
-        .mintPlot(plotX, plotY, plotCurrency)
-        .accounts({
-          user: userWallet.publicKey,
-          plotMint,
-        })
-        .signers([userWallet.payer])
-        .rpc()
+      await wrapTx(
+        program.methods
+          .mintPlot(plotX, plotY, plotCurrency)
+          .accounts({
+            user: userWallet.publicKey,
+            plotMint,
+          })
+          .signers([userWallet.payer]),
+      )
     } catch (error) {
       console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
     }
 
     try {
-      await program.methods
-        .acquirePlot(plotX, plotY, plotCurrency)
-        .accounts({
-          user: userWallet.publicKey,
-          plotMint,
-        })
-        .signers([userWallet.payer])
-        .rpc()
+      await wrapTx(
+        program.methods
+          .acquirePlot(plotX, plotY, plotCurrency)
+          .accounts({
+            user: userWallet.publicKey,
+            plotMint,
+            plotCurrencyMint: plotCurrency,
+          })
+          .signers([userWallet.payer]),
+      )
     } catch (error) {
       console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
     }
@@ -154,6 +167,16 @@ describe('farm', () => {
 
     assert(new anchor.BN(value.size).eq(new anchor.BN(1)), 'Collection should have 1 NFT')
 
+    const [plotId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot'), plotMint.toBuffer()],
+      program.programId,
+    )
+
+    const plotAccount = await program.account.plot.fetch(plotId)
+
+    console.log('last claimer', plotAccount.lastClaimer.toString())
+    console.log('user', userWallet.publicKey.toString())
+    assert(plotAccount.lastClaimer.toString() === userWallet.publicKey.toString(), 'Last claimer should be user')
     // assert(metadata)/
     // const metadataAccount = await umi.rpc.getAccount(metadataPda)
 
@@ -161,14 +184,16 @@ describe('farm', () => {
 
     let txFailed = false
     try {
-      await program.methods
-        .acquirePlot(plotX, plotY, plotCurrency)
-        .accounts({
-          user: userWallet.publicKey,
-          plotMint,
-        })
-        .signers([userWallet.payer])
-        .rpc()
+      await wrapTx(
+        program.methods
+          .acquirePlot(plotX, plotY, plotCurrency)
+          .accounts({
+            user: userWallet.publicKey,
+            plotMint,
+            plotCurrencyMint: plotCurrency,
+          })
+          .signers([userWallet.payer]),
+      )
     } catch (error) {
       txFailed = true
     }
@@ -195,30 +220,31 @@ describe('farm', () => {
       program.programId,
     )
 
-    let tx
-
     try {
-      tx = await program.methods
-        .mintPlot(plotX5, plotY5, plotCurrency)
-        .accounts({
-          user: userWallet.publicKey,
-          plotMint: plotMint55,
-        })
-        .signers([userWallet.payer])
-        .rpc()
+      await wrapTx(
+        program.methods
+          .mintPlot(plotX5, plotY5, plotCurrency)
+          .accounts({
+            user: userWallet.publicKey,
+            plotMint: plotMint55,
+          })
+          .signers([userWallet.payer]),
+      )
     } catch (error) {
       console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
     }
 
     try {
-      tx = await program.methods
-        .acquirePlot(plotX5, plotY5, plotCurrency)
-        .accounts({
-          user: userWallet.publicKey,
-          plotMint: plotMint55,
-        })
-        .signers([userWallet.payer])
-        .rpc()
+      await wrapTx(
+        program.methods
+          .acquirePlot(plotX5, plotY5, plotCurrency)
+          .accounts({
+            user: userWallet.publicKey,
+            plotMint: plotMint55,
+            plotCurrencyMint: plotCurrency,
+          })
+          .signers([userWallet.payer]),
+      )
     } catch (error) {
       console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
     }
@@ -232,27 +258,30 @@ describe('farm', () => {
     )
 
     try {
-      tx = await program.methods
-        .mintPlot(plotX2, plotY3, plotCurrency)
-        .accounts({
-          user: userWallet.publicKey,
-          plotMint: plotMint23,
-        })
-        .signers([userWallet.payer])
-        .rpc()
+      await wrapTx(
+        program.methods
+          .mintPlot(plotX2, plotY3, plotCurrency)
+          .accounts({
+            user: userWallet.publicKey,
+            plotMint: plotMint23,
+          })
+          .signers([userWallet.payer]),
+      )
     } catch (error) {
       console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
     }
 
     try {
-      tx = await program.methods
-        .acquirePlot(plotX2, plotY3, plotCurrency)
-        .accounts({
-          user: userWallet.publicKey,
-          plotMint: plotMint23,
-        })
-        .signers([userWallet.payer])
-        .rpc()
+      await wrapTx(
+        program.methods
+          .acquirePlot(plotX2, plotY3, plotCurrency)
+          .accounts({
+            user: userWallet.publicKey,
+            plotMint: plotMint23,
+            plotCurrencyMint: plotCurrency,
+          })
+          .signers([userWallet.payer]),
+      )
     } catch (error) {
       console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
     }

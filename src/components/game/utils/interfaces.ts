@@ -2,6 +2,7 @@ import { BufferGeometry, Mesh, MeshStandardMaterial, Vector3Tuple } from 'three'
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader'
 import { PublicKey } from '@solana/web3.js'
 import { PlantState } from '../../../utils/enums'
+import { BN } from '@coral-xyz/anchor'
 
 export interface GetAreNumbersEqualRoot {
   (equalTo: number): GetAreNumbersEqual
@@ -15,8 +16,11 @@ export interface BackgroundModelParams {
 }
 
 export interface RawPlot {
-  data: any
-  owner: PublicKey
+  data: {
+    balance: BN
+    lastClaimer: PublicKey,
+    water: number
+  } | null
 }
 
 export interface MappedPlotInfos {

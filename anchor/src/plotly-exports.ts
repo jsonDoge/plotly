@@ -11,7 +11,7 @@ export { Farm, FarmIDL }
 export const PLOTLY_PROGRAM_ID = new PublicKey(FarmIDL.address)
 
 // This is a helper function to get the Basic Anchor program.
-export function getBasicProgram(provider: AnchorProvider) {
+export function getFarmProgram(provider: AnchorProvider): Program<Farm> {
   return new Program(FarmIDL as Farm, provider)
 }
 

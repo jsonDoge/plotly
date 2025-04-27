@@ -13,12 +13,14 @@ pub mod farm {
     use super::*;
     
     // returns farm address
-    pub fn initialize_farm(ctx: Context<InitializeFarm>, plot_currency: Pubkey) -> Result<Pubkey> {
+    pub fn initialize_farm(ctx: Context<InitializeFarm>, plot_currency: Pubkey, plot_price: u64) -> Result<Pubkey> {
         ctx.accounts.initialize_farm(
             &plot_currency,
+            plot_price,
             ctx.bumps.plot_mint_authority,
             ctx.bumps.farm,
             ctx.bumps.farm_associated_plot_authority,
+            ctx.bumps.farm_associated_plot_currency_authority,
             ctx.program_id,
         )
     }
@@ -33,7 +35,7 @@ pub mod farm {
         plot_currency: Pubkey,
     ) -> Result<Pubkey> {
         ctx.accounts
-            .mint_plot(plot_x, plot_y, plot_currency, ctx.program_id)
+            .mint_plot(plot_x, plot_y, plot_currency, ctx.program_id, ctx.bumps.plot)
     }
 
     pub fn acquire_plot(

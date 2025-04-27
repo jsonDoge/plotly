@@ -26,6 +26,9 @@
           "signer": true
         },
         {
+          "name": "plot_currency_mint"
+        },
+        {
           "name": "farm",
           "pda": {
             "seeds": [
@@ -48,6 +51,27 @@
         {
           "name": "plot_mint",
           "writable": true
+        },
+        {
+          "name": "plot",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  111,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plot_mint"
+              }
+            ]
+          }
         },
         {
           "name": "plot_mint_authority",
@@ -312,6 +336,229 @@
           }
         },
         {
+          "name": "user_associated_plot_currency_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "plot_currency"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "farm_associated_plot_currency_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "farm_associated_plot_currency_authority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "plot_currency"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "farm_associated_plot_currency_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109,
+                  95,
+                  97,
+                  116,
+                  97,
+                  95,
+                  112,
+                  108,
+                  111,
+                  116,
+                  95,
+                  99,
+                  117,
+                  114,
+                  114,
+                  101,
+                  110,
+                  99,
+                  121,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              }
+            ]
+          }
+        },
+        {
           "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
@@ -364,6 +611,9 @@
           "name": "user",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "plot_currency_mint"
         },
         {
           "name": "plot_collection_metadata_account",
@@ -675,6 +925,140 @@
           }
         },
         {
+          "name": "farm_associated_plot_currency_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "farm_associated_plot_currency_authority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plot_currency_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "farm_associated_plot_currency_authority",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109,
+                  95,
+                  97,
+                  116,
+                  97,
+                  95,
+                  112,
+                  108,
+                  111,
+                  116,
+                  95,
+                  99,
+                  117,
+                  114,
+                  114,
+                  101,
+                  110,
+                  99,
+                  121,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              }
+            ]
+          }
+        },
+        {
           "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
@@ -699,8 +1083,13 @@
         {
           "name": "plot_currency",
           "type": "pubkey"
+        },
+        {
+          "name": "plot_price",
+          "type": "u64"
         }
-      ]
+      ],
+      "returns": "pubkey"
     },
     {
       "name": "mint_plot",
@@ -890,6 +1279,27 @@
         {
           "name": "plot_mint",
           "writable": true
+        },
+        {
+          "name": "plot",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  111,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plot_mint"
+              }
+            ]
+          }
         },
         {
           "name": "plot_mint_authority",
@@ -1718,6 +2128,19 @@
       ]
     },
     {
+      "name": "Plot",
+      "discriminator": [
+        83,
+        82,
+        6,
+        254,
+        46,
+        4,
+        206,
+        230
+      ]
+    },
+    {
       "name": "SeedMintInfo",
       "discriminator": [
         92,
@@ -1751,6 +2174,16 @@
       "code": 6003,
       "name": "InvalidSeedBalanceAmount",
       "msg": "Growth block duration not divisible by balance rate"
+    },
+    {
+      "code": 6004,
+      "name": "InsufficientPlotCurrencyToAcquirePlot",
+      "msg": "Insufficient plot currency to acquire plot"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidPlotCurrency",
+      "msg": "Invalid plot currency"
     }
   ],
   "types": [
@@ -1777,6 +2210,34 @@
           },
           {
             "name": "plot_currency",
+            "type": "pubkey"
+          },
+          {
+            "name": "plot_price",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Plot",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "water",
+            "type": "u32"
+          },
+          {
+            "name": "balance",
+            "type": "u64"
+          },
+          {
+            "name": "last_claimer",
             "type": "pubkey"
           },
           {

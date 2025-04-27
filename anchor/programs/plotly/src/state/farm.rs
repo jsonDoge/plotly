@@ -5,6 +5,7 @@ use anchor_lang::prelude::*;
 pub struct Farm {
     pub plot_collection: Pubkey,
     pub plot_currency: Pubkey,
+    pub plot_price: u64,
     pub bump: u8,
 }
 
@@ -42,8 +43,8 @@ pub struct Plant {
 
     pub last_update_block: u64,
 
-    // Ownership
-    pub owner: Pubkey,
+    // No ownership, because the user can transfer plot
+    // with plant growing
 
     // Treasury
     pub bump: u8,
@@ -52,9 +53,10 @@ pub struct Plant {
 
 #[account]
 #[derive(Default, InitSpace)]
-pub struct PlotStats {
+pub struct Plot {
     pub water: u32,
     pub balance: u64,
+    pub last_claimer: Pubkey,
     pub bump: u8,
 }
 

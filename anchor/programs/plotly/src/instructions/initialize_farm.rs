@@ -1,4 +1,5 @@
 use anchor_lang::{accounts::program, prelude::*};
+use anchor_spl::token_interface::Mint as MintInterface;
 use anchor_spl::{
     associated_token::AssociatedToken,
     metadata::{
@@ -24,6 +25,9 @@ pub struct InitializeFarm<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
 
+    // value same as plot_currency
+    pub plot_currency_mint: InterfaceAccount<'info, MintInterface>,
+
     // COLLECTION
     /// CHECK: Validate address by deriving pda NO editions for now
     #[account(
@@ -37,7 +41,7 @@ pub struct InitializeFarm<'info> {
     #[account(
         init,
         payer = user,
-        space = 8 + 8 + 32 + 32, // discriminant + bump + plot_currency + plot_collection
+        space = 8 + 32 + 32 + 32 + 8, // discriminant + plot_currency + plot_collection + plot_price + bump
         seeds = [b"farm", plot_currency.as_ref()],
         bump,
     )]
@@ -90,6 +94,25 @@ pub struct InitializeFarm<'info> {
     )]
     pub farm_associated_plot_collection_account: Account<'info, TokenAccount>,
 
+
+    // Farm plot currency TREASURY
+    #[account(
+        init,
+        payer = user,
+        associated_token::mint = plot_currency_mint,
+        associated_token::authority = farm_associated_plot_currency_authority,
+    )]
+    pub farm_associated_plot_currency_account: Account<'info, TokenAccount>,
+
+    #[account(
+        init,
+        payer = user,
+        seeds = [b"farm_ata_plot_currency_auth", farm.key().as_ref()],
+        bump,
+        space = 8 + 8,
+    )]
+    pub farm_associated_plot_currency_authority: Account<'info, AccWithBump>,
+
     pub token_program: Program<'info, Token>,
     pub token_metadata_program: Program<'info, Metadata>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -101,22 +124,30 @@ impl<'info> InitializeFarm<'info> {
     pub fn initialize_farm(
         &mut self,
         plot_currency: &Pubkey,
+        plot_price: u64,
         mint_authority_bump: u8,
         farm_bump: u8,
         farm_associated_plot_authority_bump: u8,
+        farm_associated_plot_currency_authority_bump: u8,
         program_id: &Pubkey,
-    ) -> Result<(Pubkey)> {
+    ) -> Result<Pubkey> {
         msg!("Initializing farm...");
 
         if self.farm.plot_currency != Pubkey::default() {
-            return Ok((self.farm.key()));
+            return Ok(self.farm.key());
+        }
+
+        if plot_currency != &self.plot_currency_mint.key() {
+            return Err(ErrorCode::InvalidPlotCurrency.into());
         }
 
         self.plot_mint_authority.bump = mint_authority_bump;
         self.farm_associated_plot_authority.bump = farm_associated_plot_authority_bump;
+        self.farm_associated_plot_currency_authority.bump = farm_associated_plot_currency_authority_bump;
 
         self.farm.plot_currency = *plot_currency;
         self.farm.plot_collection = self.plot_collection_mint.key();
+        self.farm.plot_price = plot_price;
         self.farm.bump = farm_bump;
 
         create_metadata_accounts_v3(

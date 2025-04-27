@@ -62,8 +62,8 @@ export const setupMint = async (
         undefined,
         tokenProgramId,
       )
-
-      console.log('Token mint:', tokenMint.toString())
+    } else {
+      console.log('Account at setupMint keypair already exists')
     }
   } else {
     tokenMint = await createMint(
@@ -133,7 +133,6 @@ export const setupMint = async (
 
   await mintTo(provider.connection, signer, tokenMint, ata.address, signer, 100_000_000)
 
-  console.log('Account at setupMint keypair already exists')
   return tokenMint
 }
 
@@ -146,21 +145,25 @@ export const setupFarm = async (
   program: anchor.Program<Farm> | anchor.Program<typeof farmIdl>,
   plotCurrency: PublicKey,
   payer: PublicKey,
+  plotPrice: anchor.BN = new anchor.BN(1000000),
 ): Promise<void> => {
   // const plotCurrency = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU')
 
   console.log('Loading plotly at :', program.programId.toString())
   try {
     const tx = await program.methods
-      .initializeFarm(plotCurrency)
+      .initializeFarm(plotCurrency, plotPrice)
       .accounts({
         user: payer,
+        plotCurrencyMint: plotCurrency
       })
       .transaction()
 
     tx.add(modifyComputeUnits)
 
     await sendAndConfirmTransaction(provider.connection, tx, [(provider.wallet as anchor.Wallet).payer])
+
+    console.log('Farm initialized')
   } catch (error) {
     console.error('Error farm setup:', error)
     throw error

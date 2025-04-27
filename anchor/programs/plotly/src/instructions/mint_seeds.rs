@@ -147,6 +147,7 @@ impl<'info> MintSeeds<'info> {
         growth_block_duration: u32,
         water_absorb_rate: u32,
         balance_absorb_rate: u64,
+        // user treasury NOT farm treasury
         treasury: &Pubkey,
         seed_mint_info_bump: u8,
         farm_associated_plant_token_authority_bump: u8,

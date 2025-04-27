@@ -121,8 +121,7 @@ const getNeighborPlots = (
 // TODO: function is growing too big, refactor
 // TODO: move this to blockchain once water is implemented
 export const reduceContractPlots = (
-  farmRawPlots: RawPlot[], // 49 plots
-  userRawPlots: RawPlot[], // 49 plots
+  rawPlots: RawPlot[], // 49 plots
   surroundingWaterLogs: any[], // 28 plots (line on each side of the 7x7 grid - look in contracts for more info)
   currentBlock: number,
   walletAddress: PublicKey,
@@ -131,7 +130,7 @@ export const reduceContractPlots = (
   absoluteCornerX: number,
   absoluteCornerY: number,
 ): MappedPlotInfos =>
-  farmRawPlots.reduce((mp: MappedPlotInfos, farmRawPlots: RawPlot, i) => {
+  rawPlots.reduce((mp: MappedPlotInfos, rawPlot: RawPlot, i) => {
     const plotCoords = { x: i % 7, y: Math.floor(i / 7) }
 
     const updatedMp = {
@@ -159,13 +158,11 @@ export const reduceContractPlots = (
     // manual calculations until current block
     // if (plot.owner === '0x0000000000000000000000000000000000000000') {
 
-    const plotInfo = mapRawPlotToPlotInfo(walletAddress, rawPlot.owner, rawPlot.data)
+    const plotInfo = mapRawPlotToPlotInfo(walletAddress, rawPlot)
 
-    const isOwner = false
-    const isPlantOwner = false
-    const isUnminted = true
 
     if (plotInfo.isUnminted) {
+ 
       updatedMp[plotCoords.x][plotCoords.y] = {
         isOwner: false,
         isPlantOwner: false,
@@ -179,7 +176,7 @@ export const reduceContractPlots = (
         overgrownBlockNumber: undefined,
 
         // plot
-        color: getPlotColor(isOwner, isPlantOwner, isUnminted),
+        color: plotInfo.color,
 
         // TODO: not yet implemented
         lastStateChangeBlock: 0, // plot.waterLog?.blockNumber?.toNumber() || 0,
@@ -202,7 +199,7 @@ export const reduceContractPlots = (
       overgrownBlockNumber: plotInfo.overgrownBlockNumber,
 
       // plot
-      color: getPlotColor(plotInfo.isOwner, plotInfo.isPlantOwner, plotInfo.isUnminted),
+      color: plotInfo.color,
       lastStateChangeBlock: 0, // plot.waterLog?.blockNumber?.toNumber() || 0,
       waterLevel: 0, // currentPlotWaterLevel,
     }

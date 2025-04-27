@@ -10,7 +10,7 @@ skip-lint = false
 plotly = "FQH8xLxebgWgTkxhyWDSfb4b68ZoW1newgSKMNXgQj4c"
 
 [programs.localnet]
-plotly = "6z68wfurCMYkZG51s1Et9BJEd9nJGUusjHXNt4dGbNNF"
+plotly = "FQH8xLxebgWgTkxhyWDSfb4b68ZoW1newgSKMNXgQj4c"
 
 [registry]
 url = "https://api.apr.dev"

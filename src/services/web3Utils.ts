@@ -4,7 +4,7 @@ import { Connection, PublicKey } from '@solana/web3.js'
 import { PLOTLY_PROGRAM_ID as programId, toLeBytes } from '@project/anchor'
 import * as anchor from '@coral-xyz/anchor'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
-import { PlotInfo } from '@/components/game/utils/interfaces'
+import { PlotInfo, RawPlot } from '@/components/game/utils/interfaces'
 import { getPlotColor } from '@/components/game/utils/plotColors'
 
 // services
@@ -68,12 +68,12 @@ import { getPlotColor } from '@/components/game/utils/plotColors'
 
 export const mapRawPlotToPlotInfo = (
   user: PublicKey,
-  mintOwner: PublicKey | undefined,
-  data: any | undefined,
+  rawPlot: RawPlot,
 ): PlotInfo => {
-  const isOwner = !!mintOwner && mintOwner.toString() === user.toString()
+  const isOwner = !!rawPlot.data && rawPlot.data.lastClaimer.toString() === user.toString()
   const isPlantOwner = false
-  const isUnminted = data === undefined && mintOwner === undefined
+  const isUnminted = !rawPlot.data
+  
   return {
     isOwner,
     isPlantOwner,
@@ -124,6 +124,13 @@ export const getPlotMintId = (x: number, y: number, plotCurrencyId: PublicKey): 
   )
 
   return plotMint
+}
+
+// neighbor account containing plot game info
+export const getPlotId = (plotMintId: PublicKey): PublicKey => {
+  const [plot] = anchor.web3.PublicKey.findProgramAddressSync([Buffer.from('plot'), plotMintId.toBuffer()], programId)
+
+  return plot
 }
 
 export const getPlotMintAtaId = (
