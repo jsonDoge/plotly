@@ -3,66 +3,13 @@ import * as anchor from '@coral-xyz/anchor'
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { fetchDigitalAsset, findMetadataPda } from '@metaplex-foundation/mpl-token-metadata'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
-import { PublicKey as umiPublicKey, some } from '@metaplex-foundation/umi'
+import { PublicKey as umiPublicKey } from '@metaplex-foundation/umi'
 
-import { Connection, Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js'
+import { PublicKey } from '@solana/web3.js'
 import assert from 'node:assert'
 import { Farm } from '../target/types/farm'
 import { setupFarm, setupMint } from './setup'
-
-// equivalent to rust to_le_bytes
-function toLeBytes(value: number, byteLength = 4, signed = false) {
-  const buffer = Buffer.alloc(byteLength)
-
-  let newVal: any = value
-
-  switch (byteLength) {
-    case 1:
-      buffer.writeUInt8(value, 0)
-      break
-    case 2:
-      if (signed) {
-        buffer.writeInt16LE(value, 0)
-      } else {
-        buffer.writeUInt16LE(value, 0)
-      }
-      break
-    case 4:
-      if (signed) {
-        buffer.writeInt32LE(value, 0)
-      } else {
-        buffer.writeUInt32LE(value, 0)
-      }
-      break
-    case 8:
-      if (typeof value !== 'bigint') {
-        newVal = BigInt(value)
-      }
-
-      if (signed) {
-        buffer.writeBigInt64LE(newVal, 0)
-      } else {
-        buffer.writeBigUInt64LE(newVal, 0)
-      }
-
-      // JS doesn't support 64-bit integers natively in all versions, so use BigInt
-      break
-    default:
-      throw new Error('Unsupported byte length')
-  }
-
-  return buffer
-}
-
-const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
-  units: 400_000,
-})
-
-const increasedCUTxWrap = (connection: Connection, payer: Keypair) => async (rawTx: any) => {
-  const tx = await rawTx.transaction()
-  tx.add(modifyComputeUnits)
-  return sendAndConfirmTransaction(connection, tx, [payer])
-}
+import { increasedCUTxWrap, toLeBytes } from './helpers'
 
 describe('farm', () => {
   // Configure the client to use the local cluster.

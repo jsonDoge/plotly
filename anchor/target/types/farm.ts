@@ -1692,6 +1692,46 @@ export type Farm = {
           }
         },
         {
+          "name": "seedMintAuthority",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  101,
+                  100,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              },
+              {
+                "kind": "account",
+                "path": "seedMint"
+              }
+            ]
+          }
+        },
+        {
           "name": "userAssociatedSeedAccount",
           "writable": true,
           "pda": {
@@ -1779,6 +1819,140 @@ export type Farm = {
                 89
               ]
             }
+          }
+        },
+        {
+          "name": "farmAssociatedSeedAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "farmAtaSeedAuthority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "seedMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "farmAtaSeedAuthority",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109,
+                  95,
+                  97,
+                  116,
+                  97,
+                  95,
+                  115,
+                  101,
+                  101,
+                  100,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              },
+              {
+                "kind": "account",
+                "path": "seedMint"
+              }
+            ]
           }
         },
         {
@@ -1962,46 +2136,6 @@ export type Farm = {
           }
         },
         {
-          "name": "seedMintAuthority",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  115,
-                  101,
-                  101,
-                  100,
-                  95,
-                  109,
-                  105,
-                  110,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "farm"
-              },
-              {
-                "kind": "account",
-                "path": "seedMint"
-              }
-            ]
-          }
-        },
-        {
           "name": "farmAssociatedPlantTokenAuthority",
           "writable": true,
           "pda": {
@@ -2104,6 +2238,669 @@ export type Farm = {
           "type": "pubkey"
         }
       ]
+    },
+    {
+      "name": "plantSeed",
+      "discriminator": [
+        139,
+        66,
+        41,
+        202,
+        41,
+        145,
+        173,
+        204
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "seedMint"
+        },
+        {
+          "name": "seedMintInfo",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  101,
+                  100,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  105,
+                  110,
+                  102,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "seedMint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "farm",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "plotCurrency"
+              }
+            ]
+          }
+        },
+        {
+          "name": "plotMint"
+        },
+        {
+          "name": "plot",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  111,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plotMint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "plotMintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  111,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              }
+            ]
+          }
+        },
+        {
+          "name": "plotMintUp"
+        },
+        {
+          "name": "plotUp"
+        },
+        {
+          "name": "plotMintRight"
+        },
+        {
+          "name": "plotRight"
+        },
+        {
+          "name": "plotMintDown"
+        },
+        {
+          "name": "plotDown",
+          "writable": true
+        },
+        {
+          "name": "plotMintLeft"
+        },
+        {
+          "name": "plotLeft",
+          "writable": true
+        },
+        {
+          "name": "plant",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plotMint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "farmAssociatedPlotAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "farmAssociatedPlotAuthority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plotMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "farmAssociatedPlotAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109,
+                  95,
+                  97,
+                  115,
+                  115,
+                  111,
+                  99,
+                  105,
+                  97,
+                  116,
+                  101,
+                  100,
+                  95,
+                  112,
+                  108,
+                  111,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              }
+            ]
+          }
+        },
+        {
+          "name": "userAssociatedSeedAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "seedMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "farmAssociatedSeedAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "farmAtaSeedAuthority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "seedMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "farmAtaSeedAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109,
+                  95,
+                  97,
+                  116,
+                  97,
+                  95,
+                  115,
+                  101,
+                  101,
+                  100,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              },
+              {
+                "kind": "account",
+                "path": "seedMint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "userAssociatedPlotAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plotMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "tokenMetadataProgram",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "plotX",
+          "type": "u32"
+        },
+        {
+          "name": "plotY",
+          "type": "u32"
+        },
+        {
+          "name": "plotCurrency",
+          "type": "pubkey"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -2131,6 +2928,19 @@ export type Farm = {
         64,
         53,
         250
+      ]
+    },
+    {
+      "name": "plant",
+      "discriminator": [
+        221,
+        207,
+        23,
+        150,
+        148,
+        54,
+        227,
+        103
       ]
     },
     {
@@ -2168,28 +2978,58 @@ export type Farm = {
     },
     {
       "code": 6001,
+      "name": "userNotPlotOwner",
+      "msg": "User is not plot owner"
+    },
+    {
+      "code": 6002,
       "name": "plotAlreadyMinted",
       "msg": "Plot already minted"
     },
     {
-      "code": 6002,
+      "code": 6003,
+      "name": "plotHasZeroBalance",
+      "msg": "Plot has zero balance"
+    },
+    {
+      "code": 6004,
       "name": "invalidSeedWaterAmount",
       "msg": "Growth block duration not divisible by water rate"
     },
     {
-      "code": 6003,
+      "code": 6005,
       "name": "invalidSeedBalanceAmount",
       "msg": "Growth block duration not divisible by balance rate"
     },
     {
-      "code": 6004,
+      "code": 6006,
       "name": "insufficientPlotCurrencyToAcquirePlot",
       "msg": "Insufficient plot currency to acquire plot"
     },
     {
-      "code": 6005,
+      "code": 6007,
       "name": "invalidPlotCurrency",
       "msg": "Invalid plot currency"
+    },
+    {
+      "code": 6008,
+      "name": "invalidPlotPrice",
+      "msg": "Plot price not divisible by 2"
+    },
+    {
+      "code": 6009,
+      "name": "invalidNeighborPlotMint",
+      "msg": "Invalid neighbor plot mint passed"
+    },
+    {
+      "code": 6010,
+      "name": "invalidNeighborPlot",
+      "msg": "Invalid neighbor plot passed"
+    },
+    {
+      "code": 6011,
+      "name": "waterCalculationError",
+      "msg": "INTERNAL: water calculation error"
     }
   ],
   "types": [
@@ -2230,6 +3070,50 @@ export type Farm = {
       }
     },
     {
+      "name": "plant",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "seedMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "water",
+            "type": "u32"
+          },
+          {
+            "name": "waterRequired",
+            "type": "u32"
+          },
+          {
+            "name": "balance",
+            "type": "u64"
+          },
+          {
+            "name": "balanceRequired",
+            "type": "u64"
+          },
+          {
+            "name": "lastUpdateBlock",
+            "type": "u64"
+          },
+          {
+            "name": "neighborDrainRatio",
+            "type": "u32"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "plot",
       "type": {
         "kind": "struct",
@@ -2243,8 +3127,56 @@ export type Farm = {
             "type": "u64"
           },
           {
+            "name": "waterRegen",
+            "type": "i32"
+          },
+          {
             "name": "lastClaimer",
             "type": "pubkey"
+          },
+          {
+            "name": "lastUpdateBlock",
+            "type": "u64"
+          },
+          {
+            "name": "rightPlantDrainRate",
+            "type": "u32"
+          },
+          {
+            "name": "leftPlantDrainRate",
+            "type": "u32"
+          },
+          {
+            "name": "upPlantDrainRate",
+            "type": "u32"
+          },
+          {
+            "name": "downPlantDrainRate",
+            "type": "u32"
+          },
+          {
+            "name": "centerPlantDrainRate",
+            "type": "u32"
+          },
+          {
+            "name": "rightPlantWaterCollected",
+            "type": "u32"
+          },
+          {
+            "name": "leftPlantWaterCollected",
+            "type": "u32"
+          },
+          {
+            "name": "upPlantWaterCollected",
+            "type": "u32"
+          },
+          {
+            "name": "downPlantWaterCollected",
+            "type": "u32"
+          },
+          {
+            "name": "centerPlantWaterCollected",
+            "type": "u32"
           },
           {
             "name": "bump",
@@ -2281,6 +3213,10 @@ export type Farm = {
           {
             "name": "balanceAbsorbRate",
             "type": "u64"
+          },
+          {
+            "name": "neighborDrainRatio",
+            "type": "u32"
           },
           {
             "name": "treasury",

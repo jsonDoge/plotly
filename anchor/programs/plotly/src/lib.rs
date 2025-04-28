@@ -11,9 +11,13 @@ declare_id!("FQH8xLxebgWgTkxhyWDSfb4b68ZoW1newgSKMNXgQj4c");
 #[program]
 pub mod farm {
     use super::*;
-    
+
     // returns farm address
-    pub fn initialize_farm(ctx: Context<InitializeFarm>, plot_currency: Pubkey, plot_price: u64) -> Result<Pubkey> {
+    pub fn initialize_farm(
+        ctx: Context<InitializeFarm>,
+        plot_currency: Pubkey,
+        plot_price: u64,
+    ) -> Result<Pubkey> {
         ctx.accounts.initialize_farm(
             &plot_currency,
             plot_price,
@@ -34,8 +38,13 @@ pub mod farm {
         plot_y: u32,
         plot_currency: Pubkey,
     ) -> Result<Pubkey> {
-        ctx.accounts
-            .mint_plot(plot_x, plot_y, plot_currency, ctx.program_id, ctx.bumps.plot)
+        ctx.accounts.mint_plot(
+            plot_x,
+            plot_y,
+            plot_currency,
+            ctx.program_id,
+            ctx.bumps.plot,
+        )
     }
 
     pub fn acquire_plot(
@@ -73,8 +82,21 @@ pub mod farm {
             ctx.bumps.seed_mint_info,
             ctx.bumps.farm_associated_plant_token_authority,
             ctx.bumps.seed_mint_authority,
+            ctx.bumps.farm_ata_seed_authority,
             &ctx.program_id,
         )
+    }
+
+    // PLANTS
+
+    // seed is passed as an account
+    pub fn plant_seed(
+        ctx: Context<PlantSeed>,
+        plot_x: u32,
+        plot_y: u32,
+        plot_currency: Pubkey,
+    ) -> Result<()> {
+        ctx.accounts.plant_seed(plot_x, plot_y, plot_currency, ctx.program_id)
     }
 
     // pub fn greet(_ctx: Context<Initialize>) -> Result<()> {

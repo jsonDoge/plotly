@@ -41,7 +41,7 @@ pub struct InitializeFarm<'info> {
     #[account(
         init,
         payer = user,
-        space = 8 + 32 + 32 + 32 + 8, // discriminant + plot_currency + plot_collection + plot_price + bump
+        space = 8 + std::mem::size_of::<Farm>(), // discriminant + plot_currency + plot_collection + plot_price + bump
         seeds = [b"farm", plot_currency.as_ref()],
         bump,
     )]
@@ -139,6 +139,11 @@ impl<'info> InitializeFarm<'info> {
 
         if plot_currency != &self.plot_currency_mint.key() {
             return Err(ErrorCode::InvalidPlotCurrency.into());
+        }
+
+        // Plot balance start decreasing (even without plant) if plot currency is below this value
+        if plot_price % 2 != 0 {
+            return Err(ErrorCode::InvalidPlotPrice.into());
         }
 
         self.plot_mint_authority.bump = mint_authority_bump;

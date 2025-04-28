@@ -78,7 +78,7 @@ pub struct MintPlot<'info> {
     pub plot_mint: Account<'info, Mint>,
 
     #[account(
-        init_if_needed,
+        init,
         payer = user,
         seeds = [b"plot", plot_mint.key().as_ref()],
         bump,
@@ -212,8 +212,9 @@ impl<'info> MintPlot<'info> {
         )?;
 
         // Decide on initial water and balance
-        self.plot.water = 100;
-        self.plot.water = 0;
+        self.plot.water = 1000000;
+        self.plot.balance = 0;
+        self.plot.water_regen = 90; // default regen rate
 
         // initial owner is plotly (can also be set to farm or program id)
         self.plot.last_claimer = self.farm_associated_plot_authority.key();

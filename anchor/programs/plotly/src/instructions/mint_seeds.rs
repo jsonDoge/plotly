@@ -50,7 +50,7 @@ pub struct MintSeeds<'info> {
         payer = user,
         seeds = [b"seed_mint_info", seed_mint.key().as_ref()],
         bump,
-        space = 8 + 32 + 8 + 32 + 16 + 16 + 32 + 32 + 8,
+        space = 8 + std::mem::size_of::<SeedMintInfo>(),
     )]
     pub seed_mint_info: Account<'info, SeedMintInfo>,
 
@@ -72,6 +72,8 @@ pub struct MintSeeds<'info> {
     )]
     pub plant_metadata_account: UncheckedAccount<'info>,
 
+    // FARM SEED MINT
+
     #[account(
         init_if_needed,
         payer = user,
@@ -92,10 +94,41 @@ pub struct MintSeeds<'info> {
     #[account(
         init_if_needed,
         payer = user,
+        seeds = [b"seed_mint_authority", farm.key().as_ref(), seed_mint.key().as_ref()],
+        space = 8 + 8,
+        bump,
+    )]
+    pub seed_mint_authority: Account<'info, AccWithBump>,
+
+    // USER SEED ATA
+
+    #[account(
+        init_if_needed,
+        payer = user,
         associated_token::mint = seed_mint,
         associated_token::authority = user,
     )]
     pub user_associated_seed_account: Account<'info, TokenAccount>,
+
+    // FARM SEED ATA
+    #[account(
+        init,
+        payer = user,
+        associated_token::mint = seed_mint,
+        associated_token::authority = farm_ata_seed_authority,
+    )]
+    pub farm_associated_seed_account: Box<Account<'info, TokenAccount>>,
+
+    #[account(
+        init,
+        payer = user,
+        seeds = [b"farm_ata_seed_authority", farm.key().as_ref(), seed_mint.key().as_ref()],
+        space = 8 + 8,
+        bump,
+    )]
+    pub farm_ata_seed_authority: Box<Account<'info, AccWithBump>>,
+
+    // FARM PLANT ATA
 
     #[account(
         init_if_needed,
@@ -112,15 +145,6 @@ pub struct MintSeeds<'info> {
         associated_token::authority = farm_associated_plant_token_authority,
     )]
     pub farm_associated_plant_token_account: Account<'info, TokenAccount>,
-
-    #[account(
-        init_if_needed,
-        payer = user,
-        seeds = [b"seed_mint_authority", farm.key().as_ref(), seed_mint.key().as_ref()],
-        space = 8 + 8,
-        bump,
-    )]
-    pub seed_mint_authority: Account<'info, AccWithBump>,
 
     #[account(
         init_if_needed,
@@ -152,6 +176,7 @@ impl<'info> MintSeeds<'info> {
         seed_mint_info_bump: u8,
         farm_associated_plant_token_authority_bump: u8,
         seed_mint_authority_bump: u8,
+        farm_associated_seed_authority_bump: u8,
         program_id: &Pubkey,
     ) -> Result<()> {
         let is_water_divisible = growth_block_duration % water_absorb_rate == 0; 
@@ -198,6 +223,7 @@ impl<'info> MintSeeds<'info> {
             self.seed_mint_authority.bump = seed_mint_authority_bump;
 
             self.farm_associated_plant_token_authority.bump = farm_associated_plant_token_authority_bump;
+            self.farm_ata_seed_authority.bump = farm_associated_seed_authority_bump;
 
             let metadata_account_info = &self.plant_metadata_account;
             let metadata_data = &mut &**metadata_account_info.try_borrow_data()?;

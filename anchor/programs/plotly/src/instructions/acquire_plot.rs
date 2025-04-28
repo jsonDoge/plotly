@@ -131,6 +131,8 @@ impl<'info> AcquirePlot<'info> {
         plot_currency: Pubkey,
         program_id: &Pubkey,
     ) -> Result<()> {
+        // TODO: add verification that neighbor plots are minted!
+
         if self.farm_associated_plot_account.amount == 0 {
             // Plot already minted
             // if self.farm_associated_plot_account.amount == 1 {
@@ -206,6 +208,9 @@ impl<'info> AcquirePlot<'info> {
         msg!("New claimer {}", self.user.key());
 
         self.plot.last_claimer = self.user.key();
+        
+        // FEE is 0.1%
+        self.plot.balance = (self.farm.plot_price as f64 * 0.999) as u64;
 
         Ok(())
     }

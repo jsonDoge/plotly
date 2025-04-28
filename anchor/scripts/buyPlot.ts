@@ -1,6 +1,7 @@
 import { AnchorProvider, Idl, Program, Wallet, web3 } from '@coral-xyz/anchor'
 import path from 'path'
 import fs from 'fs'
+import { increasedCUTxWrap, toLeBytes } from '../tests/helpers'
 
 // so that the plotCurrency address would be the same
 const localnetPlotCurrencyKeypairPath = './localnet/plotCurrency.json'
@@ -11,50 +12,6 @@ const anchor = require('@coral-xyz/anchor')
 
 function getFarmProgram(provider: AnchorProvider): Program<typeof farmIdl> {
   return new Program<typeof farmIdl>(farmIdl, provider)
-}
-
-// copy-pasted, need to move to a common place later
-function toLeBytes(value: number, byteLength = 4, signed = false) {
-  const buffer = Buffer.alloc(byteLength)
-
-  let newVal: any = value
-
-  switch (byteLength) {
-    case 1:
-      buffer.writeUInt8(value, 0)
-      break
-    case 2:
-      if (signed) {
-        buffer.writeInt16LE(value, 0)
-      } else {
-        buffer.writeUInt16LE(value, 0)
-      }
-      break
-    case 4:
-      if (signed) {
-        buffer.writeInt32LE(value, 0)
-      } else {
-        buffer.writeUInt32LE(value, 0)
-      }
-      break
-    case 8:
-      if (typeof value !== 'bigint') {
-        newVal = BigInt(value)
-      }
-
-      if (signed) {
-        buffer.writeBigInt64LE(newVal, 0)
-      } else {
-        buffer.writeBigUInt64LE(newVal, 0)
-      }
-
-      // JS doesn't support 64-bit integers natively in all versions, so use BigInt
-      break
-    default:
-      throw new Error('Unsupported byte length')
-  }
-
-  return buffer
 }
 
 async function main() {
@@ -78,6 +35,7 @@ async function main() {
   console.log('Provider:', provider.connection.rpcEndpoint)
 
   const userWallet = provider.wallet as Wallet
+  const wrapTx = increasedCUTxWrap(provider.connection, userWallet.payer)
 
   const program = getFarmProgram(provider)
 
@@ -100,27 +58,30 @@ async function main() {
   )
 
   try {
-    await program.methods
-      .mintPlot(plotX, plotY, plotCurrency)
-      .accounts({
-        user: userWallet.publicKey,
-        plotMint,
-      })
-      .signers([userWallet.payer])
-      .rpc()
+    await wrapTx(
+      program.methods
+        .mintPlot(plotX, plotY, plotCurrency)
+        .accounts({
+          user: userWallet.publicKey,
+          plotMint,
+        })
+        .signers([userWallet.payer]),
+    )
   } catch (error) {
     console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
   }
 
   try {
-    await program.methods
-      .acquirePlot(plotX, plotY, plotCurrency)
-      .accounts({
-        user: userWallet.publicKey,
-        plotMint,
-      })
-      .signers([userWallet.payer])
-      .rpc()
+    await wrapTx(
+      program.methods
+        .acquirePlot(plotX, plotY, plotCurrency)
+        .accounts({
+          user: userWallet.publicKey,
+          plotMint,
+          plotCurrencyMint: plotCurrency,
+        })
+        .signers([userWallet.payer]),
+    )
   } catch (error) {
     console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
   }
