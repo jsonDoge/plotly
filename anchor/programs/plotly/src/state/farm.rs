@@ -5,6 +5,8 @@ use anchor_lang::prelude::*;
 pub struct Farm {
     pub plot_collection: Pubkey,
     pub plot_currency: Pubkey,
+
+    // TODO: will be used for increasing plot price - currently static
     pub plot_price: u64,
     pub bump: u8,
 }
@@ -18,13 +20,18 @@ pub struct SeedMintInfo {
     pub plant_tokens_per_seed: u64,
 
     // Plant requirements
-    pub growth_block_duration: u32,
-    // 1 water per N blocks
-    pub water_absorb_rate: u32, // currently planned always 100
-    // same as above
+
+    // is only used to calculate how much water/balance is needed
+    pub growth_block_duration: u32, 
+
+    // currently TOTAL plant water absorb rate is fixed at 100
+
+    // balance absorb rate per block
     pub balance_absorb_rate: u64,
 
-    pub neighbor_drain_ratio: u32,
+    pub neighbor_water_drain_rate: u32,
+
+    pub times_to_tend: u8, // 0 - 10
 
     // Treasury
     pub treasury: Pubkey,
@@ -43,16 +50,24 @@ pub struct Plant {
     pub balance: u64,
     pub balance_required: u64,
 
+    // balance
+
+    pub balance_absorb_rate: u64,
+    pub times_to_tend: u8, // 0 - 10
+    pub times_tended: u8, // 0 - 10
+
+    // water absorb
+    // takes a 100 drain rate. 100 - (neighbor_drain_rate * 4) = center drain rate
+    pub neighbor_water_drain_rate: u32, // 0 being fully central 25 being fully neighbor 
+
     pub last_update_block: u64,
 
-    // takes a 100 drain ratio. 100 - (neighbor_drain_ratio * 4) = center drain ratio
-    pub neighbor_drain_ratio: u32, // 0 being fully central 20 being fully neighbor 
-
-    // No ownership, because the user can transfer plot
+    // No ownership, because the user CANNOT transfer plot
     // with plant growing
 
     // Treasury (copied from seed mint)
     pub treasury: Pubkey,
+    pub treasury_received_balance: u64,
     pub bump: u8,
 }
 
@@ -63,8 +78,12 @@ pub struct Plot {
     // if water level below 30% water-regen drops to 70%
     // if water level below 10% water-regen drops to 50%
     pub water: u32, // 1000000
-    pub balance: u64,
     pub water_regen: i32, // default 90
+
+    //
+
+    pub balance: u64,
+    pub balance_free_rent: u64,
     
     // plot ownership
     pub last_claimer: Pubkey,

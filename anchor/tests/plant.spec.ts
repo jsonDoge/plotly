@@ -7,10 +7,9 @@ import { PublicKey as umiPublicKey, some } from '@metaplex-foundation/umi'
 
 import { Connection, Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js'
 import assert from 'node:assert'
-import { toLeBytes } from '@project/anchor'
 import { Farm } from '../target/types/farm'
 import { setupFarm, setupMint } from './setup'
-import { mintAndBuyPlot, mintSeeds, plantSeed } from './helpers'
+import { mintAndBuyPlot, mintSeeds, plantSeed, toLeBytes } from './helpers'
 
 // equivalent to rust to_le_bytes
 
@@ -24,7 +23,7 @@ const increasedCUTxWrap = (connection: Connection, payer: Keypair) => async (raw
   return sendAndConfirmTransaction(connection, tx, [payer])
 }
 
-describe('farm', () => {
+describe('Planting', () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env()
 
@@ -42,7 +41,7 @@ describe('farm', () => {
     await setupFarm(provider, program, plotCurrency, userWallet.publicKey)
   }, 10000000)
 
-  it('Should plant a seed', async () => {
+  it('Should plant a seed and then harvest it', async () => {
     console.log('Running plant seed test')
     // Add your test here.
     const plotX = 1
@@ -64,8 +63,9 @@ describe('farm', () => {
     const seedsToMint = 5
     const plantTokensPerSeed = 10000000
     const growthBlockDuration = 1000
-    const waterRate = 10
-    const balanceRate = 1
+    const waterDrainRate = 10
+    const timesToTend = 5
+    const balanceAbsorbRate = 2
 
     console.log('setting up plant mint')
     const plantMint = await setupMint(provider, TOKEN_PROGRAM_ID)
@@ -81,14 +81,52 @@ describe('farm', () => {
       seedsToMint,
       plantTokensPerSeed,
       growthBlockDuration,
-      waterRate,
-      balanceRate,
+      waterDrainRate,
+      timesToTend,
+      balanceAbsorbRate,
     )
 
     console.log('planting seed')
 
     await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
+    const totalWaterRate = 100 // constant for now
 
+    const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('farm'), plotCurrency.toBuffer()],
+      program.programId,
+    )
+
+    const [plotMint] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
+      program.programId,
+    )
+
+    const [plantId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plant'), plotMint.toBuffer()],
+      program.programId,
+    )
+
+    const plantData = await program.account.plant.fetch(plantId)
+    console.log('Plant account data:', plantData)
+
+    assert(plantData.seedMint.equals(seedMint), 'plant seed mint matches')
+    expect(plantData.waterRequired).toEqual(totalWaterRate * growthBlockDuration)
+    assert(
+      plantData.balanceAbsorbRate.toString() === new anchor.BN(balanceAbsorbRate).toString(),
+      'balance absorb rate matches',
+    )
+    assert(plantData.water.toString() === new anchor.BN(0).toString(), 'Initial water is 0')
+    assert(plantData.balance.toString() === new anchor.BN(0).toString(), 'Initial balance is 0')
+    assert(
+      plantData.balanceRequired.toString() === new anchor.BN(balanceAbsorbRate * growthBlockDuration).toString(),
+      'Initial balance is 0',
+    )
+
+    // const plant = await provider.connection.getAccountInfo(plantId)
+    // const plantData = plant ? plant.data : null
+    // console.log('Plant account data:', plantData)
+
+    // verify that all plot drain rates are update
     // assert(txFailed, 'Transaction should have failed')
 
     // userTokenAccountInfo = await program.provider.connection.getTokenAccountBalance(userTokenAccount)

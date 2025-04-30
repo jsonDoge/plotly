@@ -80,88 +80,6 @@ export type Farm = {
           }
         },
         {
-          "name": "plotMintAuthority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  111,
-                  116,
-                  95,
-                  109,
-                  105,
-                  110,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "farm"
-              }
-            ]
-          }
-        },
-        {
-          "name": "farmAssociatedPlotAuthority",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  102,
-                  97,
-                  114,
-                  109,
-                  95,
-                  97,
-                  115,
-                  115,
-                  111,
-                  99,
-                  105,
-                  97,
-                  116,
-                  101,
-                  100,
-                  95,
-                  112,
-                  108,
-                  111,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "farm"
-              }
-            ]
-          }
-        },
-        {
           "name": "userAssociatedPlotAccount",
           "writable": true,
           "pda": {
@@ -258,7 +176,7 @@ export type Farm = {
             "seeds": [
               {
                 "kind": "account",
-                "path": "farmAssociatedPlotAuthority"
+                "path": "farmAuth"
               },
               {
                 "kind": "const",
@@ -438,7 +356,7 @@ export type Farm = {
             "seeds": [
               {
                 "kind": "account",
-                "path": "farmAssociatedPlotCurrencyAuthority"
+                "path": "farmAuth"
               },
               {
                 "kind": "const",
@@ -522,7 +440,7 @@ export type Farm = {
           }
         },
         {
-          "name": "farmAssociatedPlotCurrencyAuthority",
+          "name": "farmAuth",
           "pda": {
             "seeds": [
               {
@@ -532,24 +450,6 @@ export type Farm = {
                   97,
                   114,
                   109,
-                  95,
-                  97,
-                  116,
-                  97,
-                  95,
-                  112,
-                  108,
-                  111,
-                  116,
-                  95,
-                  99,
-                  117,
-                  114,
-                  114,
-                  101,
-                  110,
-                  99,
-                  121,
                   95,
                   97,
                   117,
@@ -758,96 +658,13 @@ export type Farm = {
           }
         },
         {
-          "name": "plotMintAuthority",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  111,
-                  116,
-                  95,
-                  109,
-                  105,
-                  110,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "farm"
-              }
-            ]
-          }
-        },
-        {
-          "name": "farmAssociatedPlotAuthority",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  102,
-                  97,
-                  114,
-                  109,
-                  95,
-                  97,
-                  115,
-                  115,
-                  111,
-                  99,
-                  105,
-                  97,
-                  116,
-                  101,
-                  100,
-                  95,
-                  112,
-                  108,
-                  111,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "farm"
-              }
-            ]
-          }
-        },
-        {
           "name": "farmAssociatedPlotCollectionAccount",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "farmAssociatedPlotAuthority"
+                "path": "farmAuth"
               },
               {
                 "kind": "const",
@@ -937,7 +754,7 @@ export type Farm = {
             "seeds": [
               {
                 "kind": "account",
-                "path": "farmAssociatedPlotCurrencyAuthority"
+                "path": "farmAuth"
               },
               {
                 "kind": "const",
@@ -1021,7 +838,7 @@ export type Farm = {
           }
         },
         {
-          "name": "farmAssociatedPlotCurrencyAuthority",
+          "name": "farmAuth",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1032,24 +849,6 @@ export type Farm = {
                   97,
                   114,
                   109,
-                  95,
-                  97,
-                  116,
-                  97,
-                  95,
-                  112,
-                  108,
-                  111,
-                  116,
-                  95,
-                  99,
-                  117,
-                  114,
-                  114,
-                  101,
-                  110,
-                  99,
-                  121,
                   95,
                   97,
                   117,
@@ -1308,94 +1107,13 @@ export type Farm = {
           }
         },
         {
-          "name": "plotMintAuthority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  111,
-                  116,
-                  95,
-                  109,
-                  105,
-                  110,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "farm"
-              }
-            ]
-          }
-        },
-        {
-          "name": "farmAssociatedPlotAuthority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  102,
-                  97,
-                  114,
-                  109,
-                  95,
-                  97,
-                  115,
-                  115,
-                  111,
-                  99,
-                  105,
-                  97,
-                  116,
-                  101,
-                  100,
-                  95,
-                  112,
-                  108,
-                  111,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "farm"
-              }
-            ]
-          }
-        },
-        {
           "name": "farmAssociatedPlotAccount",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "farmAssociatedPlotAuthority"
+                "path": "farmAuth"
               },
               {
                 "kind": "const",
@@ -1479,6 +1197,31 @@ export type Farm = {
           }
         },
         {
+          "name": "farmAuth",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              }
+            ]
+          }
+        },
+        {
           "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
@@ -1535,6 +1278,9 @@ export type Farm = {
         },
         {
           "name": "plantMint"
+        },
+        {
+          "name": "plotCurrencyMint"
         },
         {
           "name": "farm",
@@ -1692,46 +1438,6 @@ export type Farm = {
           }
         },
         {
-          "name": "seedMintAuthority",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  115,
-                  101,
-                  101,
-                  100,
-                  95,
-                  109,
-                  105,
-                  110,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "farm"
-              },
-              {
-                "kind": "account",
-                "path": "seedMint"
-              }
-            ]
-          }
-        },
-        {
           "name": "userAssociatedSeedAccount",
           "writable": true,
           "pda": {
@@ -1828,7 +1534,7 @@ export type Farm = {
             "seeds": [
               {
                 "kind": "account",
-                "path": "farmAtaSeedAuthority"
+                "path": "farmAuth"
               },
               {
                 "kind": "const",
@@ -1912,47 +1618,93 @@ export type Farm = {
           }
         },
         {
-          "name": "farmAtaSeedAuthority",
+          "name": "userAssociatedPlotCurrencyAccount",
           "writable": true,
           "pda": {
             "seeds": [
               {
+                "kind": "account",
+                "path": "user"
+              },
+              {
                 "kind": "const",
                 "value": [
-                  102,
-                  97,
-                  114,
-                  109,
-                  95,
-                  97,
-                  116,
-                  97,
-                  95,
-                  115,
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
                   101,
-                  101,
-                  100,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
                   95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
                 ]
               },
               {
                 "kind": "account",
-                "path": "farm"
-              },
-              {
-                "kind": "account",
-                "path": "seedMint"
+                "path": "plotCurrencyMint"
               }
-            ]
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
           }
         },
         {
@@ -2052,7 +1804,7 @@ export type Farm = {
             "seeds": [
               {
                 "kind": "account",
-                "path": "farmAssociatedPlantTokenAuthority"
+                "path": "farmAuth"
               },
               {
                 "kind": "const",
@@ -2136,8 +1888,7 @@ export type Farm = {
           }
         },
         {
-          "name": "farmAssociatedPlantTokenAuthority",
-          "writable": true,
+          "name": "farmAuth",
           "pda": {
             "seeds": [
               {
@@ -2149,40 +1900,14 @@ export type Farm = {
                   109,
                   95,
                   97,
-                  116,
-                  116,
-                  97,
-                  95,
-                  112,
-                  108,
-                  97,
-                  110,
-                  116,
-                  95,
-                  116,
-                  111,
-                  107,
-                  101,
-                  110,
-                  95,
-                  97,
                   117,
                   116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
+                  104
                 ]
               },
               {
                 "kind": "account",
                 "path": "farm"
-              },
-              {
-                "kind": "account",
-                "path": "plantMint"
               }
             ]
           }
@@ -2226,12 +1951,16 @@ export type Farm = {
           "type": "u32"
         },
         {
-          "name": "waterAbsorbRate",
+          "name": "neighborWaterDrainRate",
           "type": "u32"
         },
         {
           "name": "balanceAbsorbRate",
           "type": "u64"
+        },
+        {
+          "name": "timesToTend",
+          "type": "u8"
         },
         {
           "name": "treasury",
@@ -2335,51 +2064,18 @@ export type Farm = {
           }
         },
         {
-          "name": "plotMintAuthority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  111,
-                  116,
-                  95,
-                  109,
-                  105,
-                  110,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "farm"
-              }
-            ]
-          }
-        },
-        {
           "name": "plotMintUp"
         },
         {
-          "name": "plotUp"
+          "name": "plotUp",
+          "writable": true
         },
         {
           "name": "plotMintRight"
         },
         {
-          "name": "plotRight"
+          "name": "plotRight",
+          "writable": true
         },
         {
           "name": "plotMintDown"
@@ -2424,7 +2120,7 @@ export type Farm = {
             "seeds": [
               {
                 "kind": "account",
-                "path": "farmAssociatedPlotAuthority"
+                "path": "farmAuth"
               },
               {
                 "kind": "const",
@@ -2505,52 +2201,6 @@ export type Farm = {
                 89
               ]
             }
-          }
-        },
-        {
-          "name": "farmAssociatedPlotAuthority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  102,
-                  97,
-                  114,
-                  109,
-                  95,
-                  97,
-                  115,
-                  115,
-                  111,
-                  99,
-                  105,
-                  97,
-                  116,
-                  101,
-                  100,
-                  95,
-                  112,
-                  108,
-                  111,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "farm"
-              }
-            ]
           }
         },
         {
@@ -2650,7 +2300,7 @@ export type Farm = {
             "seeds": [
               {
                 "kind": "account",
-                "path": "farmAtaSeedAuthority"
+                "path": "farmAuth"
               },
               {
                 "kind": "const",
@@ -2731,49 +2381,6 @@ export type Farm = {
                 89
               ]
             }
-          }
-        },
-        {
-          "name": "farmAtaSeedAuthority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  102,
-                  97,
-                  114,
-                  109,
-                  95,
-                  97,
-                  116,
-                  97,
-                  95,
-                  115,
-                  101,
-                  101,
-                  100,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "farm"
-              },
-              {
-                "kind": "account",
-                "path": "seedMint"
-              }
-            ]
           }
         },
         {
@@ -2864,6 +2471,300 @@ export type Farm = {
                 89
               ]
             }
+          }
+        },
+        {
+          "name": "farmAuth",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "tokenMetadataProgram",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "plotX",
+          "type": "u32"
+        },
+        {
+          "name": "plotY",
+          "type": "u32"
+        },
+        {
+          "name": "plotCurrency",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "tendPlant",
+      "discriminator": [
+        242,
+        246,
+        136,
+        112,
+        167,
+        43,
+        145,
+        251
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "plotCurrencyMint"
+        },
+        {
+          "name": "plantTreasury"
+        },
+        {
+          "name": "farm",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "plotCurrency"
+              }
+            ]
+          }
+        },
+        {
+          "name": "plotMint"
+        },
+        {
+          "name": "plot",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  111,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plotMint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "plotMintUp"
+        },
+        {
+          "name": "plotUp",
+          "writable": true
+        },
+        {
+          "name": "plotMintRight"
+        },
+        {
+          "name": "plotRight",
+          "writable": true
+        },
+        {
+          "name": "plotMintDown"
+        },
+        {
+          "name": "plotDown",
+          "writable": true
+        },
+        {
+          "name": "plotMintLeft"
+        },
+        {
+          "name": "plotLeft",
+          "writable": true
+        },
+        {
+          "name": "plant",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plotMint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "farmAssociatedPlotCurrencyAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "farmAuth"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "plotCurrency"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "farmAuth",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  97,
+                  114,
+                  109,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "farm"
+              }
+            ]
           }
         },
         {
@@ -2983,53 +2884,103 @@ export type Farm = {
     },
     {
       "code": 6002,
+      "name": "invalidHarvestPlot",
+      "msg": "Invalid harvest plot"
+    },
+    {
+      "code": 6003,
       "name": "plotAlreadyMinted",
       "msg": "Plot already minted"
     },
     {
-      "code": 6003,
+      "code": 6004,
       "name": "plotHasZeroBalance",
       "msg": "Plot has zero balance"
     },
     {
-      "code": 6004,
+      "code": 6005,
       "name": "invalidSeedWaterAmount",
       "msg": "Growth block duration not divisible by water rate"
     },
     {
-      "code": 6005,
+      "code": 6006,
       "name": "invalidSeedBalanceAmount",
       "msg": "Growth block duration not divisible by balance rate"
     },
     {
-      "code": 6006,
+      "code": 6007,
       "name": "insufficientPlotCurrencyToAcquirePlot",
       "msg": "Insufficient plot currency to acquire plot"
     },
     {
-      "code": 6007,
+      "code": 6008,
       "name": "invalidPlotCurrency",
       "msg": "Invalid plot currency"
     },
     {
-      "code": 6008,
+      "code": 6009,
       "name": "invalidPlotPrice",
       "msg": "Plot price not divisible by 2"
     },
     {
-      "code": 6009,
+      "code": 6010,
       "name": "invalidNeighborPlotMint",
       "msg": "Invalid neighbor plot mint passed"
     },
     {
-      "code": 6010,
+      "code": 6011,
       "name": "invalidNeighborPlot",
       "msg": "Invalid neighbor plot passed"
     },
     {
-      "code": 6011,
+      "code": 6012,
+      "name": "invalidNeighborWaterDrainRate",
+      "msg": "Invalid neighbor water drain rate passed"
+    },
+    {
+      "code": 6013,
+      "name": "invalidTreasury",
+      "msg": "Invalid treasury address"
+    },
+    {
+      "code": 6014,
       "name": "waterCalculationError",
       "msg": "INTERNAL: water calculation error"
+    },
+    {
+      "code": 6015,
+      "name": "plantNotEnoughWater",
+      "msg": "Plant doesn't have enough water"
+    },
+    {
+      "code": 6016,
+      "name": "plantNotEnoughBalance",
+      "msg": "Plant doesn't have enough balance"
+    },
+    {
+      "code": 6017,
+      "name": "plantReachedMaxTend",
+      "msg": "Plant already reached max tend"
+    },
+    {
+      "code": 6018,
+      "name": "noBlocksPassed",
+      "msg": "No blocks passed"
+    },
+    {
+      "code": 6019,
+      "name": "tooEarlyToTend",
+      "msg": "Too early to tend"
+    },
+    {
+      "code": 6020,
+      "name": "invalidBalanceAbsorbRate",
+      "msg": "Invalid balance absorb rate"
+    },
+    {
+      "code": 6021,
+      "name": "invalidGrowthDuration",
+      "msg": "Invalid growth duration"
     }
   ],
   "types": [
@@ -3095,16 +3046,32 @@ export type Farm = {
             "type": "u64"
           },
           {
+            "name": "balanceAbsorbRate",
+            "type": "u64"
+          },
+          {
+            "name": "timesToTend",
+            "type": "u8"
+          },
+          {
+            "name": "timesTended",
+            "type": "u8"
+          },
+          {
+            "name": "neighborWaterDrainRate",
+            "type": "u32"
+          },
+          {
             "name": "lastUpdateBlock",
             "type": "u64"
           },
           {
-            "name": "neighborDrainRatio",
-            "type": "u32"
-          },
-          {
             "name": "treasury",
             "type": "pubkey"
+          },
+          {
+            "name": "treasuryReceivedBalance",
+            "type": "u64"
           },
           {
             "name": "bump",
@@ -3123,12 +3090,16 @@ export type Farm = {
             "type": "u32"
           },
           {
+            "name": "waterRegen",
+            "type": "i32"
+          },
+          {
             "name": "balance",
             "type": "u64"
           },
           {
-            "name": "waterRegen",
-            "type": "i32"
+            "name": "balanceFreeRent",
+            "type": "u64"
           },
           {
             "name": "lastClaimer",
@@ -3207,16 +3178,16 @@ export type Farm = {
             "type": "u32"
           },
           {
-            "name": "waterAbsorbRate",
-            "type": "u32"
-          },
-          {
             "name": "balanceAbsorbRate",
             "type": "u64"
           },
           {
-            "name": "neighborDrainRatio",
+            "name": "neighborWaterDrainRate",
             "type": "u32"
+          },
+          {
+            "name": "timesToTend",
+            "type": "u8"
           },
           {
             "name": "treasury",

@@ -31,19 +31,22 @@ use crate::{errors::ErrorCode, state::Farm};
     __: u32,
     ___: u32,
     ____: u64,
+    _____: u8,
     treasury: Pubkey
 )]
 pub struct MintSeeds<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
 
-    pub plant_mint: InterfaceAccount<'info, MintInterface>,
+    pub plant_mint: Box<InterfaceAccount<'info, MintInterface>>,
+    // value same as plot_currency
+    pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,
 
     #[account(
         seeds = [b"farm", plot_currency.as_ref()],
         bump,
     )]
-    pub farm: Account<'info, Farm>,
+    pub farm: Box<Account<'info, Farm>>,
 
     #[account(
         init_if_needed,
@@ -52,7 +55,7 @@ pub struct MintSeeds<'info> {
         bump,
         space = 8 + std::mem::size_of::<SeedMintInfo>(),
     )]
-    pub seed_mint_info: Account<'info, SeedMintInfo>,
+    pub seed_mint_info: Box<Account<'info, SeedMintInfo>>,
 
     /// CHECK: Validate address by deriving pda
     #[account(
@@ -78,8 +81,8 @@ pub struct MintSeeds<'info> {
         init_if_needed,
         payer = user,
         mint::decimals = 0,
-        mint::authority = seed_mint_authority,
-        mint::freeze_authority =  seed_mint_authority,
+        mint::authority = farm_auth,
+        mint::freeze_authority =  farm_auth,
         seeds = [
             b"seed_mint", 
             farm.key().as_ref(),
@@ -89,16 +92,7 @@ pub struct MintSeeds<'info> {
         ],
         bump,
     )]
-    pub seed_mint: Account<'info, Mint>,
-
-    #[account(
-        init_if_needed,
-        payer = user,
-        seeds = [b"seed_mint_authority", farm.key().as_ref(), seed_mint.key().as_ref()],
-        space = 8 + 8,
-        bump,
-    )]
-    pub seed_mint_authority: Account<'info, AccWithBump>,
+    pub seed_mint: Box<Account<'info, Mint>>,
 
     // USER SEED ATA
 
@@ -108,27 +102,28 @@ pub struct MintSeeds<'info> {
         associated_token::mint = seed_mint,
         associated_token::authority = user,
     )]
-    pub user_associated_seed_account: Account<'info, TokenAccount>,
+    pub user_associated_seed_account: Box<Account<'info, TokenAccount>>,
 
     // FARM SEED ATA
     #[account(
         init,
         payer = user,
         associated_token::mint = seed_mint,
-        associated_token::authority = farm_ata_seed_authority,
+        associated_token::authority = farm_auth,
     )]
     pub farm_associated_seed_account: Box<Account<'info, TokenAccount>>,
 
-    #[account(
-        init,
-        payer = user,
-        seeds = [b"farm_ata_seed_authority", farm.key().as_ref(), seed_mint.key().as_ref()],
-        space = 8 + 8,
-        bump,
-    )]
-    pub farm_ata_seed_authority: Box<Account<'info, AccWithBump>>,
+    // USER PLANT MINT ATA
 
-    // FARM PLANT ATA
+    #[account(
+        init_if_needed,
+        payer = user,
+        associated_token::mint = plot_currency_mint,
+        associated_token::authority = user,
+    )]
+    pub user_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
+
+    // USER PLANT MINT ATA
 
     #[account(
         init_if_needed,
@@ -136,24 +131,24 @@ pub struct MintSeeds<'info> {
         associated_token::mint = plant_mint,
         associated_token::authority = user,
     )]
-    pub user_associated_plant_token_account: Account<'info, TokenAccount>,
+    pub user_associated_plant_token_account: Box<Account<'info, TokenAccount>>,
+
+    // FARM PLANT MINT ATA
 
     #[account(
         init_if_needed,
         payer = user,
         associated_token::mint = plant_mint,
-        associated_token::authority = farm_associated_plant_token_authority,
+        associated_token::authority = farm_auth,
     )]
-    pub farm_associated_plant_token_account: Account<'info, TokenAccount>,
+    pub farm_associated_plant_token_account: Box<Account<'info, TokenAccount>>,
+
 
     #[account(
-        init_if_needed,
-        payer = user,
-        seeds = [b"farm_atta_plant_token_authority", farm.key().as_ref(), plant_mint.key().as_ref()],
-        space = 8 + 8,
+        seeds = [b"farm_auth", farm.key().as_ref()],
         bump,
     )]
-    pub farm_associated_plant_token_authority: Account<'info, AccWithBump>,
+    pub farm_auth: Box<Account<'info, AccWithBump>>,
 
     pub token_program: Program<'info, Token>,
     pub token_metadata_program: Program<'info, Metadata>,
@@ -169,25 +164,36 @@ impl<'info> MintSeeds<'info> {
         seeds_to_mint: u64,
         plant_tokens_per_seed: u64,
         growth_block_duration: u32,
-        water_absorb_rate: u32,
+        neighbor_water_drain_rate: u32,
         balance_absorb_rate: u64,
+        times_to_tend: u8,
         // user treasury NOT farm treasury
         treasury: &Pubkey,
         seed_mint_info_bump: u8,
-        farm_associated_plant_token_authority_bump: u8,
-        seed_mint_authority_bump: u8,
-        farm_associated_seed_authority_bump: u8,
         program_id: &Pubkey,
     ) -> Result<()> {
-        let is_water_divisible = growth_block_duration % water_absorb_rate == 0; 
-        if !is_water_divisible {
-            return Err(ErrorCode::InvalidSeedWaterAmount.into());
+
+        if balance_absorb_rate == 0 || balance_absorb_rate % 2 != 0 {
+            return Err(ErrorCode::InvalidBalanceAbsorbRate.into());
         }
 
-        let is_balance_divisible = growth_block_duration as u64 % balance_absorb_rate  == 0;
-        if !is_balance_divisible {
-            return Err(ErrorCode::InvalidSeedBalanceAmount.into());
+        if growth_block_duration <= 100 {
+            return Err(ErrorCode::InvalidGrowthDuration.into());
         }
+
+        if treasury != &self.user_associated_plot_currency_account.key() {
+            msg!("Treasury: {} User: {}", treasury, self.user_associated_plot_currency_account.key());
+            return Err(ErrorCode::InvalidTreasury.into());
+        }
+
+        if (neighbor_water_drain_rate > 25) || (neighbor_water_drain_rate < 0) {
+            return Err(ErrorCode::InvalidNeighborWaterDrainRate.into());
+        }
+
+        // let is_balance_divisible = growth_block_duration as u64 % balance_absorb_rate  == 0;
+        // if !is_balance_divisible {
+        //     return Err(ErrorCode::InvalidSeedBalanceAmount.into());
+        // }
 
         let plant_tokens_to_store = seeds_to_mint * plant_tokens_per_seed;
 
@@ -214,16 +220,11 @@ impl<'info> MintSeeds<'info> {
             self.seed_mint_info.plant_mint_decimals = self.plant_mint.decimals;
             self.seed_mint_info.plant_tokens_per_seed = plant_tokens_per_seed;
             self.seed_mint_info.growth_block_duration = growth_block_duration;
-            self.seed_mint_info.water_absorb_rate = water_absorb_rate;
+            self.seed_mint_info.neighbor_water_drain_rate = neighbor_water_drain_rate;
             self.seed_mint_info.balance_absorb_rate = balance_absorb_rate;
             self.seed_mint_info.treasury = *treasury;
 
             self.seed_mint_info.bump = seed_mint_info_bump;
-            
-            self.seed_mint_authority.bump = seed_mint_authority_bump;
-
-            self.farm_associated_plant_token_authority.bump = farm_associated_plant_token_authority_bump;
-            self.farm_ata_seed_authority.bump = farm_associated_seed_authority_bump;
 
             let metadata_account_info = &self.plant_metadata_account;
             let metadata_data = &mut &**metadata_account_info.try_borrow_data()?;
@@ -243,17 +244,16 @@ impl<'info> MintSeeds<'info> {
                     CreateMetadataAccountsV3 {
                         metadata: self.seed_metadata_account.to_account_info(),
                         mint: self.seed_mint.to_account_info(),
-                        mint_authority: self.seed_mint_authority.to_account_info(),
+                        mint_authority: self.farm_auth.to_account_info(),
                         payer: self.user.to_account_info(),
-                        update_authority: self.seed_mint_authority.to_account_info(),
+                        update_authority: self.farm_auth.to_account_info(),
                         system_program: self.system_program.to_account_info(),
                         rent: self.rent.to_account_info(),
                     },
                     &[&[
-                        b"seed_mint_authority",
+                        b"farm_auth",
                         self.farm.key().as_ref(),
-                        self.seed_mint.key().as_ref(),
-                        &[self.seed_mint_authority.bump][..],
+                        &[self.farm_auth.bump][..],
                     ]],
                 ),
                 DataV2 {
@@ -281,13 +281,12 @@ impl<'info> MintSeeds<'info> {
                 MintTo {
                     mint: self.seed_mint.to_account_info(),
                     to: self.user_associated_seed_account.to_account_info(),
-                    authority: self.seed_mint_authority.to_account_info(),
+                    authority: self.farm_auth.to_account_info(),
                 },
                 &[&[
-                    b"seed_mint_authority",
+                    b"farm_auth",
                     self.farm.key().as_ref(),
-                    self.seed_mint.key().as_ref(),
-                    &[self.seed_mint_authority.bump][..],
+                    &[self.farm_auth.bump][..],
                 ]],
             ),
             seeds_to_mint,

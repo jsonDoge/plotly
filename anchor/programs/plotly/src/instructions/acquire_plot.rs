@@ -44,8 +44,8 @@ pub struct AcquirePlot<'info> {
         init_if_needed,
         payer = user,
         mint::decimals = 0,
-        mint::authority = plot_mint_authority,
-        mint::freeze_authority =  plot_mint_authority,
+        mint::authority = farm_auth,
+        mint::freeze_authority =  farm_auth,
         seeds = [b"plot_mint", &plot_x.to_le_bytes()[..], &plot_y.to_le_bytes()[..], farm.key().as_ref()],
         bump,
     )]
@@ -58,20 +58,6 @@ pub struct AcquirePlot<'info> {
     )]
     pub plot: Account<'info, Plot>,
 
-    #[account(
-        seeds = [b"plot_mint_authority", farm.key().as_ref()],
-        bump,
-    )]
-    pub plot_mint_authority: Account<'info, AccWithBump>,
-
-    #[account(
-        init_if_needed,
-        payer = user,
-        seeds = [b"farm_associated_plot_authority", farm.key().as_ref()],
-        bump,
-        space = 8 + 8,
-    )]
-    pub farm_associated_plot_authority: Account<'info, AccWithBump>,
     // Create associated token account, if needed
     // This is the account that will hold the NFT
     #[account(
@@ -86,7 +72,7 @@ pub struct AcquirePlot<'info> {
         init_if_needed,
         payer = user,
         associated_token::mint = plot_mint,
-        associated_token::authority = farm_associated_plot_authority,
+        associated_token::authority = farm_auth,
     )]
     pub farm_associated_plot_account: Account<'info, TokenAccount>,
 
@@ -105,16 +91,17 @@ pub struct AcquirePlot<'info> {
     #[account(
         mut,
         associated_token::mint = plot_currency,
-        associated_token::authority = farm_associated_plot_currency_authority,
+        associated_token::authority = farm_auth,
     )]
     pub farm_associated_plot_currency_account: Account<'info, TokenAccount>,
 
+    // PDA authority
+
     #[account(
-        seeds = [b"farm_ata_plot_currency_auth", farm.key().as_ref()],
+        seeds = [b"farm_auth", farm.key().as_ref()],
         bump,
     )]
-    pub farm_associated_plot_currency_authority: Account<'info, AccWithBump>,
-
+    pub farm_auth: Account<'info, AccWithBump>,
 
     pub token_program: Program<'info, Token>,
     pub token_metadata_program: Program<'info, Metadata>,
@@ -131,6 +118,7 @@ impl<'info> AcquirePlot<'info> {
         plot_currency: Pubkey,
         program_id: &Pubkey,
     ) -> Result<()> {
+        // TODO: add deposit balance
         // TODO: add verification that neighbor plots are minted!
 
         if self.farm_associated_plot_account.amount == 0 {
@@ -143,8 +131,11 @@ impl<'info> AcquirePlot<'info> {
             return Err(ErrorCode::PlotAlreadyOwned.into());
         }
 
+        // Farm 0.1% fee
+        let total_plot_price = self.farm.plot_price + self.farm.plot_price / 1000;
+
         if self.user_associated_plot_currency_account.amount == 0 ||
-            self.user_associated_plot_currency_account.amount < self.farm.plot_price {
+            self.user_associated_plot_currency_account.amount < total_plot_price {
             return Err(ErrorCode::InsufficientPlotCurrencyToAcquirePlot.into());
         }
 
@@ -183,7 +174,7 @@ impl<'info> AcquirePlot<'info> {
             mint: self.plot_mint.to_account_info(),
             from: self.farm_associated_plot_account.to_account_info(),
             to: self.user_associated_plot_account.to_account_info(),
-            authority: self.farm_associated_plot_authority.to_account_info(),
+            authority: self.farm_auth.to_account_info(),
         };
 
         let cpi_program = self.token_program.to_account_info();
@@ -196,9 +187,9 @@ impl<'info> AcquirePlot<'info> {
             cpi_program,
             cpi_accounts,
             &[&[
-                b"farm_associated_plot_authority",
+                b"farm_auth",
                 self.farm.key().as_ref(),
-                &[self.farm_associated_plot_authority.bump],
+                &[self.farm_auth.bump],
             ]],
         ), 1, 0)?;
 
@@ -210,7 +201,8 @@ impl<'info> AcquirePlot<'info> {
         self.plot.last_claimer = self.user.key();
         
         // FEE is 0.1%
-        self.plot.balance = (self.farm.plot_price as f64 * 0.999) as u64;
+        self.plot.balance = self.farm.plot_price;
+        self.plot.balance_free_rent = self.farm.plot_price;
 
         Ok(())
     }

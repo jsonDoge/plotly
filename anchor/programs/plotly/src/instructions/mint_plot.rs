@@ -16,7 +16,7 @@ use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 // use mpl_token_metadata::types::DataV2;
 // use mpl_token_metadata::ID as TOKEN_METADATA_PROGRAM_ID;
 
-use crate::state::{AccWithBump, Plot};
+use crate::{constants::BASE_BALANCE_FREE_RENT, state::{AccWithBump, Plot}};
 use crate::{errors::ErrorCode, state::Farm};
 
 #[derive(Accounts)]
@@ -70,8 +70,8 @@ pub struct MintPlot<'info> {
         init_if_needed,
         payer = user,
         mint::decimals = 0,
-        mint::authority = plot_mint_authority,
-        mint::freeze_authority =  plot_mint_authority,
+        mint::authority = farm_auth,
+        mint::freeze_authority =  farm_auth,
         seeds = [b"plot_mint", &plot_x.to_le_bytes()[..], &plot_y.to_le_bytes()[..], farm.key().as_ref()],
         bump,
     )]
@@ -87,24 +87,18 @@ pub struct MintPlot<'info> {
     pub plot: Account<'info, Plot>,
 
     #[account(
-        seeds = [b"plot_mint_authority", farm.key().as_ref()],
-        bump,
-    )]
-    pub plot_mint_authority: Account<'info, AccWithBump>,
-
-    #[account(
-        seeds = [b"farm_associated_plot_authority", farm.key().as_ref()],
-        bump
-    )]
-    pub farm_associated_plot_authority: Account<'info, AccWithBump>,
-
-    #[account(
         init_if_needed,
         payer = user,
         associated_token::mint = plot_mint,
-        associated_token::authority = farm_associated_plot_authority,
+        associated_token::authority = farm_auth,
     )]
     pub farm_associated_plot_account: Account<'info, TokenAccount>,
+
+    #[account(
+        seeds = [b"farm_auth", farm.key().as_ref()],
+        bump,
+    )]
+    pub farm_auth: Account<'info, AccWithBump>,
 
     pub token_program: Program<'info, Token>,
     pub token_metadata_program: Program<'info, Metadata>,
@@ -139,16 +133,16 @@ impl<'info> MintPlot<'info> {
                 CreateMetadataAccountsV3 {
                     metadata: self.metadata_account.to_account_info(),
                     mint: self.plot_mint.to_account_info(),
-                    mint_authority: self.plot_mint_authority.to_account_info(),
+                    mint_authority: self.farm_auth.to_account_info(),
                     payer: self.user.to_account_info(),
-                    update_authority: self.plot_mint_authority.to_account_info(),
+                    update_authority: self.farm_auth.to_account_info(),
                     system_program: self.system_program.to_account_info(),
                     rent: self.rent.to_account_info(),
                 },
                 &[&[
-                    b"plot_mint_authority",
+                    b"farm_auth",
                     self.farm.key().as_ref(),
-                    &[self.plot_mint_authority.bump][..],
+                    &[self.farm_auth.bump][..],
                 ]],
             ),
             DataV2 {
@@ -180,12 +174,12 @@ impl<'info> MintPlot<'info> {
                 MintTo {
                     mint: self.plot_mint.to_account_info(),
                     to: self.farm_associated_plot_account.to_account_info(),
-                    authority: self.plot_mint_authority.to_account_info(),
+                    authority: self.farm_auth.to_account_info(),
                 },
                 &[&[
-                    b"plot_mint_authority",
+                    b"farm_auth",
                     self.farm.key().as_ref(),
-                    &[self.plot_mint_authority.bump][..],
+                    &[self.farm_auth.bump][..],
                 ]],
             ),
             1,
@@ -196,16 +190,16 @@ impl<'info> MintPlot<'info> {
                 self.token_metadata_program.to_account_info(),
                 VerifySizedCollectionItem {
                     metadata: self.metadata_account.to_account_info(),
-                    collection_authority: self.plot_mint_authority.to_account_info(),
+                    collection_authority: self.farm_auth.to_account_info(),
                     payer: self.user.to_account_info(),
                     collection_mint: self.plot_collection_mint.to_account_info(),
                     collection_metadata: self.plot_collection_metadata_account.to_account_info(),
                     collection_master_edition: self.master_edition.to_account_info(),
                 },
                 &[&[
-                    b"plot_mint_authority",
+                    b"farm_auth",
                     self.farm.key().as_ref(),
-                    &[self.plot_mint_authority.bump][..],
+                    &[self.farm_auth.bump][..],
                 ]],
             ),
             None,
@@ -215,9 +209,27 @@ impl<'info> MintPlot<'info> {
         self.plot.water = 1000000;
         self.plot.balance = 0;
         self.plot.water_regen = 90; // default regen rate
+        self.plot.balance_free_rent = 0;
+
+        // set drain rates
+        self.plot.right_plant_drain_rate = 0;
+        self.plot.left_plant_drain_rate = 0;
+        self.plot.up_plant_drain_rate = 0;
+        self.plot.down_plant_drain_rate = 0;
+        self.plot.center_plant_drain_rate = 0;
+
+        // set water collected
+        self.plot.right_plant_water_collected = 0;
+        self.plot.left_plant_water_collected = 0;
+        self.plot.up_plant_water_collected = 0;
+        self.plot.down_plant_water_collected = 0;
+        self.plot.center_plant_water_collected = 0;
+        
+        // set last update block
+        self.plot.last_update_block = Clock::get()?.slot as u64;
 
         // initial owner is plotly (can also be set to farm or program id)
-        self.plot.last_claimer = self.farm_associated_plot_authority.key();
+        self.plot.last_claimer = self.farm_auth.key();
         self.plot.bump = plot_bump;
 
         // Confirm collection size

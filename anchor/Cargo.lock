@@ -1328,7 +1328,6 @@ dependencies = [
  "anchor-syn",
  "mpl-token-metadata",
  "proc-macro2",
- "solana-program",
 ]
 
 [[package]]

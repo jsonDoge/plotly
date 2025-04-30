@@ -6,6 +6,8 @@ pub enum ErrorCode {
     PlotAlreadyOwned,
     #[msg("User is not plot owner")]
     UserNotPlotOwner,
+    #[msg("Invalid harvest plot")]
+    InvalidHarvestPlot,
     #[msg("Plot already minted")]
     PlotAlreadyMinted,
     #[msg("Plot has zero balance")]
@@ -24,6 +26,24 @@ pub enum ErrorCode {
     InvalidNeighborPlotMint,
     #[msg("Invalid neighbor plot passed")]
     InvalidNeighborPlot,
+    #[msg("Invalid neighbor water drain rate passed")]
+    InvalidNeighborWaterDrainRate,
+    #[msg("Invalid treasury address")]
+    InvalidTreasury,
     #[msg("INTERNAL: water calculation error")]
     WaterCalculationError,
+    #[msg("Plant doesn't have enough water")]
+    PlantNotEnoughWater,
+    #[msg("Plant doesn't have enough balance")]
+    PlantNotEnoughBalance,
+    #[msg("Plant already reached max tend")]
+    PlantReachedMaxTend,
+    #[msg("No blocks passed")]
+    NoBlocksPassed,
+    #[msg("Too early to tend")]
+    TooEarlyToTend,
+    #[msg("Invalid balance absorb rate")]
+    InvalidBalanceAbsorbRate,
+    #[msg("Invalid growth duration")]
+    InvalidGrowthDuration,
 }

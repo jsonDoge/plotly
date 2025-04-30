@@ -1,6 +1,7 @@
 import * as anchor from '@coral-xyz/anchor'
 import { Farm } from '@project/anchor'
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token'
+// import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { Connection, Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js'
 
 export function toLeBytes(value: number, byteLength = 4, signed = false) {
@@ -160,9 +161,11 @@ export const mintSeeds = async (
   seedsToMint: number = 5,
   plantTokensPerSeed: number = 10000000,
   growthBlockDuration: number = 1000,
-  waterRate: number = 10,
-  balanceRate: number = 1,
+  neighborWaterDrainRate: number = 10,
+  timesToTend: number = 5,
+  balanceAbsorbRate: number = 1,
 ) => {
+  console.log('balanceAbsorbRate', balanceAbsorbRate)
   const wrapTx = increasedCUTxWrap(provider.connection, userWallet.payer)
 
   const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -170,13 +173,20 @@ export const mintSeeds = async (
     program.programId,
   )
 
+  const [userPlotCurrencyAta] = anchor.web3.PublicKey.findProgramAddressSync(
+    [userWallet.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), plotCurrency.toBuffer()],
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+  )
+
+  console.log('userPlotCurrencyAta', userPlotCurrencyAta.toString())
+
   const [seedMint] = anchor.web3.PublicKey.findProgramAddressSync(
     [
       Buffer.from('seed_mint'),
       farm.toBuffer(),
       plantMint.toBuffer(),
       toLeBytes(plantTokensPerSeed, 8),
-      userWallet.publicKey.toBuffer(),
+      userPlotCurrencyAta.toBuffer(),
     ],
     program.programId,
   )
@@ -189,11 +199,13 @@ export const mintSeeds = async (
           new anchor.BN(seedsToMint),
           new anchor.BN(plantTokensPerSeed),
           growthBlockDuration,
-          waterRate,
-          new anchor.BN(balanceRate),
-          userWallet.publicKey,
+          neighborWaterDrainRate,
+          new anchor.BN(balanceAbsorbRate),
+          timesToTend,
+          userPlotCurrencyAta,
         )
         .accountsPartial({
+          plotCurrencyMint: plotCurrency,
           user: userWallet.publicKey,
           plantMint,
           seedMint,
@@ -278,14 +290,14 @@ export const plantSeed = async (
         .accountsPartial({
           user: userWallet.publicKey,
           seedMint,
-          plotMintRight: neighborPlotMints[0],
+          plotMintLeft: neighborPlotMints[0],
           plotMintUp: neighborPlotMints[1],
           plotMintDown: neighborPlotMints[2],
-          plotMintLeft: neighborPlotMints[3],
-          plotRight: neighborPlots[0],
+          plotMintRight: neighborPlotMints[3],
+          plotLeft: neighborPlots[0],
           plotUp: neighborPlots[1],
           plotDown: neighborPlots[2],
-          plotLeft: neighborPlots[3],
+          plotRight: neighborPlots[3],
           plotMint,
         })
         .signers([userWallet.payer]),

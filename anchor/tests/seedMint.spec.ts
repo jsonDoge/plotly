@@ -1,6 +1,6 @@
 import * as anchor from '@coral-xyz/anchor'
 // import { SystemProgram } from '@solana/web3.js'
-import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 
 import { PublicKey } from '@solana/web3.js'
@@ -33,11 +33,17 @@ describe('seed minting', () => {
       program.programId,
     )
 
+    const [userPlotCurrencyAta] = anchor.web3.PublicKey.findProgramAddressSync(
+      [userWallet.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), plotCurrency.toBuffer()],
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+
     const seedsToMint = 5
     const plantTokensPerSeed = 10000000
     const growthBlockDuration = 1000
     const waterRate = 10
-    const balanceRate = 1
+    const timesToTend = 5
+    const balanceDrainRate = 2
 
     const [seedMint] = anchor.web3.PublicKey.findProgramAddressSync(
       [
@@ -45,14 +51,14 @@ describe('seed minting', () => {
         farm.toBuffer(),
         plantMint.toBuffer(),
         toLeBytes(plantTokensPerSeed, 8),
-        userWallet.publicKey.toBuffer(),
+        userPlotCurrencyAta.toBuffer(),
       ],
       program.programId,
     )
 
     console.log('plantMint', plantMint.toString())
     console.log('plotMint', plotCurrency.toString())
-    console.log('treasury', userWallet.publicKey.toString())
+    console.log('treasury', userPlotCurrencyAta.toString())
     try {
       await wrapTx(
         program.methods
@@ -62,10 +68,12 @@ describe('seed minting', () => {
             new anchor.BN(plantTokensPerSeed),
             growthBlockDuration,
             waterRate,
-            new anchor.BN(balanceRate),
-            userWallet.publicKey,
+            new anchor.BN(balanceDrainRate),
+            timesToTend,
+            userPlotCurrencyAta,
           )
           .accountsPartial({
+            plotCurrencyMint: plotCurrency,
             user: userWallet.publicKey,
             plantMint,
             seedMint,

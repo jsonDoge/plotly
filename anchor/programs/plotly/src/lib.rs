@@ -1,8 +1,12 @@
+#![allow(warnings)]
+
 use anchor_lang::prelude::*;
 
 pub mod errors;
 pub mod instructions;
 pub mod state;
+pub mod constants;
+pub mod helpers;
 
 use instructions::*;
 
@@ -21,10 +25,8 @@ pub mod farm {
         ctx.accounts.initialize_farm(
             &plot_currency,
             plot_price,
-            ctx.bumps.plot_mint_authority,
             ctx.bumps.farm,
-            ctx.bumps.farm_associated_plot_authority,
-            ctx.bumps.farm_associated_plot_currency_authority,
+            ctx.bumps.farm_auth,
             ctx.program_id,
         )
     }
@@ -65,8 +67,10 @@ pub mod farm {
         seeds_to_mint: u64,
         plant_tokens_per_seed: u64,
         growth_block_duration: u32,
-        water_absorb_rate: u32,
+        neighbor_water_drain_rate: u32,
         balance_absorb_rate: u64,
+        times_to_tend: u8,
+        // treasury has to be an associated token account of plot_currency
         treasury: Pubkey,
     ) -> Result<()> {
         msg!("Treasury!:: {}", treasury);
@@ -76,13 +80,11 @@ pub mod farm {
             seeds_to_mint,
             plant_tokens_per_seed,
             growth_block_duration,
-            water_absorb_rate,
+            neighbor_water_drain_rate,
             balance_absorb_rate,
+            times_to_tend,
             &treasury,
             ctx.bumps.seed_mint_info,
-            ctx.bumps.farm_associated_plant_token_authority,
-            ctx.bumps.seed_mint_authority,
-            ctx.bumps.farm_ata_seed_authority,
             &ctx.program_id,
         )
     }
@@ -98,6 +100,16 @@ pub mod farm {
     ) -> Result<()> {
         ctx.accounts.plant_seed(plot_x, plot_y, plot_currency, ctx.program_id)
     }
+
+    pub fn tend_plant(
+        ctx: Context<TendPlant>,
+        plot_x: u32,
+        plot_y: u32,
+        plot_currency: Pubkey
+    ) -> Result<()> {
+        ctx.accounts.tend_plant(plot_x, plot_y, plot_currency, ctx.program_id)
+    }
+
 
     // pub fn greet(_ctx: Context<Initialize>) -> Result<()> {
     //     msg!("GM!");

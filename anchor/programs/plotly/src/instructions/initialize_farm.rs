@@ -26,7 +26,7 @@ pub struct InitializeFarm<'info> {
     pub user: Signer<'info>,
 
     // value same as plot_currency
-    pub plot_currency_mint: InterfaceAccount<'info, MintInterface>,
+    pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,
 
     // COLLECTION
     /// CHECK: Validate address by deriving pda NO editions for now
@@ -45,18 +45,18 @@ pub struct InitializeFarm<'info> {
         seeds = [b"farm", plot_currency.as_ref()],
         bump,
     )]
-    pub farm: Account<'info, Farm>,
+    pub farm: Box<Account<'info, Farm>>,
 
     #[account(
         init,
         payer = user,
         mint::decimals = 0,
-        mint::authority = plot_mint_authority,
-        mint::freeze_authority =  plot_mint_authority,
+        mint::authority = farm_auth,
+        mint::freeze_authority =  farm_auth,
         seeds = [b"plot_collection_mint", farm.key().as_ref()],
         bump,
     )]
-    pub plot_collection_mint: Account<'info, Mint>,
+    pub plot_collection_mint: Box<Account<'info, Mint>>,
 
     /// CHECK: Validate address by deriving pda NO editions for now
     #[account(
@@ -67,51 +67,34 @@ pub struct InitializeFarm<'info> {
     )]
     pub master_edition: UncheckedAccount<'info>,
 
-    #[account(
-        init,
-        payer = user,
-        seeds = [b"plot_mint_authority", farm.key().as_ref()],
-        bump,
-        space = 8 + 8,
-    )]
-    pub plot_mint_authority: Account<'info, AccWithBump>,
-
-    #[account(
-        init,
-        payer = user,
-        seeds = [b"farm_associated_plot_authority", farm.key().as_ref()],
-        bump,
-        space = 8 + 8,
-    )]
-    pub farm_associated_plot_authority: Account<'info, AccWithBump>,
-
     // for holding collection
     #[account(
         init,
         payer = user,
         associated_token::mint = plot_collection_mint,
-        associated_token::authority = farm_associated_plot_authority,
+        associated_token::authority = farm_auth,
     )]
-    pub farm_associated_plot_collection_account: Account<'info, TokenAccount>,
+    pub farm_associated_plot_collection_account: Box<Account<'info, TokenAccount>>,
 
 
     // Farm plot currency TREASURY
+
     #[account(
         init,
         payer = user,
         associated_token::mint = plot_currency_mint,
-        associated_token::authority = farm_associated_plot_currency_authority,
+        associated_token::authority = farm_auth,
     )]
-    pub farm_associated_plot_currency_account: Account<'info, TokenAccount>,
+    pub farm_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
 
     #[account(
         init,
         payer = user,
-        seeds = [b"farm_ata_plot_currency_auth", farm.key().as_ref()],
-        bump,
+        seeds = [b"farm_auth", farm.key().as_ref()],
         space = 8 + 8,
+        bump,
     )]
-    pub farm_associated_plot_currency_authority: Account<'info, AccWithBump>,
+    pub farm_auth: Account<'info, AccWithBump>,
 
     pub token_program: Program<'info, Token>,
     pub token_metadata_program: Program<'info, Metadata>,
@@ -125,10 +108,8 @@ impl<'info> InitializeFarm<'info> {
         &mut self,
         plot_currency: &Pubkey,
         plot_price: u64,
-        mint_authority_bump: u8,
         farm_bump: u8,
-        farm_associated_plot_authority_bump: u8,
-        farm_associated_plot_currency_authority_bump: u8,
+        farm_auth: u8,
         program_id: &Pubkey,
     ) -> Result<Pubkey> {
         msg!("Initializing farm...");
@@ -146,9 +127,7 @@ impl<'info> InitializeFarm<'info> {
             return Err(ErrorCode::InvalidPlotPrice.into());
         }
 
-        self.plot_mint_authority.bump = mint_authority_bump;
-        self.farm_associated_plot_authority.bump = farm_associated_plot_authority_bump;
-        self.farm_associated_plot_currency_authority.bump = farm_associated_plot_currency_authority_bump;
+        self.farm_auth.bump = farm_auth;
 
         self.farm.plot_currency = *plot_currency;
         self.farm.plot_collection = self.plot_collection_mint.key();
@@ -161,16 +140,16 @@ impl<'info> InitializeFarm<'info> {
                 CreateMetadataAccountsV3 {
                     metadata: self.plot_collection_metadata_account.to_account_info(),
                     mint: self.plot_collection_mint.to_account_info(),
-                    mint_authority: self.plot_mint_authority.to_account_info(),
+                    mint_authority: self.farm_auth.to_account_info(),
                     payer: self.user.to_account_info(),
-                    update_authority: self.plot_mint_authority.to_account_info(),
+                    update_authority: self.farm_auth.to_account_info(),
                     system_program: self.system_program.to_account_info(),
                     rent: self.rent.to_account_info(),
                 },
                 &[&[
-                    b"plot_mint_authority",
+                    b"farm_auth",
                     self.farm.key().as_ref(),
-                    &[self.plot_mint_authority.bump][..],
+                    &[self.farm_auth.bump][..],
                 ]],
             ),
             DataV2 {
@@ -199,12 +178,12 @@ impl<'info> InitializeFarm<'info> {
                     to: self
                         .farm_associated_plot_collection_account
                         .to_account_info(),
-                    authority: self.plot_mint_authority.to_account_info(),
+                    authority: self.farm_auth.to_account_info(),
                 },
                 &[&[
-                    b"plot_mint_authority",
+                    b"farm_auth",
                     self.farm.key().as_ref(),
-                    &[self.plot_mint_authority.bump][..],
+                    &[self.farm_auth.bump][..],
                 ]],
             ),
             1,
@@ -218,8 +197,8 @@ impl<'info> InitializeFarm<'info> {
                 CreateMasterEditionV3 {
                     edition: self.master_edition.to_account_info(),
                     mint: self.plot_collection_mint.to_account_info(),
-                    update_authority: self.plot_mint_authority.to_account_info(),
-                    mint_authority: self.plot_mint_authority.to_account_info(),
+                    update_authority: self.farm_auth.to_account_info(),
+                    mint_authority: self.farm_auth.to_account_info(),
                     payer: self.user.to_account_info(),
                     metadata: self.plot_collection_metadata_account.to_account_info(),
                     token_program: self.token_program.to_account_info(),
@@ -227,9 +206,9 @@ impl<'info> InitializeFarm<'info> {
                     rent: self.rent.to_account_info(),
                 },
                 &[&[
-                    b"plot_mint_authority",
+                    b"farm_auth",
                     self.farm.key().as_ref(),
-                    &[self.plot_mint_authority.bump][..],
+                    &[self.farm_auth.bump][..],
                 ]],
             ),
             Some(0),

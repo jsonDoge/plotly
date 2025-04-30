@@ -1,5 +1,5 @@
 use anchor_lang::{accounts::program, prelude::*};
-use anchor_spl::token_interface::Mint as MintInterface;
+use anchor_spl::token_interface::{Mint as MintInterface, TokenAccount as TokenAccountInterface};
 use anchor_spl::{
     associated_token::AssociatedToken,
     metadata::{
@@ -14,38 +14,21 @@ use anchor_spl::{
     },
 };
 use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
-// use anchor_lang::system_program::{create_account, CreateAccount};
-// use anchor_spl::token::{initialize_mint, InitializeMint, Mint as SplMint, Token as SplToken};
-// use anchor_spl::token_interface::Mint;
-// use mpl_token_metadata::instructions::CreateMetadataAccountV3CpiBuilder;
-// use mpl_token_metadata::types::DataV2;
-// use mpl_token_metadata::ID as TOKEN_METADATA_PROGRAM_ID;
 
-use crate::constants::{
-    MAX_PLOT_WATER, PLANT_WATER_ABSORB_RATE, WATER_10_THRESHOLD, WATER_30_THRESHOLD,
-};
-use crate::errors::ErrorCode;
-use crate::helpers::get_plot_water_collected;
-use crate::state::{AccWithBump, Farm, Plant, Plot, SeedMintInfo};
+use crate::helpers::{get_balance_collected, get_plot_water_collected};
+use crate::state::{AccWithBump, Plant, Plot};
+use crate::{errors::ErrorCode, state::Farm};
 
 #[derive(Accounts)]
 #[instruction(plot_x: u32, plot_y: u32, plot_currency: Pubkey)]
-pub struct PlantSeed<'info> {
+pub struct TendPlant<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
 
     // value same as plot_currency
-    // pub plot_currency_mint: InterfaceAccount<'info, MintInterface>,
-    pub seed_mint: InterfaceAccount<'info, MintInterface>,
+    pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,
+    pub plant_treasury: Box<InterfaceAccount<'info, TokenAccountInterface>>,
 
-    // SEED
-    #[account(
-        seeds = [b"seed_mint_info", seed_mint.key().as_ref()],
-        bump,
-    )]
-    pub seed_mint_info: Box<Account<'info, SeedMintInfo>>,
-
-    // FARM
     #[account(
         seeds = [b"farm", plot_currency.as_ref()],
         bump,
@@ -59,7 +42,7 @@ pub struct PlantSeed<'info> {
         seeds = [b"plot_mint", &plot_x.to_le_bytes()[..], &plot_y.to_le_bytes()[..], farm.key().as_ref()],
         bump,
     )]
-    pub plot_mint: Account<'info, Mint>,
+    pub plot_mint: Box<Account<'info, Mint>>,
 
     #[account(
         mut,
@@ -67,8 +50,8 @@ pub struct PlantSeed<'info> {
         bump,
     )]
     pub plot: Box<Account<'info, Plot>>,
-
-    // NEIGHBORING PLOTS
+    
+        // NEIGHBORING PLOTS
 
     // UP
     /// CHECK: mint existance
@@ -136,47 +119,21 @@ pub struct PlantSeed<'info> {
     )]
     pub plant: Box<Account<'info, Plant>>,
 
-    // FARM PLOT ATA
+    // Farm plot currency TREASURY
+
     #[account(
         mut,
-        associated_token::mint = plot_mint,
+        associated_token::mint = plot_currency,
         associated_token::authority = farm_auth,
     )]
-    pub farm_associated_plot_account: Account<'info, TokenAccount>,
+    pub farm_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
 
-    // Create associated token account, if needed
-    // This is the account that will hold the NFT
-
-    // USER SEED ATA
-    #[account(
-        mut,
-        associated_token::mint = seed_mint,
-        associated_token::authority = user,
-    )]
-    pub user_associated_seed_account: Account<'info, TokenAccount>,
-
-    // FARM SEED ATA
-    #[account(
-        mut,
-        associated_token::mint = seed_mint,
-        associated_token::authority = farm_auth,
-    )]
-    pub farm_associated_seed_account: Box<Account<'info, TokenAccount>>,
-
-    // USER PLOT ATA
-    #[account(
-        mut,
-        associated_token::mint = plot_mint,
-        associated_token::authority = user,
-    )]
-    pub user_associated_plot_account: Box<Account<'info, TokenAccount>>,
-
-    // PDA authority
+    // farm auth
     #[account(
         seeds = [b"farm_auth", farm.key().as_ref()],
         bump,
     )]
-    pub farm_auth: Account<'info, AccWithBump>,
+    pub farm_auth: Box<Account<'info, AccWithBump>>,
 
     pub token_program: Program<'info, Token>,
     pub token_metadata_program: Program<'info, Metadata>,
@@ -185,65 +142,66 @@ pub struct PlantSeed<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-impl<'info> PlantSeed<'info> {
-    pub fn plant_seed(
-        &mut self,
-        plot_x: u32,
-        plot_y: u32,
-        plot_currency: Pubkey,
-        program_id: &Pubkey,
-    ) -> Result<()> {
-        msg!("Planting seed...");
-        // user not owner
-        if self.farm_associated_plot_account.amount == 1
-            || self.user_associated_plot_account.amount == 0
-        {
+impl<'info> TendPlant<'info> {
+    pub fn tend_plant(&mut self, plot_x: u32, plot_y: u32, plot_currency: Pubkey, program_id: &Pubkey) -> Result<()> {
+        if self.plant.treasury != self.plant_treasury.key() {
+            return Err(ErrorCode::InvalidTreasury.into());
+        }
+
+        if self.plot.last_claimer != self.user.key() {
             return Err(ErrorCode::UserNotPlotOwner.into());
         }
 
-        // can't plant on balance "dry" plot
-        if self.plot.balance == 0 {
-            return Err(ErrorCode::PlotHasZeroBalance.into());
+        if self.plant.times_tended >= self.plant.times_to_tend {
+            return Err(ErrorCode::PlantReachedMaxTend.into());
         }
 
-        msg!("Validation passed...");
+        // tends devide the balance into +1 periods of balance |___T___T___| <- for 2 tends we have 3 periods
+        let balance_per_tend = self.plant.balance_required / (self.plant.times_to_tend + 1) as u64;
+        let current_block = Clock::get()?.slot;
 
-        // if self.farm.plot_currency != self.plot_currency_mint.key() {
-        //     return Err(ErrorCode::InvalidPlotCurrency.into());
-        // }
+        let blocks_passed = current_block - self.plant.last_update_block;
 
-        // // CHARGE USER FOR PLOT
+        if blocks_passed == 0 {
+            return Err(ErrorCode::NoBlocksPassed.into());
+        }
 
-        // let cpi_accounts = TransferChecked {
-        //     mint: self.plot_currency_mint.to_account_info(),
-        //     from: self.user_associated_plot_currency_account.to_account_info(),
-        //     to: self.farm_associated_plot_currency_account.to_account_info(),
-        //     authority: self.user.to_account_info(),
-        // };
+        let updated_balance = get_balance_collected(
+            self.plant.balance,
+            self.plot.balance,
+            self.plant.balance_absorb_rate,
+            balance_per_tend,
+            self.plant.times_tended,
+            self.plant.times_to_tend,
+            blocks_passed,
+        );
+        
+        self.plant.balance += updated_balance.0;
+        self.plot.balance = updated_balance.1;
 
-        // let cpi_program = self.token_program.to_account_info();
 
-        // // If authority is a PDA, you can pass seeds in a signer context here
+        // 25% of the balance required for the next tend
+        let tending_allowed_balance_buffer = balance_per_tend / 4;
 
-        // msg!("Transferring plot currency to farm...");
+        let next_tend_balance_at =
+            (self.plant.times_tended + 1) as u64 * self.plant.balance_required;
+        let next_tend_allowed_from = next_tend_balance_at - tending_allowed_balance_buffer;
 
-        // // TODO: hardcoding decimals, but will update later
-        // token::transfer_checked(CpiContext::new(
-        //     cpi_program,
-        //     cpi_accounts,
-        // // price should be scaled to decimals
-        // ), self.farm.plot_price, 6)?;
+        if self.plant.balance < next_tend_allowed_from {
+            return Err(ErrorCode::TooEarlyToTend.into());
+        }
 
-        // TRANSFER PLOT (to farm)
+        self.plant.times_tended += 1;
 
-        msg!("constructin Cpi accoutns");
 
-        // Cross Program Invocation (CPI)
-        // Invoking the mint_to instruction on the token program
+        // SENDING BALANCE TO TREASURY
+
+        let balance_to_send = self.plant.balance - self.plant.treasury_received_balance;
+
         let cpi_accounts = TransferChecked {
             mint: self.plot_mint.to_account_info(),
-            from: self.user_associated_plot_account.to_account_info(),
-            to: self.farm_associated_plot_account.to_account_info(),
+            from: self.farm_associated_plot_currency_account.to_account_info(),
+            to: self.plant_treasury.to_account_info(),
             authority: self.user.to_account_info(),
         };
 
@@ -254,53 +212,13 @@ impl<'info> PlantSeed<'info> {
 
         msg!("Transferring plot NFT to farm...");
 
-        token::transfer_checked(CpiContext::new(cpi_program, cpi_accounts), 1, 0)?;
+        // TODO: store plot currency decimals in the farm
+        token::transfer_checked(CpiContext::new(cpi_program, cpi_accounts), balance_to_send, 6)?;
 
-        msg!("constructin Cpi accoutns seed");
+        self.plant.treasury_received_balance = self.plant.balance;
 
-        // TRANSFER SEEDS (to farm)
-        let cpi_accounts = TransferChecked {
-            mint: self.seed_mint.to_account_info(),
-            from: self.user_associated_seed_account.to_account_info(),
-            to: self.farm_associated_seed_account.to_account_info(),
-            authority: self.user.to_account_info(),
-        };
 
-        msg!("constructin Cpi program seed");
-
-        let cpi_program = self.token_program.to_account_info();
-
-        // If authority is a PDA, you can pass seeds in a signer context here
-
-        msg!("Transferring Seed token to farm...");
-
-        token::transfer_checked(CpiContext::new(cpi_program, cpi_accounts), 1, 0)?;
-
-        // RESET PLANT to new one
-
-        msg!("cetner water: {:?}", self.plot.water);
-
-        self.plant.seed_mint = self.seed_mint.key();
-
-        self.plant.water = 0;
-
-        // currently water absorb rate is always 100
-        self.plant.water_required =
-            self.seed_mint_info.growth_block_duration * PLANT_WATER_ABSORB_RATE;
-        self.plant.balance = 0;
-        self.plant.balance_required = (self.seed_mint_info.growth_block_duration as u64)
-            * self.seed_mint_info.balance_absorb_rate;
-
-        self.plant.balance_absorb_rate = self.seed_mint_info.balance_absorb_rate;
-        self.plant.times_to_tend = self.seed_mint_info.times_to_tend;
-        self.plant.times_tended = 0;
-        self.plant.treasury_received_balance = 0;
-
-        self.plant.treasury = self.seed_mint_info.treasury;
-        self.plant.neighbor_water_drain_rate = self.seed_mint_info.neighbor_water_drain_rate;
-
-        let current_block = Clock::get()?.slot;
-        let blocks_passed = current_block - self.plot.last_update_block;
+        // UPDATE water to match plant update
 
         // UPDATE CENTER
 
@@ -323,12 +241,14 @@ impl<'info> PlantSeed<'info> {
         self.plot.left_plant_water_collected += current_plot_water_res.1;
         self.plot.up_plant_water_collected += current_plot_water_res.2;
         self.plot.down_plant_water_collected += current_plot_water_res.3;
+        // ceneter plant has just been planted
 
-        // center plant has just been planted
         self.plot.center_plant_water_collected = 0;
 
-        self.plot.center_plant_drain_rate = 100 - (self.plant.neighbor_water_drain_rate * 4);
         self.plot.last_update_block = current_block;
+
+        let mut total_water_collected =
+            self.plot.center_plant_water_collected + current_plot_water_res.4;
 
         // TODO: add limitation so that collected water wouldn't cross u32::MAX
 
@@ -385,16 +305,15 @@ impl<'info> PlantSeed<'info> {
             plot.right_plant_water_collected += water_updated_res.0;
             plot.left_plant_water_collected += water_updated_res.1;
             plot.up_plant_water_collected += water_updated_res.2;
+            plot.down_plant_water_collected = 0;
             plot.center_plant_water_collected += water_updated_res.4;
 
-            // CURRENTLY PLANTING: freshly planted plot has no water
-            plot.down_plant_water_collected = 0;
+            total_water_collected += plot.down_plant_water_collected + water_updated_res.3;
 
-            plot.down_plant_drain_rate = self.plant.neighbor_water_drain_rate;
             plot.last_update_block = current_block;
         }
 
-        if (plot_y < 999) {
+        if plot_y < 999 {
             let (expected_mint, _bump) = Pubkey::find_program_address(
                 &[
                     b"plot_mint",
@@ -438,19 +357,19 @@ impl<'info> PlantSeed<'info> {
             );
 
             plot.water = water_updated_res.5;
+
             plot.right_plant_water_collected += water_updated_res.0;
             plot.left_plant_water_collected += water_updated_res.1;
+            plot.up_plant_water_collected = 0;
             plot.down_plant_water_collected += water_updated_res.3;
             plot.center_plant_water_collected += water_updated_res.4;
 
-            // CURRENTLY PLANTING: freshly planted plot has no water
-            plot.up_plant_water_collected = 0;
+            total_water_collected += plot.up_plant_water_collected + water_updated_res.2;
 
-            plot.up_plant_drain_rate = self.plant.neighbor_water_drain_rate;
             plot.last_update_block = current_block;
         }
 
-        if (plot_x > 0) {
+        if plot_x > 0 {
             let (expected_mint, _bump) = Pubkey::find_program_address(
                 &[
                     b"plot_mint",
@@ -494,19 +413,19 @@ impl<'info> PlantSeed<'info> {
             );
 
             plot.water = water_updated_res.5;
-            plot.up_plant_water_collected += water_updated_res.2;
+
+            plot.right_plant_water_collected = 0;
             plot.left_plant_water_collected += water_updated_res.1;
+            plot.up_plant_water_collected += water_updated_res.2;
             plot.down_plant_water_collected += water_updated_res.3;
             plot.center_plant_water_collected += water_updated_res.4;
 
-            // CURRENTLY PLANTING: freshly planted plot has no water
-            plot.right_plant_water_collected = 0;
+            total_water_collected += plot.right_plant_water_collected + water_updated_res.0;
 
-            plot.right_plant_drain_rate = self.plant.neighbor_water_drain_rate;
             plot.last_update_block = current_block;
         }
 
-        if (plot_x < 999) {
+        if plot_x < 999 {
             let (expected_mint, _bump) = Pubkey::find_program_address(
                 &[
                     b"plot_mint",
@@ -550,27 +469,19 @@ impl<'info> PlantSeed<'info> {
             );
 
             plot.water = water_updated_res.5;
-            plot.up_plant_water_collected += water_updated_res.2;
+
             plot.right_plant_water_collected += water_updated_res.0;
+            plot.left_plant_water_collected = 0;
+            plot.up_plant_water_collected += water_updated_res.2;
             plot.down_plant_water_collected += water_updated_res.3;
             plot.center_plant_water_collected += water_updated_res.4;
 
-            // CURRENTLY PLANTING: freshly planted plot has no water
-            plot.left_plant_water_collected = 0;
+            total_water_collected += plot.left_plant_water_collected + water_updated_res.1;
 
-            plot.left_plant_drain_rate = self.plant.neighbor_water_drain_rate;
             plot.last_update_block = current_block;
         }
 
-        // HANDLE CENTER
-
-        msg!("Plot minted x:{} y:{}", plot_x, plot_y);
-        msg!("New claimer {}", self.user.key());
-
-        // set claimer if not set (used to check who is the true owner of the plot during growing)
-        if self.plot.last_claimer != self.user.key() {
-            self.plot.last_claimer = self.user.key();
-        }
+        self.plant.water = self.plant.water + total_water_collected;
 
         Ok(())
     }
