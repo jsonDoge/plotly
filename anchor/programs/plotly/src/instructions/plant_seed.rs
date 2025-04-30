@@ -14,12 +14,6 @@ use anchor_spl::{
     },
 };
 use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
-// use anchor_lang::system_program::{create_account, CreateAccount};
-// use anchor_spl::token::{initialize_mint, InitializeMint, Mint as SplMint, Token as SplToken};
-// use anchor_spl::token_interface::Mint;
-// use mpl_token_metadata::instructions::CreateMetadataAccountV3CpiBuilder;
-// use mpl_token_metadata::types::DataV2;
-// use mpl_token_metadata::ID as TOKEN_METADATA_PROGRAM_ID;
 
 use crate::constants::{
     MAX_PLOT_WATER, PLANT_WATER_ABSORB_RATE, WATER_10_THRESHOLD, WATER_30_THRESHOLD,
@@ -27,6 +21,12 @@ use crate::constants::{
 use crate::errors::ErrorCode;
 use crate::helpers::get_plot_water_collected;
 use crate::state::{AccWithBump, Farm, Plant, Plot, SeedMintInfo};
+
+// transfer plot to farm
+// transfer 1 seed to farm
+// update plant to seed info
+// update plot water and set new drain rates
+// update plot claimer to current user
 
 #[derive(Accounts)]
 #[instruction(plot_x: u32, plot_y: u32, plot_currency: Pubkey)]
@@ -208,35 +208,7 @@ impl<'info> PlantSeed<'info> {
 
         msg!("Validation passed...");
 
-        // if self.farm.plot_currency != self.plot_currency_mint.key() {
-        //     return Err(ErrorCode::InvalidPlotCurrency.into());
-        // }
-
-        // // CHARGE USER FOR PLOT
-
-        // let cpi_accounts = TransferChecked {
-        //     mint: self.plot_currency_mint.to_account_info(),
-        //     from: self.user_associated_plot_currency_account.to_account_info(),
-        //     to: self.farm_associated_plot_currency_account.to_account_info(),
-        //     authority: self.user.to_account_info(),
-        // };
-
-        // let cpi_program = self.token_program.to_account_info();
-
-        // // If authority is a PDA, you can pass seeds in a signer context here
-
-        // msg!("Transferring plot currency to farm...");
-
-        // // TODO: hardcoding decimals, but will update later
-        // token::transfer_checked(CpiContext::new(
-        //     cpi_program,
-        //     cpi_accounts,
-        // // price should be scaled to decimals
-        // ), self.farm.plot_price, 6)?;
-
         // TRANSFER PLOT (to farm)
-
-        msg!("constructin Cpi accoutns");
 
         // Cross Program Invocation (CPI)
         // Invoking the mint_to instruction on the token program
@@ -247,7 +219,6 @@ impl<'info> PlantSeed<'info> {
             authority: self.user.to_account_info(),
         };
 
-        msg!("constructin Cpi program");
         let cpi_program = self.token_program.to_account_info();
 
         // If authority is a PDA, you can pass seeds in a signer context here
@@ -256,9 +227,8 @@ impl<'info> PlantSeed<'info> {
 
         token::transfer_checked(CpiContext::new(cpi_program, cpi_accounts), 1, 0)?;
 
-        msg!("constructin Cpi accoutns seed");
+        // TRANSFER 1 SEED (to farm)
 
-        // TRANSFER SEEDS (to farm)
         let cpi_accounts = TransferChecked {
             mint: self.seed_mint.to_account_info(),
             from: self.user_associated_seed_account.to_account_info(),
@@ -276,7 +246,7 @@ impl<'info> PlantSeed<'info> {
 
         token::transfer_checked(CpiContext::new(cpi_program, cpi_accounts), 1, 0)?;
 
-        // RESET PLANT to new one
+        // Set Plant to seed info
 
         msg!("cetner water: {:?}", self.plot.water);
 
@@ -302,7 +272,7 @@ impl<'info> PlantSeed<'info> {
         let current_block = Clock::get()?.slot;
         let blocks_passed = current_block - self.plot.last_update_block;
 
-        // UPDATE CENTER
+        // UPDATE CENTER PLOT Water and Drain Rate
 
         msg!("Calculating water for center...");
 
@@ -331,10 +301,9 @@ impl<'info> PlantSeed<'info> {
         self.plot.last_update_block = current_block;
 
         // TODO: add limitation so that collected water wouldn't cross u32::MAX
+        // TODO: how about some DRY? no? no...
 
-        // Update water neighbors and water before updating regeneration
-
-        // HANDLE NEIGHBORS
+        // UPDATE NEIGHBOR PLOTS and water before updating regeneration
 
         msg!("Handling neighbors...");
         if (plot_y > 0) {
@@ -364,9 +333,7 @@ impl<'info> PlantSeed<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            // let plot_data = Plot::try_from_slice(&self.plot_up.data.borrow())?;
-            let data = self.plot_up.data.borrow();
-            let mut plot = Plot::try_deserialize_unchecked(&mut &data[..])?;
+            let mut plot = Plot::try_deserialize( &mut &self.plot_up.data.borrow()[..])?;
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -392,6 +359,8 @@ impl<'info> PlantSeed<'info> {
 
             plot.down_plant_drain_rate = self.plant.neighbor_water_drain_rate;
             plot.last_update_block = current_block;
+
+            plot.try_serialize(&mut &mut self.plot_up.data.borrow_mut()[..])?;
         }
 
         if (plot_y < 999) {
@@ -421,8 +390,7 @@ impl<'info> PlantSeed<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            let data = self.plot_down.data.borrow();
-            let mut plot = Plot::try_deserialize_unchecked(&mut &data[..])?;
+            let mut plot = Plot::try_deserialize( &mut &self.plot_down.data.borrow()[..])?;
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -448,6 +416,7 @@ impl<'info> PlantSeed<'info> {
 
             plot.up_plant_drain_rate = self.plant.neighbor_water_drain_rate;
             plot.last_update_block = current_block;
+            plot.try_serialize(&mut &mut self.plot_down.data.borrow_mut()[..])?;
         }
 
         if (plot_x > 0) {
@@ -477,8 +446,7 @@ impl<'info> PlantSeed<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            let data = self.plot_left.data.borrow();
-            let mut plot = Plot::try_deserialize_unchecked(&mut &data[..])?;
+            let mut plot = Plot::try_deserialize( &mut &self.plot_left.data.borrow()[..])?;
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -504,6 +472,7 @@ impl<'info> PlantSeed<'info> {
 
             plot.right_plant_drain_rate = self.plant.neighbor_water_drain_rate;
             plot.last_update_block = current_block;
+            plot.try_serialize(&mut &mut self.plot_left.data.borrow_mut()[..])?;
         }
 
         if (plot_x < 999) {
@@ -533,8 +502,7 @@ impl<'info> PlantSeed<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            let data = self.plot_right.data.borrow();
-            let mut plot = Plot::try_deserialize_unchecked(&mut &data[..])?;
+            let mut plot = Plot::try_deserialize( &mut &self.plot_right.data.borrow()[..])?;
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -560,9 +528,10 @@ impl<'info> PlantSeed<'info> {
 
             plot.left_plant_drain_rate = self.plant.neighbor_water_drain_rate;
             plot.last_update_block = current_block;
+            plot.try_serialize(&mut &mut self.plot_right.data.borrow_mut()[..])?;
         }
 
-        // HANDLE CENTER
+        // UPDATE PLOT CLAIMER to current user
 
         msg!("Plot minted x:{} y:{}", plot_x, plot_y);
         msg!("New claimer {}", self.user.key());

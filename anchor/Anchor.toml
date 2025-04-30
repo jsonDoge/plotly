@@ -20,7 +20,7 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "../node_modules/.bin/jest --preset ts-jest"
+test = "../node_modules/.bin/jest --preset ts-jest  --runInBand"
 buyPlot = "../node_modules/.bin/ts-node ./scripts/buyPlot.ts"
 
 [test]

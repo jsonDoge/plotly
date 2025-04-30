@@ -179,34 +179,6 @@ mod tests {
         );
     }
 
-    // #[test]
-    // fn test_reaches_overage_and_goes_one_block_in_but_drain_rate_too_slow() {
-    //     // balance required 1008 (growth block duration 1000 and absorb rate 1)
-    //     // 5 tends -> 1008 / 6 -> 168 (balance per tend)
-
-    //     let plant_balance = 100;
-    //     let plot_balance = 1000000;
-    //     let plant_absorb_rate = 2;
-    //     let balance_per_tend = 168; // at what balance step the plant can be tended
-    //     let times_tended = 0;
-    //     let max_tends = 5;
-    //     let blocks_passed = 35;
-
-    //     assert_eq!(
-    //         get_balance_collected(
-    //             plant_balance,
-    //             plot_balance,
-    //             plant_absorb_rate,
-    //             balance_per_tend,
-    //             times_tended,
-    //             max_tends,
-    //             blocks_passed
-    //         ),
-    //         // overage is half the rate so shouldnt change
-    //         (67, 1000000 - 67)
-    //     );
-    // }
-
     #[test]
     fn test_reaches_overage_and_goes_two_blocks_in__gets_one() {
         // balance required 1008 (growth block duration 1000 and absorb rate 1)

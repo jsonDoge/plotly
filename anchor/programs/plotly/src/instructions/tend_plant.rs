@@ -142,6 +142,9 @@ pub struct TendPlant<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
+// updates plant/plot balances.
+// updates plant water, plot and surrounding plots water.
+// sends absorbed balance to treasury
 impl<'info> TendPlant<'info> {
     pub fn tend_plant(&mut self, plot_x: u32, plot_y: u32, plot_currency: Pubkey, program_id: &Pubkey) -> Result<()> {
         if self.plant.treasury != self.plant_treasury.key() {

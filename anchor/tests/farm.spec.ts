@@ -31,7 +31,6 @@ describe('farm', () => {
 
   it('Should mint the same plot NFT only ONCE', async () => {
     console.log('Running test')
-    // Add your test here.
     const plotX = 1
     const plotY = 1
 
@@ -153,7 +152,6 @@ describe('farm', () => {
   }, 1000000)
 
   it('Should mint be able to mint separate Plot NFTs and track supply', async () => {
-    // Add your test here.
     const plotX5 = 5
     const plotY5 = 5
 
