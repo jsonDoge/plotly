@@ -94,7 +94,7 @@ pub struct InitializeFarm<'info> {
         space = 8 + 8,
         bump,
     )]
-    pub farm_auth: Account<'info, AccWithBump>,
+    pub farm_auth: Box<Account<'info, AccWithBump>>,
 
     pub token_program: Program<'info, Token>,
     pub token_metadata_program: Program<'info, Metadata>,

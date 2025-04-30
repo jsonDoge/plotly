@@ -106,7 +106,7 @@ pub struct MintSeeds<'info> {
 
     // FARM SEED ATA
     #[account(
-        init,
+        init_if_needed,
         payer = user,
         associated_token::mint = seed_mint,
         associated_token::authority = farm_auth,

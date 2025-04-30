@@ -31,13 +31,13 @@ pub struct AcquirePlot<'info> {
     pub user: Signer<'info>,
 
     // value same as plot_currency
-    pub plot_currency_mint: InterfaceAccount<'info, MintInterface>,
+    pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,
 
     #[account(
         seeds = [b"farm", plot_currency.as_ref()],
         bump,
     )]
-    pub farm: Account<'info, Farm>,
+    pub farm: Box<Account<'info, Farm>>,
 
     // Create new mint account, NFTs have 0 decimals
     #[account(
@@ -49,14 +49,14 @@ pub struct AcquirePlot<'info> {
         seeds = [b"plot_mint", &plot_x.to_le_bytes()[..], &plot_y.to_le_bytes()[..], farm.key().as_ref()],
         bump,
     )]
-    pub plot_mint: Account<'info, Mint>,
+    pub plot_mint: Box<Account<'info, Mint>>,
 
     #[account(
         mut,
         seeds = [b"plot", plot_mint.key().as_ref()],
         bump,
     )]
-    pub plot: Account<'info, Plot>,
+    pub plot: Box<Account<'info, Plot>>,
 
     // Create associated token account, if needed
     // This is the account that will hold the NFT
@@ -66,7 +66,7 @@ pub struct AcquirePlot<'info> {
         associated_token::mint = plot_mint,
         associated_token::authority = user,
     )]
-    pub user_associated_plot_account: Account<'info, TokenAccount>,
+    pub user_associated_plot_account: Box<Account<'info, TokenAccount>>,
 
     #[account(
         init_if_needed,
@@ -74,7 +74,7 @@ pub struct AcquirePlot<'info> {
         associated_token::mint = plot_mint,
         associated_token::authority = farm_auth,
     )]
-    pub farm_associated_plot_account: Account<'info, TokenAccount>,
+    pub farm_associated_plot_account: Box<Account<'info, TokenAccount>>,
 
 
     // User plot currency account
@@ -84,7 +84,7 @@ pub struct AcquirePlot<'info> {
         associated_token::mint = plot_currency,
         associated_token::authority = user,
     )]
-    pub user_associated_plot_currency_account: Account<'info, TokenAccount>,
+    pub user_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
 
     // Farm plot currency TREASURY
 
@@ -93,7 +93,7 @@ pub struct AcquirePlot<'info> {
         associated_token::mint = plot_currency,
         associated_token::authority = farm_auth,
     )]
-    pub farm_associated_plot_currency_account: Account<'info, TokenAccount>,
+    pub farm_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
 
     // PDA authority
 
@@ -101,7 +101,7 @@ pub struct AcquirePlot<'info> {
         seeds = [b"farm_auth", farm.key().as_ref()],
         bump,
     )]
-    pub farm_auth: Account<'info, AccWithBump>,
+    pub farm_auth: Box<Account<'info, AccWithBump>>,
 
     pub token_program: Program<'info, Token>,
     pub token_metadata_program: Program<'info, Metadata>,

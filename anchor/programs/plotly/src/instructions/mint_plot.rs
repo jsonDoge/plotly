@@ -29,7 +29,7 @@ pub struct MintPlot<'info> {
         seeds = [b"farm", plot_currency.as_ref()],
         bump,
     )]
-    pub farm: Account<'info, Farm>,
+    pub farm: Box<Account<'info, Farm>>,
 
     // COLLECTION
     /// CHECK: Validate address by deriving pda NO editions for now
@@ -45,7 +45,7 @@ pub struct MintPlot<'info> {
         seeds = [b"plot_collection_mint", farm.key().as_ref()],
         bump,
     )]
-    pub plot_collection_mint: Account<'info, Mint>,
+    pub plot_collection_mint: Box<Account<'info, Mint>>,
 
     /// CHECK: Validate address by deriving pda
     #[account(
@@ -75,7 +75,7 @@ pub struct MintPlot<'info> {
         seeds = [b"plot_mint", &plot_x.to_le_bytes()[..], &plot_y.to_le_bytes()[..], farm.key().as_ref()],
         bump,
     )]
-    pub plot_mint: Account<'info, Mint>,
+    pub plot_mint: Box<Account<'info, Mint>>,
 
     #[account(
         init,
@@ -84,7 +84,7 @@ pub struct MintPlot<'info> {
         bump,
         space = 8 + std::mem::size_of::<Plot>(),
     )]
-    pub plot: Account<'info, Plot>,
+    pub plot: Box<Account<'info, Plot>>,
 
     #[account(
         init_if_needed,
@@ -92,13 +92,13 @@ pub struct MintPlot<'info> {
         associated_token::mint = plot_mint,
         associated_token::authority = farm_auth,
     )]
-    pub farm_associated_plot_account: Account<'info, TokenAccount>,
+    pub farm_associated_plot_account: Box<Account<'info, TokenAccount>>,
 
     #[account(
         seeds = [b"farm_auth", farm.key().as_ref()],
         bump,
     )]
-    pub farm_auth: Account<'info, AccWithBump>,
+    pub farm_auth: Box<Account<'info, AccWithBump>>,
 
     pub token_program: Program<'info, Token>,
     pub token_metadata_program: Program<'info, Metadata>,

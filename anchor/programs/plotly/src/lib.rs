@@ -101,18 +101,13 @@ pub mod farm {
         ctx.accounts.plant_seed(plot_x, plot_y, plot_currency, ctx.program_id)
     }
 
-    pub fn tend_plant(
-        ctx: Context<TendPlant>,
-        plot_x: u32,
-        plot_y: u32,
-        plot_currency: Pubkey
-    ) -> Result<()> {
-        ctx.accounts.tend_plant(plot_x, plot_y, plot_currency, ctx.program_id)
-    }
-
-
-    // pub fn greet(_ctx: Context<Initialize>) -> Result<()> {
-    //     msg!("GM!");
-    //     Ok(())
+    // pub fn tend_plant(
+    //     ctx: Context<TendPlant>,
+    //     plot_x: u32,
+    //     plot_y: u32,
+    //     plot_currency: Pubkey
+    // ) -> Result<()> {
+    //     ctx.accounts.tend_plant(plot_x, plot_y, plot_currency, ctx.program_id)
     // }
+
 }

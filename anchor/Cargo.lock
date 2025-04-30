@@ -1325,7 +1325,6 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
- "anchor-syn",
  "mpl-token-metadata",
  "proc-macro2",
 ]
