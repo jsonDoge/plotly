@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::program::Farm;
+use crate::{program::Farm, state::Recipe};
 
 #[error_code]
 pub enum ErrorCode {
@@ -52,6 +52,22 @@ pub enum ErrorCode {
     ZeroBalance,
     #[msg("Plot still has balance")]
     PlotStillHasBalance,
+    #[msg("Invalid ingredient data")]
+    InvalidIngredientData,
+    #[msg("Invalid recipe result data")]
+    InvalidRecipeResultData,
+    #[msg("Recipe already exists, use deposit")]
+    RecipeAlreadyExists,
+    #[msg("Recipe doesnt exist")]
+    RecipeDoesntExist,
+    #[msg("Insufficient ingredient token balance")]
+    InsufficientIngredientTokenBalance,
+    #[msg("Invalid recipe treasury")]
+    InvalidRecipeTreasury,
+    #[msg("Recipe doesnt have enough tokens")]
+    RecipeDoesntHaveEnoughTokens,
+    #[msg("Cant refill by 0 tokens")]
+    CantRefillByZeroTokens,
     // INTERNAL ERRORS (Unexpected)
     #[msg("INTERNAL: water calculation error")]
     WaterCalculationError,

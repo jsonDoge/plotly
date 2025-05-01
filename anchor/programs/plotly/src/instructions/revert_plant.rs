@@ -23,7 +23,7 @@ use crate::helpers::{get_balance_collected, get_plot_water_collected};
 use crate::state::{AccWithBump, Farm, Plant, Plot, SeedMintInfo};
 
 #[derive(Accounts)]
-#[instruction(plot_x: u32, plot_y: u32, plot_currency: Pubkey)]
+#[instruction(plot_x: u32, plot_y: u32)]
 pub struct RevertPlant<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -43,7 +43,7 @@ pub struct RevertPlant<'info> {
 
     // FARM
     #[account(
-        seeds = [b"farm", plot_currency.as_ref()],
+        seeds = [b"farm", plot_currency_mint.key().as_ref()],
         bump,
     )]
     pub farm: Box<Account<'info, Farm>>,
@@ -161,7 +161,7 @@ pub struct RevertPlant<'info> {
     // FARM PLOT CURRENCY ATA
     #[account(
         mut,
-        associated_token::mint = plot_currency,
+        associated_token::mint = plot_currency_mint,
         associated_token::authority = farm_auth,
     )]
     pub farm_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
@@ -226,7 +226,6 @@ impl<'info> RevertPlant<'info> {
         &mut self,
         plot_x: u32,
         plot_y: u32,
-        plot_currency: Pubkey,
         program_id: &Pubkey,
     ) -> Result<()> {
         msg!("Reverting plant...");
@@ -601,7 +600,15 @@ impl<'info> RevertPlant<'info> {
 
         // TODO: store plot currency decimals in the farm
         token::transfer_checked(
-            CpiContext::new(cpi_program, cpi_accounts),
+            CpiContext::new_with_signer(
+                cpi_program,
+                cpi_accounts,
+                &[&[
+                    b"farm_auth",
+                    self.farm.key().as_ref(),
+                    &[self.farm_auth.bump][..],
+                ]],
+            ),
             balance_to_send,
             6,
         )?;
@@ -621,6 +628,7 @@ impl<'info> RevertPlant<'info> {
         self.plant.last_update_block = 0;
         self.plant.treasury = Pubkey::default();
         self.plant.treasury_received_balance = 0;
+        self.plant.balance_absorb_rate = 0;
         // bump doesn't change because plants <> plot one to one
 
         // GIVE Plot NFT only if plot still has the minimum balance

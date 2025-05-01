@@ -110,6 +110,24 @@ pub struct Plot {
 
 #[account]
 #[derive(Default, InitSpace)]
+pub struct Recipe {
+    pub ingredient_0: Pubkey,
+    pub ingredient_1: Pubkey,
+
+    pub ingredient_0_amount_per_1_result_token: u64,
+    pub ingredient_1_amount_per_1_result_token: u64,
+
+    pub result_token: Pubkey,
+
+    pub result_token_balance: u64,
+
+    pub ingredient_0_treasury: Pubkey,
+    pub ingredient_1_treasury: Pubkey,
+    pub bump: u8,
+}
+
+#[account]
+#[derive(Default, InitSpace)]
 pub struct AccWithBump {
     pub bump: u8,
 }

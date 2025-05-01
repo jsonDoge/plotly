@@ -21,8 +21,10 @@ use crate::{errors::ErrorCode, state::Farm};
 #[instruction(
     plot_currency: Pubkey,
     ingredient_amounts: [u64; 2],
+    __: u64,
+    treasuries: [Pubkey; 2],
 )]
-pub struct CreateRecipe<'info> {
+pub struct RefillRecipe<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
 
@@ -54,8 +56,8 @@ pub struct CreateRecipe<'info> {
             ingredient_1_mint.key().as_ref(),
             &ingredient_amounts[1].to_le_bytes()[..],
             result_mint.key().as_ref(),
-            user_associated_ingredient_0_token_account.key().as_ref(),
-            user_associated_ingredient_1_token_account.key().as_ref(),
+            treasuries[0].as_ref(),
+            treasuries[1].as_ref(),
             farm.key().as_ref()
         ],
         space = 8 + std::mem::size_of::<Recipe>(),
@@ -63,23 +65,6 @@ pub struct CreateRecipe<'info> {
         bump,
     )]
     pub recipe: Box<Account<'info, Recipe>>,
-
-    // USER INGREDIENT TOKEN ATA
-    #[account(
-        init_if_needed,
-        payer = user,
-        associated_token::mint = ingredient_0_mint,
-        associated_token::authority = user,
-    )]
-    pub user_associated_ingredient_0_token_account: Box<Account<'info, TokenAccount>>,
-
-    #[account(
-        init_if_needed,
-        payer = user,
-        associated_token::mint = ingredient_1_mint,
-        associated_token::authority = user,
-    )]
-    pub user_associated_ingredient_1_token_account: Box<Account<'info, TokenAccount>>,
 
     // USER RESULT TOKEN ATA
     #[account(
@@ -113,16 +98,20 @@ pub struct CreateRecipe<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-impl<'info> CreateRecipe<'info> {
-    pub fn create_recipe(
+impl<'info> RefillRecipe<'info> {
+    pub fn refill_recipe(
         &mut self,
         plot_currency: Pubkey,
-        // TODO: later can increase to more if time left
         ingredient_amounts: [u64; 2],
-        result_token_deposit: u64,
+        result_token_to_add: u64,
+        treasuries: [Pubkey; 2],
         recipe_bump: u8,
         program_id: &Pubkey,
     ) -> Result<()> {
+
+        if result_token_to_add == 0 {
+            return Err(ErrorCode::CantRefillByZeroTokens.into());
+        }
 
         if self.ingredient_0_mint.key() == Pubkey::default() || self.ingredient_1_mint.key() == Pubkey::default() {
             return Err(ErrorCode::InvalidIngredientData.into());
@@ -132,10 +121,10 @@ impl<'info> CreateRecipe<'info> {
             return Err(ErrorCode::InvalidIngredientData.into());
         }
 
-        if self.user_associated_ingredient_0_token_account.key() == Pubkey::default() {
+        if treasuries[0] == Pubkey::default() {
             return Err(ErrorCode::InvalidIngredientData.into());
         }
-        if self.user_associated_ingredient_1_token_account.key() == Pubkey::default() {
+        if treasuries[1] == Pubkey::default() {
             return Err(ErrorCode::InvalidIngredientData.into());
         }
 
@@ -149,8 +138,8 @@ impl<'info> CreateRecipe<'info> {
         }
 
         msg!(
-            "Transferring result token to farm... {}",
-            result_token_deposit
+            "Refilling result token to farm... {}",
+            result_token_to_add
         );
 
         let cpi_accounts = TransferChecked {
@@ -164,26 +153,13 @@ impl<'info> CreateRecipe<'info> {
 
         token::transfer_checked(
             CpiContext::new(cpi_program, cpi_accounts),
-            result_token_deposit,
+            result_token_to_add,
             self.result_mint.decimals,
         )?;
 
-        self.recipe.ingredient_0 = self.ingredient_0_mint.key();
-        self.recipe.ingredient_1 = self.ingredient_1_mint.key();
-        
-        self.recipe.ingredient_0_amount_per_1_result_token = ingredient_amounts[0];
-        self.recipe.ingredient_1_amount_per_1_result_token = ingredient_amounts[1];
-        
-        self.recipe.result_token = self.result_mint.key();
+        self.recipe.result_token_balance += result_token_to_add;
 
-        self.recipe.result_token_balance = result_token_deposit;
-
-        self.recipe.ingredient_0_treasury = self.user_associated_ingredient_0_token_account.key();
-        self.recipe.ingredient_1_treasury = self.user_associated_ingredient_1_token_account.key();
-
-        self.recipe.bump = recipe_bump;
-
-        msg!("Recipe created!");
+        msg!("Recipe refilled!");
 
         Ok(())
     }

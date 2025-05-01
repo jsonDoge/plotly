@@ -127,9 +127,56 @@ pub mod farm {
         ctx: Context<RevertPlant>,
         plot_x: u32,
         plot_y: u32,
-        plot_currency: Pubkey
     ) -> Result<()> {
-        ctx.accounts.revertPlant(plot_x, plot_y, plot_currency, ctx.program_id)
+        ctx.accounts.revertPlant(plot_x, plot_y, ctx.program_id)
     }
 
+
+    // RECIPES
+    pub fn create_recipe(
+        ctx: Context<CreateRecipe>,
+        plot_currency: Pubkey,
+        ingredient_amounts: [u64; 2],
+        result_token_deposit: u64,
+    ) -> Result<()> {
+        ctx.accounts.create_recipe(
+            plot_currency,
+            ingredient_amounts,
+            result_token_deposit,
+            ctx.bumps.recipe,
+            ctx.program_id,
+        )
+    }
+
+    pub fn mint_recipe(
+        ctx: Context<MintRecipe>,
+        plot_currency: Pubkey,
+        ingredient_amounts: [u64; 2],
+        result_token_receive: u64,
+    ) -> Result<()> {
+        ctx.accounts.mint_recipe(
+            plot_currency,
+            ingredient_amounts,
+            result_token_receive,
+            ctx.bumps.recipe,
+            ctx.program_id,
+        )
+    }
+
+    pub fn refill_recipe(
+        ctx: Context<RefillRecipe>,
+        plot_currency: Pubkey,
+        ingredient_amounts: [u64; 2],
+        result_token_to_add: u64,
+        treasuries: [Pubkey; 2],
+    ) -> Result<()> {
+        ctx.accounts.refill_recipe(
+            plot_currency,
+            ingredient_amounts,
+            result_token_to_add,
+            treasuries,
+            ctx.bumps.recipe,
+            ctx.program_id,
+        )
+    }
 }

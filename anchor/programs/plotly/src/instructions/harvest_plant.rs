@@ -247,8 +247,15 @@ impl<'info> HarvestPlant<'info> {
             blocks_passed,
         );
 
-        self.plant.balance += new_balance_stats.0;
-        self.plot.balance = new_balance_stats.1;
+        // get balance has no idea when the plant absorption ends (workaround maybe later include in the function)
+        let absorbed = if (self.plant.balance + new_balance_stats.0) > self.plant.balance_required {
+            self.plant.balance_required - self.plant.balance
+        } else {
+            new_balance_stats.0
+        };
+
+        self.plant.balance += absorbed;
+        self.plot.balance = self.plot.balance - absorbed;
 
         // UPDATE CENTER
 
@@ -550,7 +557,10 @@ impl<'info> HarvestPlant<'info> {
 
         // If authority is a PDA, you can pass seeds in a signer context here
 
-        msg!("plant tokens to send: {:?}", self.seed_mint_info.plant_tokens_per_seed);
+        msg!(
+            "plant tokens to send: {:?}",
+            self.seed_mint_info.plant_tokens_per_seed
+        );
 
         token::transfer_checked(
             CpiContext::new_with_signer(
@@ -571,7 +581,7 @@ impl<'info> HarvestPlant<'info> {
 
         msg!("Transferring plot currency to plant treasury...");
 
-        let balance_to_send = self.plant.balance_required - self.plant.treasury_received_balance;
+        let balance_to_send = self.plant.balance - self.plant.treasury_received_balance;
 
         let cpi_accounts = TransferChecked {
             mint: self.plot_currency_mint.to_account_info(),

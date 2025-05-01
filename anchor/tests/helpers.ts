@@ -606,7 +606,7 @@ export const revertPlant = async (
   try {
     await wrapTx(
       program.methods
-        .revertPlant(plotX, plotY, plotCurrency)
+        .revertPlant(plotX, plotY)
         .accountsPartial({
           user: userWallet.publicKey,
           seedMint,

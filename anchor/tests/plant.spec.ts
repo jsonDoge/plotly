@@ -306,7 +306,7 @@ describe('Planting', () => {
     expect(plotData.balance.eq(plotBalanceBefore.sub(plantData.balance))).toBeTruthy()
   }, 1000000)
 
-  it.only('Should plant a seed -> tend once -> harvest it', async () => {
+  it('Should plant a seed -> tend once -> harvest it', async () => {
     console.log('Running plant seed test')
     const plotX = 1
     const plotY = 1
@@ -464,7 +464,7 @@ describe('Planting', () => {
     }
   }, 1000000)
 
-  it('Should plant a seed -> tend once -> revert plant ', async () => {
+  it.only('Should plant a seed -> tend once -> revert plant ', async () => {
     console.log('Running plant seed test')
     const plotX = 1
     const plotY = 1
@@ -530,19 +530,29 @@ describe('Planting', () => {
       ASSOCIATED_TOKEN_PROGRAM_ID,
     )
 
+    // TODO: check if treasury gets the plot currency
+    // const [plantTreasuryAta] = anchor.web3.PublicKey.findProgramAddressSync(
+    //   [userWallet.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), plotCurrency.toBuffer()],
+    //   ASSOCIATED_TOKEN_PROGRAM_ID,
+    // )
+
+    const [userSeedAta] = anchor.web3.PublicKey.findProgramAddressSync(
+      [userWallet.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), seedMint.toBuffer()],
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+
     console.log('planting seed')
 
     const plantSlot = await provider.connection.getSlot()
 
     await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
-    const totalWaterRate = 100 // constant for now
 
     await waitForSlots(provider, await provider.connection.getSlot(), 45) // should allow tending 25% within tending threashold (half of growth block duration)
     console.log('tending plant')
 
     await tendPlant(provider, program, plotX, plotY, plotCurrency, userWallet)
 
-    await waitForSlots(provider, await provider.connection.getSlot(), 56) // total growth time is 101, so we need to wait for 45 + 56 = 101
+    // await waitForSlots(provider, await provider.connection.getSlot(), 56) // total growth time is 101, so we need to wait for 45 + 56 = 101
     console.log('reverting plant')
 
     const revertPlantSlot = await provider.connection.getSlot()
@@ -550,12 +560,28 @@ describe('Planting', () => {
     console.log('plant slot:', plantSlot)
     console.log('revert slot:', revertPlantSlot)
 
-    const userPlantTokenAtaData = await getAccount(provider.connection, userPlantTokenAta)
+    let userPlantTokenAtaData = await getAccount(provider.connection, userPlantTokenAta)
     const balanceBeforeRevert = userPlantTokenAtaData.amount
+    let userSeedAtaData = await getAccount(provider.connection, userSeedAta)
+    const seedsBeforeRevert = userSeedAtaData.amount
 
     await revertPlant(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
 
-    console.log('fetching addresses')
+    userPlantTokenAtaData = await getAccount(provider.connection, userPlantTokenAta)
+    const balanceAfterRevert = userPlantTokenAtaData.amount
+    userSeedAtaData = await getAccount(provider.connection, userSeedAta)
+    const seedsAfterRevert = userSeedAtaData.amount
+
+    // user should NOT receive any plant tokens
+    expect(new anchor.BN((balanceBeforeRevert - balanceAfterRevert).toString()).toString()).toEqual(
+      new anchor.BN(0).toString(),
+    )
+
+    // should receive back one seed
+    expect(new anchor.BN((seedsAfterRevert - seedsBeforeRevert).toString()).toString()).toEqual(
+      new anchor.BN(1).toString(),
+    )
+
     const plantData = await program.account.plant.fetch(plantId)
 
     // reset plant data
@@ -565,9 +591,10 @@ describe('Planting', () => {
     expect(plantData.water.toString()).toEqual(new anchor.BN(0).toString())
     expect(plantData.balance.toString()).toEqual(new anchor.BN(0).toString())
     expect(plantData.balanceRequired.toString()).toEqual(new anchor.BN(0).toString())
-
-    // user received expected plant tokens
-    expect(userPlantTokenAtaData.amount.toString()).toEqual(new anchor.BN(seedInfo.plantTokensPerSeed).toString())
+    expect(plantData.timesTended.toString()).toEqual(new anchor.BN(0).toString())
+    expect(plantData.timesToTend.toString()).toEqual(new anchor.BN(0).toString())
+    expect(plantData.treasury).toEqual(PublicKey.default)
+    expect(plantData.treasuryReceivedBalance.toString()).toEqual(new anchor.BN(0).toString())
 
     // up/down/left/right
     const surroundingPlotIds = await getSurroundingPlotIds(plotX, plotY, farm, program.programId)

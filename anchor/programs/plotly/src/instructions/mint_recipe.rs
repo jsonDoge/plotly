@@ -22,7 +22,7 @@ use crate::{errors::ErrorCode, state::Farm};
     plot_currency: Pubkey,
     ingredient_amounts: [u64; 2],
 )]
-pub struct CreateRecipe<'info> {
+pub struct MintRecipe<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
 
@@ -44,7 +44,6 @@ pub struct CreateRecipe<'info> {
     pub result_mint: Box<Account<'info, Mint>>,
 
     // RECIPE
-
     #[account(
         init,
         seeds = [
@@ -99,6 +98,13 @@ pub struct CreateRecipe<'info> {
     )]
     pub farm_associated_result_token_account: Box<Account<'info, TokenAccount>>,
 
+    // RECIPE TREASURY
+    #[account(mut)]
+    pub recipe_ingredient_0_treasury: Box<Account<'info, TokenAccount>>,
+
+    #[account(mut)]
+    pub recipe_ingredient_1_treasury: Box<Account<'info, TokenAccount>>,
+
     // AUTH
     #[account(
         seeds = [b"farm_auth", farm.key().as_ref()],
@@ -113,18 +119,19 @@ pub struct CreateRecipe<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-impl<'info> CreateRecipe<'info> {
-    pub fn create_recipe(
+impl<'info> MintRecipe<'info> {
+    pub fn mint_recipe(
         &mut self,
         plot_currency: Pubkey,
         // TODO: later can increase to more if time left
         ingredient_amounts: [u64; 2],
-        result_token_deposit: u64,
+        result_token_receive: u64,
         recipe_bump: u8,
         program_id: &Pubkey,
     ) -> Result<()> {
-
-        if self.ingredient_0_mint.key() == Pubkey::default() || self.ingredient_1_mint.key() == Pubkey::default() {
+        if self.ingredient_0_mint.key() == Pubkey::default()
+            || self.ingredient_1_mint.key() == Pubkey::default()
+        {
             return Err(ErrorCode::InvalidIngredientData.into());
         }
 
@@ -139,24 +146,58 @@ impl<'info> CreateRecipe<'info> {
             return Err(ErrorCode::InvalidIngredientData.into());
         }
 
-        if self.result_mint.key() == Pubkey::default() {
+        if self.result_mint.key() == Pubkey::default() || result_token_receive == 0 {
             return Err(ErrorCode::InvalidRecipeResultData.into());
         }
 
-        // already exists
-        if self.recipe.ingredient_0 != Pubkey::default() || self.recipe.ingredient_1 != Pubkey::default() {
-            return Err(ErrorCode::RecipeAlreadyExists.into());
+        // doesnt exists
+        if self.recipe.ingredient_0 == Pubkey::default()
+            || self.recipe.ingredient_1 == Pubkey::default()
+        {
+            return Err(ErrorCode::RecipeDoesntExist.into());
         }
 
+        // treasury doesnt match
+        if self.recipe.ingredient_0_treasury != self.recipe_ingredient_0_treasury.key() {
+            return Err(ErrorCode::InvalidRecipeTreasury.into());
+        }
+
+        if self.recipe.ingredient_1_treasury != self.recipe_ingredient_1_treasury.key() {
+            return Err(ErrorCode::InvalidRecipeTreasury.into());
+        }
+
+        let ingredient_0_amount_required =
+            self.recipe.ingredient_0_amount_per_1_result_token * result_token_receive;
+        let ingredient_1_amount_required =
+            self.recipe.ingredient_1_amount_per_1_result_token * result_token_receive;
+
+
+        if self.recipe.result_token_balance < result_token_receive {
+            return Err(ErrorCode::RecipeDoesntHaveEnoughTokens.into());
+        }
+
+        if self.user_associated_ingredient_0_token_account.amount < ingredient_0_amount_required {
+            return Err(ErrorCode::InsufficientIngredientTokenBalance.into());
+        }
+
+        if self.user_associated_ingredient_1_token_account.amount < ingredient_1_amount_required {
+            return Err(ErrorCode::InsufficientIngredientTokenBalance.into());
+        }
+
+        // TRANSFERING INGREDIENTS TO TREASURY
+
+        // ingredient 0
         msg!(
-            "Transferring result token to farm... {}",
-            result_token_deposit
+            "Transferring ingredient token 0 to recipe treasury... {}",
+            ingredient_0_amount_required
         );
 
         let cpi_accounts = TransferChecked {
             mint: self.result_mint.to_account_info(),
-            from: self.user_associated_result_token_account.to_account_info(),
-            to: self.farm_associated_result_token_account.to_account_info(),
+            from: self
+                .user_associated_ingredient_0_token_account
+                .to_account_info(),
+            to: self.recipe_ingredient_0_treasury.to_account_info(),
             authority: self.user.to_account_info(),
         };
 
@@ -164,26 +205,65 @@ impl<'info> CreateRecipe<'info> {
 
         token::transfer_checked(
             CpiContext::new(cpi_program, cpi_accounts),
-            result_token_deposit,
+            ingredient_0_amount_required,
+            self.ingredient_0_mint.decimals,
+        )?;
+
+        msg!(
+            "Transferring ingredient token 0 to recipe treasury... {}",
+            ingredient_1_amount_required
+        );
+
+        let cpi_accounts = TransferChecked {
+            mint: self.result_mint.to_account_info(),
+            from: self
+                .user_associated_ingredient_1_token_account
+                .to_account_info(),
+            to: self.recipe_ingredient_1_treasury.to_account_info(),
+            authority: self.user.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+
+        token::transfer_checked(
+            CpiContext::new(cpi_program, cpi_accounts),
+            ingredient_1_amount_required,
+            self.ingredient_1_mint.decimals,
+        )?;
+
+        // TRANSFERING RESULT TOKEN TO USER
+
+        msg!(
+            "Transferring result token to user... {}",
+            result_token_receive
+        );
+
+        let cpi_accounts = TransferChecked {
+            mint: self.result_mint.to_account_info(),
+            from: self.farm_associated_result_token_account.to_account_info(),
+            to: self.user_associated_result_token_account.to_account_info(),
+            authority: self.farm_auth.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+
+        token::transfer_checked(
+            CpiContext::new_with_signer(
+                cpi_program,
+                cpi_accounts,
+                &[&[
+                    b"farm_auth",
+                    self.farm.key().as_ref(),
+                    &[self.farm_auth.bump][..],
+                ]],
+            ),
+            result_token_receive,
             self.result_mint.decimals,
         )?;
 
-        self.recipe.ingredient_0 = self.ingredient_0_mint.key();
-        self.recipe.ingredient_1 = self.ingredient_1_mint.key();
-        
-        self.recipe.ingredient_0_amount_per_1_result_token = ingredient_amounts[0];
-        self.recipe.ingredient_1_amount_per_1_result_token = ingredient_amounts[1];
-        
-        self.recipe.result_token = self.result_mint.key();
+        self.recipe.result_token_balance -= result_token_receive;
 
-        self.recipe.result_token_balance = result_token_deposit;
-
-        self.recipe.ingredient_0_treasury = self.user_associated_ingredient_0_token_account.key();
-        self.recipe.ingredient_1_treasury = self.user_associated_ingredient_1_token_account.key();
-
-        self.recipe.bump = recipe_bump;
-
-        msg!("Recipe created!");
+        msg!("Token crafted by recipe!");
 
         Ok(())
     }
