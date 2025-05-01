@@ -59,6 +59,10 @@ pub mod farm {
             .acquire_plot(plot_x, plot_y, plot_currency, ctx.program_id)
     }
 
+    // add balance
+    // returns plot to farm
+    // revokes plot
+
     // SEEDS
 
     pub fn mint_seeds(
@@ -101,13 +105,22 @@ pub mod farm {
         ctx.accounts.plant_seed(plot_x, plot_y, plot_currency, ctx.program_id)
     }
 
-    // pub fn tend_plant(
-    //     ctx: Context<TendPlant>,
-    //     plot_x: u32,
-    //     plot_y: u32,
-    //     plot_currency: Pubkey
-    // ) -> Result<()> {
-    //     ctx.accounts.tend_plant(plot_x, plot_y, plot_currency, ctx.program_id)
-    // }
+    pub fn tend_plant(
+        ctx: Context<TendPlant>,
+        plot_x: u32,
+        plot_y: u32,
+        plot_currency: Pubkey
+    ) -> Result<()> {
+        ctx.accounts.tend_plant(plot_x, plot_y, plot_currency, ctx.program_id)
+    }
+
+    pub fn harvest_plant(
+        ctx: Context<HarvestPlant>,
+        plot_x: u32,
+        plot_y: u32,
+        plot_currency: Pubkey
+    ) -> Result<()> {
+        ctx.accounts.harvest_plant(plot_x, plot_y, plot_currency, ctx.program_id)
+    }
 
 }

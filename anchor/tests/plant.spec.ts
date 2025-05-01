@@ -1,15 +1,13 @@
+/* eslint-disable no-await-in-loop */
 import * as anchor from '@coral-xyz/anchor'
-// import { SystemProgram } from '@solana/web3.js'
-import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { fetchDigitalAsset, findMetadataPda } from '@metaplex-foundation/mpl-token-metadata'
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
-import { PublicKey as umiPublicKey, some } from '@metaplex-foundation/umi'
 
 import { Connection, Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js'
 import assert from 'node:assert'
 import { Farm } from '../target/types/farm'
 import { setupFarm, setupMint } from './setup'
-import { mintAndBuyPlot, mintSeeds, plantSeed, toLeBytes } from './helpers'
+import { mintAndBuyPlot, mintSeeds, plantSeed, tendPlant, toLeBytes, waitForSlots } from './helpers'
 
 // equivalent to rust to_le_bytes
 
@@ -343,5 +341,79 @@ describe('Planting', () => {
       expect(rightPlotData.leftPlantDrainRate).toEqual(plantData.neighborWaterDrainRate)
       expect(rightPlotData.rightPlantDrainRate).toEqual(0)
     }
+  }, 1000000)
+
+  it.only('Should plant a seed and be able to tend it', async () => {
+    console.log('Running plant seed test')
+    const plotX = 1
+    const plotY = 1
+
+    console.log('minting plots and buying')
+    await mintAndBuyPlot(provider, program, plotCurrency, plotX, plotY, userWallet)
+
+    const seedsToMint = 5
+    const plantTokensPerSeed = 10000000
+    const growthBlockDuration = 101
+    const waterDrainRate = 10
+    const timesToTend = 5
+    const balanceAbsorbRate = 2
+
+    console.log('setting up plant mint')
+    const plantMint = await setupMint(provider, TOKEN_PROGRAM_ID)
+
+    console.log('creating seed')
+
+    const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('farm'), plotCurrency.toBuffer()],
+      program.programId,
+    )
+
+    const [plotMint] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
+      program.programId,
+    )
+
+    const [plotId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot'), plotMint.toBuffer()],
+      program.programId,
+    )
+
+    let plotData = await program.account.plot.fetch(plotId)
+    const plotBalanceBefore = plotData.balance
+
+    const seedMint = await mintSeeds(
+      provider,
+      program,
+      plotCurrency,
+      plantMint,
+      userWallet,
+      seedsToMint,
+      plantTokensPerSeed,
+      growthBlockDuration,
+      waterDrainRate,
+      timesToTend,
+      balanceAbsorbRate,
+    )
+    console.log('planting seed')
+
+    await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
+
+    console.log('tending plant')
+
+    const currentSlot = await provider.connection.getSlot()
+    await waitForSlots(provider, currentSlot, 17)
+
+    await tendPlant(provider, program, plotX, plotY, plotCurrency, userWallet)
+
+    const [plantId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plant'), plotMint.toBuffer()],
+      program.programId,
+    )
+
+    const plantData = await program.account.plant.fetch(plantId)
+    plotData = await program.account.plot.fetch(plotId)
+
+    expect(plantData.balance.gt(new anchor.BN(0))).toBeTruthy()
+    expect(plotData.balance.eq(plotBalanceBefore.sub(plantData.balance))).toBeTruthy()
   }, 1000000)
 })

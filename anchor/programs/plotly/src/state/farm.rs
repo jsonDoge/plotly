@@ -80,7 +80,7 @@ pub struct Plot {
     pub water: u32, // 1000000
     pub water_regen: i32, // default 90
 
-    //
+    // balance
 
     pub balance: u64,
     pub balance_free_rent: u64,

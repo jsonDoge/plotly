@@ -27,7 +27,6 @@ pub struct TendPlant<'info> {
 
     // value same as plot_currency
     pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,
-    pub plant_treasury: Box<InterfaceAccount<'info, TokenAccountInterface>>,
 
     #[account(
         seeds = [b"farm", plot_currency.as_ref()],
@@ -50,8 +49,8 @@ pub struct TendPlant<'info> {
         bump,
     )]
     pub plot: Box<Account<'info, Plot>>,
-    
-        // NEIGHBORING PLOTS
+
+    // NEIGHBORING PLOTS
 
     // UP
     /// CHECK: mint existance
@@ -120,13 +119,18 @@ pub struct TendPlant<'info> {
     pub plant: Box<Account<'info, Plant>>,
 
     // Farm plot currency TREASURY
-
     #[account(
         mut,
-        associated_token::mint = plot_currency,
+        associated_token::mint = plot_currency_mint,
         associated_token::authority = farm_auth,
     )]
     pub farm_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
+
+    // Treasury - plot currecncy ATA
+    #[account(
+        mut,
+    )]
+    pub plant_treasury: Box<Account<'info, TokenAccount>>,
 
     // farm auth
     #[account(
@@ -146,7 +150,13 @@ pub struct TendPlant<'info> {
 // updates plant water, plot and surrounding plots water.
 // sends absorbed balance to treasury
 impl<'info> TendPlant<'info> {
-    pub fn tend_plant(&mut self, plot_x: u32, plot_y: u32, plot_currency: Pubkey, program_id: &Pubkey) -> Result<()> {
+    pub fn tend_plant(
+        &mut self,
+        plot_x: u32,
+        plot_y: u32,
+        plot_currency: Pubkey,
+        program_id: &Pubkey,
+    ) -> Result<()> {
         if self.plant.treasury != self.plant_treasury.key() {
             return Err(ErrorCode::InvalidTreasury.into());
         }
@@ -154,6 +164,9 @@ impl<'info> TendPlant<'info> {
         if self.plot.last_claimer != self.user.key() {
             return Err(ErrorCode::UserNotPlotOwner.into());
         }
+
+        msg!("times tended {}", self.plant.times_tended);
+        msg!("times to tend {}", self.plant.times_to_tend);
 
         if self.plant.times_tended >= self.plant.times_to_tend {
             return Err(ErrorCode::PlantReachedMaxTend.into());
@@ -178,16 +191,14 @@ impl<'info> TendPlant<'info> {
             self.plant.times_to_tend,
             blocks_passed,
         );
-        
+
         self.plant.balance += updated_balance.0;
         self.plot.balance = updated_balance.1;
-
 
         // 25% of the balance required for the next tend
         let tending_allowed_balance_buffer = balance_per_tend / 4;
 
-        let next_tend_balance_at =
-            (self.plant.times_tended + 1) as u64 * self.plant.balance_required;
+        let next_tend_balance_at = (self.plant.times_tended + 1) as u64 * balance_per_tend;
         let next_tend_allowed_from = next_tend_balance_at - tending_allowed_balance_buffer;
 
         if self.plant.balance < next_tend_allowed_from {
@@ -196,30 +207,43 @@ impl<'info> TendPlant<'info> {
 
         self.plant.times_tended += 1;
 
-
         // SENDING BALANCE TO TREASURY
 
         let balance_to_send = self.plant.balance - self.plant.treasury_received_balance;
 
+        msg!("Sending balance to treasury: {}", balance_to_send);
+
         let cpi_accounts = TransferChecked {
-            mint: self.plot_mint.to_account_info(),
+            mint: self.plot_currency_mint.to_account_info(),
             from: self.farm_associated_plot_currency_account.to_account_info(),
             to: self.plant_treasury.to_account_info(),
-            authority: self.user.to_account_info(),
+            authority: self.farm_auth.to_account_info(),
         };
 
-        msg!("constructin Cpi program");
         let cpi_program = self.token_program.to_account_info();
 
         // If authority is a PDA, you can pass seeds in a signer context here
 
-        msg!("Transferring plot NFT to farm...");
+        msg!("Sending balance to treasury 2: {}", balance_to_send);
 
         // TODO: store plot currency decimals in the farm
-        token::transfer_checked(CpiContext::new(cpi_program, cpi_accounts), balance_to_send, 6)?;
+        token::transfer_checked(
+            CpiContext::new_with_signer(
+                cpi_program,
+                cpi_accounts,
+                &[&[
+                    b"farm_auth",
+                    self.farm.key().as_ref(),
+                    &[self.farm_auth.bump][..],
+                ]],
+            ),
+            balance_to_send,
+            6,
+        )?;
+        msg!("Balance sent: {}");
+
 
         self.plant.treasury_received_balance = self.plant.balance;
-
 
         // UPDATE water to match plant update
 
@@ -287,9 +311,7 @@ impl<'info> TendPlant<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            // let plot_data = Plot::try_from_slice(&self.plot_up.data.borrow())?;
-            let data = self.plot_up.data.borrow();
-            let mut plot = Plot::try_deserialize_unchecked(&mut &data[..])?;
+            let mut plot = Plot::try_deserialize(&mut &self.plot_up.data.borrow()[..])?;
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -314,6 +336,7 @@ impl<'info> TendPlant<'info> {
             total_water_collected += plot.down_plant_water_collected + water_updated_res.3;
 
             plot.last_update_block = current_block;
+            plot.try_serialize(&mut &mut self.plot_up.data.borrow_mut()[..])?;
         }
 
         if plot_y < 999 {
@@ -343,8 +366,7 @@ impl<'info> TendPlant<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            let data = self.plot_down.data.borrow();
-            let mut plot = Plot::try_deserialize_unchecked(&mut &data[..])?;
+            let mut plot = Plot::try_deserialize(&mut &self.plot_down.data.borrow()[..])?;
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -370,6 +392,7 @@ impl<'info> TendPlant<'info> {
             total_water_collected += plot.up_plant_water_collected + water_updated_res.2;
 
             plot.last_update_block = current_block;
+            plot.try_serialize(&mut &mut self.plot_down.data.borrow_mut()[..])?;
         }
 
         if plot_x > 0 {
@@ -399,8 +422,7 @@ impl<'info> TendPlant<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            let data = self.plot_left.data.borrow();
-            let mut plot = Plot::try_deserialize_unchecked(&mut &data[..])?;
+            let mut plot = Plot::try_deserialize(&mut &self.plot_left.data.borrow()[..])?;
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -426,6 +448,7 @@ impl<'info> TendPlant<'info> {
             total_water_collected += plot.right_plant_water_collected + water_updated_res.0;
 
             plot.last_update_block = current_block;
+            let mut plot = Plot::try_deserialize(&mut &self.plot_left.data.borrow()[..])?;
         }
 
         if plot_x < 999 {
@@ -455,8 +478,7 @@ impl<'info> TendPlant<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            let data = self.plot_right.data.borrow();
-            let mut plot = Plot::try_deserialize_unchecked(&mut &data[..])?;
+            let mut plot = Plot::try_deserialize(&mut &self.plot_left.data.borrow()[..])?;
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -482,6 +504,7 @@ impl<'info> TendPlant<'info> {
             total_water_collected += plot.left_plant_water_collected + water_updated_res.1;
 
             plot.last_update_block = current_block;
+            plot.try_serialize(&mut &mut self.plot_right.data.borrow_mut()[..])?;
         }
 
         self.plant.water = self.plant.water + total_water_collected;

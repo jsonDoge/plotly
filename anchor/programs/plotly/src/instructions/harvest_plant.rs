@@ -305,9 +305,8 @@ impl<'info> HarvestPlant<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            // let plot_data = Plot::try_from_slice(&self.plot_up.data.borrow())?;
-            let data = self.plot_up.data.borrow();
-            let mut plot = Plot::try_deserialize_unchecked(&mut &data[..])?;
+            let mut plot = Plot::try_deserialize( &mut &self.plot_up.data.borrow()[..])?;
+
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -333,6 +332,8 @@ impl<'info> HarvestPlant<'info> {
             total_water_collected += plot.down_plant_water_collected + water_updated_res.3;
 
             plot.last_update_block = current_block;
+
+            plot.try_serialize(&mut &mut self.plot_up.data.borrow_mut()[..])?;
         }
 
         if (plot_y < 999) {
@@ -362,8 +363,8 @@ impl<'info> HarvestPlant<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            let data = self.plot_down.data.borrow();
-            let mut plot = Plot::try_deserialize_unchecked(&mut &data[..])?;
+            let mut plot = Plot::try_deserialize( &mut &self.plot_down.data.borrow()[..])?;
+
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -390,6 +391,8 @@ impl<'info> HarvestPlant<'info> {
             total_water_collected += plot.up_plant_water_collected + water_updated_res.2;
 
             plot.last_update_block = current_block;
+
+            plot.try_serialize(&mut &mut self.plot_down.data.borrow_mut()[..])?;
         }
 
         if plot_x > 0 {
@@ -419,8 +422,7 @@ impl<'info> HarvestPlant<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            let data = self.plot_left.data.borrow();
-            let mut plot = Plot::try_deserialize_unchecked(&mut &data[..])?;
+            let mut plot = Plot::try_deserialize( &mut &self.plot_left.data.borrow()[..])?;
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -447,6 +449,8 @@ impl<'info> HarvestPlant<'info> {
             total_water_collected += plot.right_plant_water_collected + water_updated_res.0;
 
             plot.last_update_block = current_block;
+            
+            plot.try_serialize(&mut &mut self.plot_left.data.borrow_mut()[..])?;
         }
 
         if plot_x < 999 {
@@ -476,8 +480,8 @@ impl<'info> HarvestPlant<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            let data = self.plot_right.data.borrow();
-            let mut plot = Plot::try_deserialize_unchecked(&mut &data[..])?;
+            let mut plot = Plot::try_deserialize( &mut &self.plot_left.data.borrow()[..])?;
+
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -504,6 +508,7 @@ impl<'info> HarvestPlant<'info> {
             total_water_collected += plot.left_plant_water_collected + water_updated_res.1;
 
             plot.last_update_block = current_block;
+            plot.try_serialize(&mut &mut self.plot_right.data.borrow_mut()[..])?;
         }
 
         self.plant.water = self.plant.water + total_water_collected;

@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
 
+use crate::program::Farm;
+
 #[error_code]
 pub enum ErrorCode {
     #[msg("Plot already owned")]
@@ -18,6 +20,8 @@ pub enum ErrorCode {
     InvalidSeedBalanceAmount,
     #[msg("Insufficient plot currency to acquire plot")]
     InsufficientPlotCurrencyToAcquirePlot,
+    #[msg("Insufficient plot currency")]
+    InsufficientPlotCurrency,
     #[msg("Invalid plot currency")]
     InvalidPlotCurrency,
     #[msg("Plot price not divisible by 2")]
@@ -30,8 +34,6 @@ pub enum ErrorCode {
     InvalidNeighborWaterDrainRate,
     #[msg("Invalid treasury address")]
     InvalidTreasury,
-    #[msg("INTERNAL: water calculation error")]
-    WaterCalculationError,
     #[msg("Plant doesn't have enough water")]
     PlantNotEnoughWater,
     #[msg("Plant doesn't have enough balance")]
@@ -46,4 +48,13 @@ pub enum ErrorCode {
     InvalidBalanceAbsorbRate,
     #[msg("Invalid growth duration")]
     InvalidGrowthDuration,
+    #[msg("Zero balance")]
+    ZeroBalance,
+    #[msg("Plot still has balance")]
+    PlotStillHasBalance,
+    // INTERNAL ERRORS (Unexpected)
+    #[msg("INTERNAL: water calculation error")]
+    WaterCalculationError,
+    #[msg("INTERNAL: farm doesn't own the plot mint")]
+    FarmDoesntOwnPlotMint,
 }

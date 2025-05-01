@@ -223,6 +223,7 @@ impl<'info> MintSeeds<'info> {
             self.seed_mint_info.neighbor_water_drain_rate = neighbor_water_drain_rate;
             self.seed_mint_info.balance_absorb_rate = balance_absorb_rate;
             self.seed_mint_info.treasury = *treasury;
+            self.seed_mint_info.times_to_tend = times_to_tend;
 
             self.seed_mint_info.bump = seed_mint_info_bump;
 
