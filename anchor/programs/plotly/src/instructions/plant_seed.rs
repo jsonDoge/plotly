@@ -250,6 +250,7 @@ impl<'info> PlantSeed<'info> {
 
         msg!("cetner water: {:?}", self.plot.water);
 
+        let current_block = Clock::get()?.slot;
         self.plant.seed_mint = self.seed_mint.key();
 
         self.plant.water = 0;
@@ -257,19 +258,21 @@ impl<'info> PlantSeed<'info> {
         // currently water absorb rate is always 100
         self.plant.water_required =
             self.seed_mint_info.growth_block_duration * PLANT_WATER_ABSORB_RATE;
+        self.plant.neighbor_water_drain_rate = self.seed_mint_info.neighbor_water_drain_rate;
+
         self.plant.balance = 0;
         self.plant.balance_required = (self.seed_mint_info.growth_block_duration as u64)
             * self.seed_mint_info.balance_absorb_rate;
+            self.plant.balance_absorb_rate = self.seed_mint_info.balance_absorb_rate;
 
-        self.plant.balance_absorb_rate = self.seed_mint_info.balance_absorb_rate;
         self.plant.times_to_tend = self.seed_mint_info.times_to_tend;
         self.plant.times_tended = 0;
+        
         self.plant.treasury_received_balance = 0;
-
         self.plant.treasury = self.seed_mint_info.treasury;
-        self.plant.neighbor_water_drain_rate = self.seed_mint_info.neighbor_water_drain_rate;
 
-        let current_block = Clock::get()?.slot;
+        self.plant.last_update_block = current_block;
+
         let blocks_passed = current_block - self.plot.last_update_block;
 
         // UPDATE CENTER PLOT Water and Drain Rate
@@ -535,6 +538,7 @@ impl<'info> PlantSeed<'info> {
 
         msg!("Plot minted x:{} y:{}", plot_x, plot_y);
         msg!("New claimer {}", self.user.key());
+        msg!("PLANTING: current_block {}", current_block);
 
         // set claimer if not set (used to check who is the true owner of the plot during growing)
         if self.plot.last_claimer != self.user.key() {

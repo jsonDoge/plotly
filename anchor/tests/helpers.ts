@@ -421,6 +421,218 @@ export const tendPlant = async (
   return plotMint
 }
 
+export const harvestPlant = async (
+  provider: anchor.AnchorProvider,
+  program: anchor.Program<Farm>,
+  plotX: number,
+  plotY: number,
+  plotCurrency: PublicKey,
+  seedMint: PublicKey,
+  userWallet: anchor.Wallet,
+) => {
+  const wrapTx = increasedCUTxWrap(provider.connection, userWallet.payer)
+
+  const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('farm'), plotCurrency.toBuffer()],
+    program.programId,
+  )
+
+  const neighborPlotMints = []
+  const neighborPlots = []
+
+  console.log(`center x: ${plotX}, y: ${plotY}`)
+
+  // right/up/down/left
+  for (let x = -1; x <= 1; x += 1) {
+    for (let y = -1; y <= 1; y += 1) {
+      // skip the center and diagonal
+      if (Math.abs(x) + Math.abs(y) !== 1) {
+        continue
+      }
+      if (plotX + x < 0 || plotY + y < 0) {
+        neighborPlotMints.push(PublicKey.default)
+        continue
+      }
+      if (plotX + x > 999 || plotY + y > 999) {
+        neighborPlotMints.push(PublicKey.default)
+        continue
+      }
+
+      const neighborX = plotX + x
+      const neighborY = plotY + y
+
+      const [neighborPlotMint] = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from('plot_mint'), toLeBytes(neighborX), toLeBytes(neighborY), farm.toBuffer()],
+        program.programId,
+      )
+
+      console.log(`neighborPlotMint x: ${neighborX}, y: ${neighborY} ${neighborPlotMint.toString()}`)
+
+      const [neighborPlot] = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from('plot'), neighborPlotMint.toBuffer()],
+        program.programId,
+      )
+
+      neighborPlotMints.push(neighborPlotMint)
+      neighborPlots.push(neighborPlot)
+    }
+  }
+
+  const [plotMint] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
+    program.programId,
+  )
+
+  const [plantId] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('plant'), plotMint.toBuffer()],
+    program.programId,
+  )
+
+  const [seedInfoId] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('seed_mint_info'), seedMint.toBuffer()],
+    program.programId,
+  )
+
+  const plant = await program.account.plant.fetch(plantId)
+  const seedInfo = await program.account.seedMintInfo.fetch(seedInfoId)
+  console.log('plant treasury', plant.treasury.toString())
+
+  try {
+    await wrapTx(
+      program.methods
+        .harvestPlant(plotX, plotY, plotCurrency)
+        .accountsPartial({
+          user: userWallet.publicKey,
+          seedMint,
+          plotMintLeft: neighborPlotMints[0],
+          plotMintUp: neighborPlotMints[1],
+          plotMintDown: neighborPlotMints[2],
+          plotMintRight: neighborPlotMints[3],
+          plotLeft: neighborPlots[0],
+          plotUp: neighborPlots[1],
+          plotDown: neighborPlots[2],
+          plotRight: neighborPlots[3],
+          plotMint,
+          plantMint: seedInfo.plantMint,
+          plantTreasury: plant.treasury,
+          plotCurrencyMint: plotCurrency,
+        })
+        .signers([userWallet.payer]),
+    )
+  } catch (error) {
+    console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
+    throw error
+  }
+
+  return seedMint
+}
+
+export const revertPlant = async (
+  provider: anchor.AnchorProvider,
+  program: anchor.Program<Farm>,
+  plotX: number,
+  plotY: number,
+  plotCurrency: PublicKey,
+  seedMint: PublicKey,
+  userWallet: anchor.Wallet,
+) => {
+  const wrapTx = increasedCUTxWrap(provider.connection, userWallet.payer)
+
+  const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('farm'), plotCurrency.toBuffer()],
+    program.programId,
+  )
+
+  const neighborPlotMints = []
+  const neighborPlots = []
+
+  console.log(`center x: ${plotX}, y: ${plotY}`)
+
+  // right/up/down/left
+  for (let x = -1; x <= 1; x += 1) {
+    for (let y = -1; y <= 1; y += 1) {
+      // skip the center and diagonal
+      if (Math.abs(x) + Math.abs(y) !== 1) {
+        continue
+      }
+      if (plotX + x < 0 || plotY + y < 0) {
+        neighborPlotMints.push(PublicKey.default)
+        continue
+      }
+      if (plotX + x > 999 || plotY + y > 999) {
+        neighborPlotMints.push(PublicKey.default)
+        continue
+      }
+
+      const neighborX = plotX + x
+      const neighborY = plotY + y
+
+      const [neighborPlotMint] = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from('plot_mint'), toLeBytes(neighborX), toLeBytes(neighborY), farm.toBuffer()],
+        program.programId,
+      )
+
+      console.log(`neighborPlotMint x: ${neighborX}, y: ${neighborY} ${neighborPlotMint.toString()}`)
+
+      const [neighborPlot] = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from('plot'), neighborPlotMint.toBuffer()],
+        program.programId,
+      )
+
+      neighborPlotMints.push(neighborPlotMint)
+      neighborPlots.push(neighborPlot)
+    }
+  }
+
+  const [plotMint] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
+    program.programId,
+  )
+
+  const [plantId] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('plant'), plotMint.toBuffer()],
+    program.programId,
+  )
+
+  const [seedInfoId] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('seed_mint_info'), seedMint.toBuffer()],
+    program.programId,
+  )
+
+  const plant = await program.account.plant.fetch(plantId)
+  const seedInfo = await program.account.seedMintInfo.fetch(seedInfoId)
+  console.log('plant treasury', plant.treasury.toString())
+
+  try {
+    await wrapTx(
+      program.methods
+        .revertPlant(plotX, plotY, plotCurrency)
+        .accountsPartial({
+          user: userWallet.publicKey,
+          seedMint,
+          plotMintLeft: neighborPlotMints[0],
+          plotMintUp: neighborPlotMints[1],
+          plotMintDown: neighborPlotMints[2],
+          plotMintRight: neighborPlotMints[3],
+          plotLeft: neighborPlots[0],
+          plotUp: neighborPlots[1],
+          plotDown: neighborPlots[2],
+          plotRight: neighborPlots[3],
+          plotMint,
+          plantMint: seedInfo.plantMint,
+          plantTreasury: plant.treasury,
+          plotCurrencyMint: plotCurrency,
+        })
+        .signers([userWallet.payer]),
+    )
+  } catch (error) {
+    console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
+    throw error
+  }
+
+  return seedMint
+}
+
 // because not time-travel functionality :(
 export const waitForSlots = async (provider: anchor.AnchorProvider, startSlot: number, slotDifference = 10) => {
   let wait = true

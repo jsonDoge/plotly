@@ -15,6 +15,7 @@ pub struct Farm {
 #[derive(Default, InitSpace)]
 pub struct SeedMintInfo {
     // Seed growth result
+    // improve name since it's a RESULTING token from a plant != plant
     pub plant_mint: Pubkey,
     pub plant_mint_decimals: u8,
     pub plant_tokens_per_seed: u64,
@@ -60,6 +61,7 @@ pub struct Plant {
     // takes a 100 drain rate. 100 - (neighbor_drain_rate * 4) = center drain rate
     pub neighbor_water_drain_rate: u32, // 0 being fully central 25 being fully neighbor 
 
+    // this is likely not needed (because plot tracks resource consumption)
     pub last_update_block: u64,
 
     // No ownership, because the user CANNOT transfer plot

@@ -31,9 +31,8 @@ pub struct HarvestPlant<'info> {
     pub plant_mint: Box<InterfaceAccount<'info, MintInterface>>,
 
     // value same as plot_currency
-    // pub plot_currency_mint: InterfaceAccount<'info, MintInterface>,
+    pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,
     pub seed_mint: Box<InterfaceAccount<'info, MintInterface>>,
-    pub plant_treasury: Box<InterfaceAccount<'info, TokenAccountInterface>>,
 
     // SEED
     #[account(
@@ -167,6 +166,10 @@ pub struct HarvestPlant<'info> {
     )]
     pub farm_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
 
+    // Treasury - plot currecncy ATA
+    #[account(mut)]
+    pub plant_treasury: Box<Account<'info, TokenAccount>>,
+
     // Create associated token account, if needed
     // This is the account that will hold the NFT
 
@@ -202,7 +205,6 @@ pub struct HarvestPlant<'info> {
 // resets plant to zero
 // set plot drain rates to zero (related to this plant)
 
-
 impl<'info> HarvestPlant<'info> {
     pub fn harvest_plant(
         &mut self,
@@ -217,6 +219,14 @@ impl<'info> HarvestPlant<'info> {
             || self.farm_associated_plot_account.amount == 0
         {
             return Err(ErrorCode::InvalidHarvestPlot.into());
+        }
+
+        if self.plant.treasury != self.plant_treasury.key() {
+            return Err(ErrorCode::InvalidTreasury.into());
+        }
+
+        if self.plot.last_claimer != self.user.key() {
+            return Err(ErrorCode::UserNotPlotOwner.into());
         }
 
         // first update then see if enough resources to harvest
@@ -237,8 +247,8 @@ impl<'info> HarvestPlant<'info> {
             blocks_passed,
         );
 
+        self.plant.balance += new_balance_stats.0;
         self.plot.balance = new_balance_stats.1;
-        self.plant.balance = new_balance_stats.0;
 
         // UPDATE CENTER
 
@@ -255,6 +265,9 @@ impl<'info> HarvestPlant<'info> {
             blocks_passed,
         );
 
+        let mut total_water_collected =
+            self.plot.center_plant_water_collected + current_plot_water_res.4;
+
         // Update the water level
         self.plot.water = current_plot_water_res.5;
         self.plot.right_plant_water_collected += current_plot_water_res.0;
@@ -267,9 +280,6 @@ impl<'info> HarvestPlant<'info> {
         self.plot.center_plant_drain_rate = 0;
 
         self.plot.last_update_block = current_block;
-
-        let mut total_water_collected =
-            self.plot.center_plant_water_collected + current_plot_water_res.4;
 
         // TODO: add limitation so that collected water wouldn't cross u32::MAX
 
@@ -305,8 +315,7 @@ impl<'info> HarvestPlant<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            let mut plot = Plot::try_deserialize( &mut &self.plot_up.data.borrow()[..])?;
-
+            let mut plot = Plot::try_deserialize(&mut &self.plot_up.data.borrow()[..])?;
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -320,6 +329,7 @@ impl<'info> HarvestPlant<'info> {
                 plot.water_regen,
                 blocks_passed,
             );
+            total_water_collected += plot.down_plant_water_collected + water_updated_res.3;
 
             plot.water = water_updated_res.5;
             plot.right_plant_water_collected += water_updated_res.0;
@@ -329,7 +339,6 @@ impl<'info> HarvestPlant<'info> {
             plot.center_plant_water_collected += water_updated_res.4;
 
             plot.down_plant_drain_rate = 0;
-            total_water_collected += plot.down_plant_water_collected + water_updated_res.3;
 
             plot.last_update_block = current_block;
 
@@ -363,8 +372,7 @@ impl<'info> HarvestPlant<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            let mut plot = Plot::try_deserialize( &mut &self.plot_down.data.borrow()[..])?;
-
+            let mut plot = Plot::try_deserialize(&mut &self.plot_down.data.borrow()[..])?;
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -378,6 +386,7 @@ impl<'info> HarvestPlant<'info> {
                 plot.water_regen,
                 blocks_passed,
             );
+            total_water_collected += plot.up_plant_water_collected + water_updated_res.2;
 
             plot.water = water_updated_res.5;
 
@@ -388,7 +397,6 @@ impl<'info> HarvestPlant<'info> {
             plot.center_plant_water_collected += water_updated_res.4;
 
             plot.up_plant_drain_rate = 0;
-            total_water_collected += plot.up_plant_water_collected + water_updated_res.2;
 
             plot.last_update_block = current_block;
 
@@ -422,7 +430,7 @@ impl<'info> HarvestPlant<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            let mut plot = Plot::try_deserialize( &mut &self.plot_left.data.borrow()[..])?;
+            let mut plot = Plot::try_deserialize(&mut &self.plot_left.data.borrow()[..])?;
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -436,6 +444,7 @@ impl<'info> HarvestPlant<'info> {
                 plot.water_regen,
                 blocks_passed,
             );
+            total_water_collected += plot.right_plant_water_collected + water_updated_res.0;
 
             plot.water = water_updated_res.5;
 
@@ -446,10 +455,9 @@ impl<'info> HarvestPlant<'info> {
             plot.center_plant_water_collected += water_updated_res.4;
 
             plot.right_plant_drain_rate = 0;
-            total_water_collected += plot.right_plant_water_collected + water_updated_res.0;
 
             plot.last_update_block = current_block;
-            
+
             plot.try_serialize(&mut &mut self.plot_left.data.borrow_mut()[..])?;
         }
 
@@ -480,8 +488,7 @@ impl<'info> HarvestPlant<'info> {
                 return Err(ErrorCode::InvalidNeighborPlot.into());
             }
 
-            let mut plot = Plot::try_deserialize( &mut &self.plot_left.data.borrow()[..])?;
-
+            let mut plot = Plot::try_deserialize(&mut &self.plot_right.data.borrow()[..])?;
 
             let blocks_passed = current_block - plot.last_update_block;
 
@@ -495,6 +502,7 @@ impl<'info> HarvestPlant<'info> {
                 plot.water_regen,
                 blocks_passed,
             );
+            total_water_collected += plot.left_plant_water_collected + water_updated_res.1;
 
             plot.water = water_updated_res.5;
 
@@ -505,7 +513,6 @@ impl<'info> HarvestPlant<'info> {
             plot.center_plant_water_collected += water_updated_res.4;
 
             plot.left_plant_drain_rate = 0;
-            total_water_collected += plot.left_plant_water_collected + water_updated_res.1;
 
             plot.last_update_block = current_block;
             plot.try_serialize(&mut &mut self.plot_right.data.borrow_mut()[..])?;
@@ -513,6 +520,12 @@ impl<'info> HarvestPlant<'info> {
 
         self.plant.water = self.plant.water + total_water_collected;
         // see if plant has enough resources
+
+        msg!("HARVESTING: current_block: {:?}", current_block);
+        msg!("Plant water: {:?}", self.plant.water);
+        msg!("Plant water required: {:?}", self.plant.water_required);
+        msg!("Plant balance: {:?}", self.plant.balance);
+        msg!("Plant balance required: {:?}", self.plant.balance_required);
 
         if self.plant.water < self.plant.water_required {
             return Err(ErrorCode::PlantNotEnoughWater.into());
@@ -522,8 +535,9 @@ impl<'info> HarvestPlant<'info> {
             return Err(ErrorCode::PlantNotEnoughBalance.into());
         }
 
-
         //  GIVE RESULTING TOKEN
+
+        msg!("Transferring plant tokens to user...");
 
         let cpi_accounts = TransferChecked {
             mint: self.plant_mint.to_account_info(),
@@ -535,6 +549,8 @@ impl<'info> HarvestPlant<'info> {
         let cpi_program = self.token_program.to_account_info();
 
         // If authority is a PDA, you can pass seeds in a signer context here
+
+        msg!("plant tokens to send: {:?}", self.seed_mint_info.plant_tokens_per_seed);
 
         token::transfer_checked(
             CpiContext::new_with_signer(
@@ -551,36 +567,41 @@ impl<'info> HarvestPlant<'info> {
             self.seed_mint_info.plant_mint_decimals,
         )?;
 
+        // SENDING rest of Plant BALANCE TO plant TREASURY
 
-        // SENDING rest of Plant BALANCE TO TREASURY
+        msg!("Transferring plot currency to plant treasury...");
 
         let balance_to_send = self.plant.balance_required - self.plant.treasury_received_balance;
 
         let cpi_accounts = TransferChecked {
-            mint: self.plot_mint.to_account_info(),
+            mint: self.plot_currency_mint.to_account_info(),
             from: self.farm_associated_plot_currency_account.to_account_info(),
             to: self.plant_treasury.to_account_info(),
-            authority: self.user.to_account_info(),
+            authority: self.farm_auth.to_account_info(),
         };
 
-        msg!("constructin Cpi program");
         let cpi_program = self.token_program.to_account_info();
 
         // If authority is a PDA, you can pass seeds in a signer context here
 
-        msg!("Transferring plot NFT to farm...");
-
         // TODO: store plot currency decimals in the farm
-        token::transfer_checked(CpiContext::new(cpi_program, cpi_accounts), balance_to_send, 6)?;
-
-        self.plant.treasury_received_balance = self.plant.balance;
-  
-
-        msg!("Validation passed...");
+        token::transfer_checked(
+            CpiContext::new_with_signer(
+                cpi_program,
+                cpi_accounts,
+                &[&[
+                    b"farm_auth",
+                    self.farm.key().as_ref(),
+                    &[self.farm_auth.bump][..],
+                ]],
+            ),
+            balance_to_send,
+            6,
+        )?;
 
         // RESET PLANT to zero values
 
-        msg!("cetner water: {:?}", self.plot.water);
+        msg!("center water: {:?}", self.plot.water);
 
         self.plant.seed_mint = Pubkey::default();
         self.plant.water = 0;
@@ -593,19 +614,21 @@ impl<'info> HarvestPlant<'info> {
         self.plant.last_update_block = 0;
         self.plant.treasury = Pubkey::default();
         self.plant.treasury_received_balance = 0;
+        self.plant.balance_absorb_rate = 0;
         // bump doesn't change because plants <> plot one to one
-
 
         // GIVE Plot NFT only if plot still has the minimum balance
 
         if self.plot.balance >= self.plot.balance_free_rent {
+            msg!("Transferring plot NFT back to user...");
+
             // Cross Program Invocation (CPI)
             // Invoking the mint_to instruction on the token program
             let cpi_accounts = TransferChecked {
                 mint: self.plot_mint.to_account_info(),
                 from: self.farm_associated_plot_account.to_account_info(),
                 to: self.user_associated_plot_account.to_account_info(),
-                authority: self.user.to_account_info(),
+                authority: self.farm_auth.to_account_info(),
             };
 
             msg!("constructin Cpi program");
@@ -615,7 +638,19 @@ impl<'info> HarvestPlant<'info> {
 
             msg!("Transferring plot NFT to farm...");
 
-            token::transfer_checked(CpiContext::new(cpi_program, cpi_accounts), 1, 0)?;
+            token::transfer_checked(
+                CpiContext::new_with_signer(
+                    cpi_program,
+                    cpi_accounts,
+                    &[&[
+                        b"farm_auth",
+                        self.farm.key().as_ref(),
+                        &[self.farm_auth.bump][..],
+                    ]],
+                ),
+                1,
+                0,
+            )?;
         }
 
         Ok(())

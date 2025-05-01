@@ -226,7 +226,7 @@ impl<'info> MintPlot<'info> {
         self.plot.center_plant_water_collected = 0;
         
         // set last update block
-        self.plot.last_update_block = Clock::get()?.slot as u64;
+        self.plot.last_update_block = Clock::get()?.slot;
 
         // initial owner is plotly (can also be set to farm or program id)
         self.plot.last_claimer = self.farm_auth.key();

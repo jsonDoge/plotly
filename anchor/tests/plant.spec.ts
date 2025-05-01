@@ -1,13 +1,22 @@
 /* eslint-disable no-await-in-loop */
 import * as anchor from '@coral-xyz/anchor'
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { ASSOCIATED_TOKEN_PROGRAM_ID, getAccount, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 
 import { Connection, Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js'
 import assert from 'node:assert'
 import { Farm } from '../target/types/farm'
 import { setupFarm, setupMint } from './setup'
-import { mintAndBuyPlot, mintSeeds, plantSeed, tendPlant, toLeBytes, waitForSlots } from './helpers'
+import {
+  harvestPlant,
+  mintAndBuyPlot,
+  mintSeeds,
+  plantSeed,
+  revertPlant,
+  tendPlant,
+  toLeBytes,
+  waitForSlots,
+} from './helpers'
 
 // equivalent to rust to_le_bytes
 
@@ -223,127 +232,7 @@ describe('Planting', () => {
     }
   }, 1000000)
 
-  it('Should plant a seed and then harvest it', async () => {
-    console.log('Running plant seed test')
-    const plotX = 1
-    const plotY = 1
-
-    console.log('minting plots and buying')
-    await mintAndBuyPlot(provider, program, plotCurrency, plotX, plotY, userWallet)
-
-    const seedsToMint = 5
-    const plantTokensPerSeed = 10000000
-    const growthBlockDuration = 1000
-    const waterDrainRate = 10
-    const timesToTend = 5
-    const balanceAbsorbRate = 2
-
-    console.log('setting up plant mint')
-    const plantMint = await setupMint(provider, TOKEN_PROGRAM_ID)
-
-    console.log('creating seed')
-
-    const seedMint = await mintSeeds(
-      provider,
-      program,
-      plotCurrency,
-      plantMint,
-      userWallet,
-      seedsToMint,
-      plantTokensPerSeed,
-      growthBlockDuration,
-      waterDrainRate,
-      timesToTend,
-      balanceAbsorbRate,
-    )
-
-    console.log('planting seed')
-
-    await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
-    const totalWaterRate = 100 // constant for now
-
-    const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from('farm'), plotCurrency.toBuffer()],
-      program.programId,
-    )
-
-    const [plotMint] = anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
-      program.programId,
-    )
-
-    const [plotId] = anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from('plot'), plotMint.toBuffer()],
-      program.programId,
-    )
-
-    const [plantId] = anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from('plant'), plotMint.toBuffer()],
-      program.programId,
-    )
-
-    const plantData = await program.account.plant.fetch(plantId)
-    console.log('Plant account data:', plantData)
-
-    assert(plantData.seedMint.equals(seedMint), 'plant seed mint matches')
-    expect(plantData.waterRequired).toEqual(totalWaterRate * growthBlockDuration)
-    assert(
-      plantData.balanceAbsorbRate.toString() === new anchor.BN(balanceAbsorbRate).toString(),
-      'balance absorb rate matches',
-    )
-    assert(plantData.water.toString() === new anchor.BN(0).toString(), 'Initial water is 0')
-    assert(plantData.balance.toString() === new anchor.BN(0).toString(), 'Initial balance is 0')
-    assert(
-      plantData.balanceRequired.toString() === new anchor.BN(balanceAbsorbRate * growthBlockDuration).toString(),
-      'Initial balance is 0',
-    )
-
-    // up/down/left/right
-    const surroundingPlotIds = await getSurroundingPlotIds(plotX, plotY, farm, program.programId)
-
-    const centerPlotData = await program.account.plot.fetch(plotId)
-    expect(centerPlotData.centerPlantDrainRate).toEqual(100 - plantData.neighborWaterDrainRate * 4)
-    expect(centerPlotData.upPlantDrainRate).toEqual(0)
-    expect(centerPlotData.downPlantDrainRate).toEqual(0)
-    expect(centerPlotData.leftPlantDrainRate).toEqual(0)
-    expect(centerPlotData.rightPlantDrainRate).toEqual(0)
-
-    if (surroundingPlotIds[0]) {
-      const upPlotData = await program.account.plot.fetch(surroundingPlotIds[0])
-      expect(upPlotData.centerPlantDrainRate).toEqual(0)
-      expect(upPlotData.upPlantDrainRate).toEqual(0)
-      expect(upPlotData.downPlantDrainRate).toEqual(plantData.neighborWaterDrainRate)
-      expect(upPlotData.leftPlantDrainRate).toEqual(0)
-      expect(upPlotData.rightPlantDrainRate).toEqual(0)
-    }
-
-    if (surroundingPlotIds[1]) {
-      const downPlotData = await program.account.plot.fetch(surroundingPlotIds[1])
-      expect(downPlotData.centerPlantDrainRate).toEqual(0)
-      expect(downPlotData.upPlantDrainRate).toEqual(plantData.neighborWaterDrainRate)
-      expect(downPlotData.downPlantDrainRate).toEqual(0)
-      expect(downPlotData.leftPlantDrainRate).toEqual(0)
-      expect(downPlotData.rightPlantDrainRate).toEqual(0)
-    }
-    if (surroundingPlotIds[2]) {
-      const leftPlotData = await program.account.plot.fetch(surroundingPlotIds[2])
-      expect(leftPlotData.centerPlantDrainRate).toEqual(0)
-      expect(leftPlotData.upPlantDrainRate).toEqual(0)
-      expect(leftPlotData.downPlantDrainRate).toEqual(0)
-      expect(leftPlotData.leftPlantDrainRate).toEqual(0)
-      expect(leftPlotData.rightPlantDrainRate).toEqual(plantData.neighborWaterDrainRate)
-    }
-    if (surroundingPlotIds[3]) {
-      const rightPlotData = await program.account.plot.fetch(surroundingPlotIds[3])
-      expect(rightPlotData.centerPlantDrainRate).toEqual(0)
-      expect(rightPlotData.upPlantDrainRate).toEqual(0)
-      expect(rightPlotData.downPlantDrainRate).toEqual(0)
-      expect(rightPlotData.leftPlantDrainRate).toEqual(plantData.neighborWaterDrainRate)
-      expect(rightPlotData.rightPlantDrainRate).toEqual(0)
-    }
-  }, 1000000)
-
-  it.only('Should plant a seed and be able to tend it', async () => {
+  it('Should plant a seed and be able to tend it', async () => {
     console.log('Running plant seed test')
     const plotX = 1
     const plotY = 1
@@ -398,10 +287,10 @@ describe('Planting', () => {
 
     await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
 
-    console.log('tending plant')
-
     const currentSlot = await provider.connection.getSlot()
     await waitForSlots(provider, currentSlot, 17)
+
+    console.log('tending plant')
 
     await tendPlant(provider, program, plotX, plotY, plotCurrency, userWallet)
 
@@ -415,5 +304,313 @@ describe('Planting', () => {
 
     expect(plantData.balance.gt(new anchor.BN(0))).toBeTruthy()
     expect(plotData.balance.eq(plotBalanceBefore.sub(plantData.balance))).toBeTruthy()
+  }, 1000000)
+
+  it.only('Should plant a seed -> tend once -> harvest it', async () => {
+    console.log('Running plant seed test')
+    const plotX = 1
+    const plotY = 1
+
+    const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('farm'), plotCurrency.toBuffer()],
+      program.programId,
+    )
+
+    const [plotMint] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
+      program.programId,
+    )
+
+    const [plotId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot'), plotMint.toBuffer()],
+      program.programId,
+    )
+
+    const [plantId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plant'), plotMint.toBuffer()],
+      program.programId,
+    )
+
+    console.log('minting plots and buying')
+    await mintAndBuyPlot(provider, program, plotCurrency, plotX, plotY, userWallet)
+
+    const seedsToMint = 5
+    const plantTokensPerSeed = 10000000
+    const growthBlockDuration = 101
+    const waterDrainRate = 10
+    const timesToTend = 1
+    const balanceAbsorbRate = 2
+
+    console.log('setting up plant mint')
+    const plantMint = await setupMint(provider, TOKEN_PROGRAM_ID)
+
+    console.log('creating seed')
+
+    const seedMint = await mintSeeds(
+      provider,
+      program,
+      plotCurrency,
+      plantMint,
+      userWallet,
+      seedsToMint,
+      plantTokensPerSeed,
+      growthBlockDuration,
+      waterDrainRate,
+      timesToTend,
+      balanceAbsorbRate,
+    )
+
+    const [seedInfoId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('seed_mint_info'), seedMint.toBuffer()],
+      program.programId,
+    )
+    const seedInfo = await program.account.seedMintInfo.fetch(seedInfoId)
+    const plantTokenMintId = seedInfo.plantMint
+
+    const [userPlantTokenAta] = anchor.web3.PublicKey.findProgramAddressSync(
+      [userWallet.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), plantTokenMintId.toBuffer()],
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+
+    console.log('planting seed')
+
+    const plantSlot = await provider.connection.getSlot()
+
+    await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
+    const totalWaterRate = 100 // constant for now
+
+    await waitForSlots(provider, await provider.connection.getSlot(), 45) // should allow tending 25% within tending threashold (half of growth block duration)
+    console.log('tending plant')
+
+    await tendPlant(provider, program, plotX, plotY, plotCurrency, userWallet)
+
+    await waitForSlots(provider, await provider.connection.getSlot(), 56) // total growth time is 101, so we need to wait for 45 + 56 = 101
+    console.log('harvesting plant')
+
+    const harvestSlot = await provider.connection.getSlot()
+
+    console.log('plant slot:', plantSlot)
+    console.log('harvest slot:', harvestSlot)
+
+    let userPlantTokenAtaData = await getAccount(provider.connection, userPlantTokenAta)
+    const balanceBeforeHarvest = userPlantTokenAtaData.amount
+
+    await harvestPlant(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
+
+    console.log('fetching addresses')
+
+    const plantData = await program.account.plant.fetch(plantId)
+
+    // reset plant data
+    expect(plantData.seedMint).toEqual(PublicKey.default)
+    expect(plantData.waterRequired).toEqual(0)
+    expect(plantData.balanceAbsorbRate.toString()).toEqual(new anchor.BN(0).toString())
+    expect(plantData.water.toString()).toEqual(new anchor.BN(0).toString())
+    expect(plantData.balance.toString()).toEqual(new anchor.BN(0).toString())
+    expect(plantData.balanceRequired.toString()).toEqual(new anchor.BN(0).toString())
+
+    userPlantTokenAtaData = await getAccount(provider.connection, userPlantTokenAta)
+    const balanceAfterHarvest = userPlantTokenAtaData.amount
+
+    console.log('seed info', seedInfo)
+
+    // user received expected plant tokens
+    expect(new anchor.BN((balanceAfterHarvest - balanceBeforeHarvest).toString()).toString()).toEqual(
+      seedInfo.plantTokensPerSeed.toString(),
+    )
+
+    // up/down/left/right
+    const surroundingPlotIds = await getSurroundingPlotIds(plotX, plotY, farm, program.programId)
+
+    const centerPlotData = await program.account.plot.fetch(plotId)
+    expect(centerPlotData.centerPlantDrainRate).toEqual(0)
+    expect(centerPlotData.upPlantDrainRate).toEqual(0)
+    expect(centerPlotData.downPlantDrainRate).toEqual(0)
+    expect(centerPlotData.leftPlantDrainRate).toEqual(0)
+    expect(centerPlotData.rightPlantDrainRate).toEqual(0)
+
+    if (surroundingPlotIds[0]) {
+      const upPlotData = await program.account.plot.fetch(surroundingPlotIds[0])
+      expect(upPlotData.centerPlantDrainRate).toEqual(0)
+      expect(upPlotData.upPlantDrainRate).toEqual(0)
+      expect(upPlotData.downPlantDrainRate).toEqual(0)
+      expect(upPlotData.leftPlantDrainRate).toEqual(0)
+      expect(upPlotData.rightPlantDrainRate).toEqual(0)
+    }
+
+    if (surroundingPlotIds[1]) {
+      const downPlotData = await program.account.plot.fetch(surroundingPlotIds[1])
+      expect(downPlotData.centerPlantDrainRate).toEqual(0)
+      expect(downPlotData.upPlantDrainRate).toEqual(0)
+      expect(downPlotData.downPlantDrainRate).toEqual(0)
+      expect(downPlotData.leftPlantDrainRate).toEqual(0)
+      expect(downPlotData.rightPlantDrainRate).toEqual(0)
+    }
+    if (surroundingPlotIds[2]) {
+      const leftPlotData = await program.account.plot.fetch(surroundingPlotIds[2])
+      expect(leftPlotData.centerPlantDrainRate).toEqual(0)
+      expect(leftPlotData.upPlantDrainRate).toEqual(0)
+      expect(leftPlotData.downPlantDrainRate).toEqual(0)
+      expect(leftPlotData.leftPlantDrainRate).toEqual(0)
+      expect(leftPlotData.rightPlantDrainRate).toEqual(0)
+    }
+    if (surroundingPlotIds[3]) {
+      const rightPlotData = await program.account.plot.fetch(surroundingPlotIds[3])
+      expect(rightPlotData.centerPlantDrainRate).toEqual(0)
+      expect(rightPlotData.upPlantDrainRate).toEqual(0)
+      expect(rightPlotData.downPlantDrainRate).toEqual(0)
+      expect(rightPlotData.leftPlantDrainRate).toEqual(0)
+      expect(rightPlotData.rightPlantDrainRate).toEqual(0)
+    }
+  }, 1000000)
+
+  it('Should plant a seed -> tend once -> revert plant ', async () => {
+    console.log('Running plant seed test')
+    const plotX = 1
+    const plotY = 1
+
+    const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('farm'), plotCurrency.toBuffer()],
+      program.programId,
+    )
+
+    const [plotMint] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
+      program.programId,
+    )
+
+    const [plotId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot'), plotMint.toBuffer()],
+      program.programId,
+    )
+
+    const [plantId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plant'), plotMint.toBuffer()],
+      program.programId,
+    )
+
+    console.log('minting plots and buying')
+    await mintAndBuyPlot(provider, program, plotCurrency, plotX, plotY, userWallet)
+
+    const seedsToMint = 5
+    const plantTokensPerSeed = 10000000
+    const growthBlockDuration = 101
+    const waterDrainRate = 10
+    const timesToTend = 1
+    const balanceAbsorbRate = 2
+
+    console.log('setting up plant mint')
+    const plantMint = await setupMint(provider, TOKEN_PROGRAM_ID)
+
+    console.log('creating seed')
+
+    const seedMint = await mintSeeds(
+      provider,
+      program,
+      plotCurrency,
+      plantMint,
+      userWallet,
+      seedsToMint,
+      plantTokensPerSeed,
+      growthBlockDuration,
+      waterDrainRate,
+      timesToTend,
+      balanceAbsorbRate,
+    )
+
+    const [seedInfoId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('seed_mint_info'), seedMint.toBuffer()],
+      program.programId,
+    )
+    const seedInfo = await program.account.seedMintInfo.fetch(seedInfoId)
+    const plantTokenMintId = seedInfo.plantMint
+
+    const [userPlantTokenAta] = anchor.web3.PublicKey.findProgramAddressSync(
+      [userWallet.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), plantTokenMintId.toBuffer()],
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+
+    console.log('planting seed')
+
+    const plantSlot = await provider.connection.getSlot()
+
+    await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
+    const totalWaterRate = 100 // constant for now
+
+    await waitForSlots(provider, await provider.connection.getSlot(), 45) // should allow tending 25% within tending threashold (half of growth block duration)
+    console.log('tending plant')
+
+    await tendPlant(provider, program, plotX, plotY, plotCurrency, userWallet)
+
+    await waitForSlots(provider, await provider.connection.getSlot(), 56) // total growth time is 101, so we need to wait for 45 + 56 = 101
+    console.log('reverting plant')
+
+    const revertPlantSlot = await provider.connection.getSlot()
+
+    console.log('plant slot:', plantSlot)
+    console.log('revert slot:', revertPlantSlot)
+
+    const userPlantTokenAtaData = await getAccount(provider.connection, userPlantTokenAta)
+    const balanceBeforeRevert = userPlantTokenAtaData.amount
+
+    await revertPlant(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
+
+    console.log('fetching addresses')
+    const plantData = await program.account.plant.fetch(plantId)
+
+    // reset plant data
+    expect(plantData.seedMint).toEqual(PublicKey.default)
+    expect(plantData.waterRequired).toEqual(0)
+    expect(plantData.balanceAbsorbRate.toString()).toEqual(new anchor.BN(0).toString())
+    expect(plantData.water.toString()).toEqual(new anchor.BN(0).toString())
+    expect(plantData.balance.toString()).toEqual(new anchor.BN(0).toString())
+    expect(plantData.balanceRequired.toString()).toEqual(new anchor.BN(0).toString())
+
+    // user received expected plant tokens
+    expect(userPlantTokenAtaData.amount.toString()).toEqual(new anchor.BN(seedInfo.plantTokensPerSeed).toString())
+
+    // up/down/left/right
+    const surroundingPlotIds = await getSurroundingPlotIds(plotX, plotY, farm, program.programId)
+
+    const centerPlotData = await program.account.plot.fetch(plotId)
+    expect(centerPlotData.centerPlantDrainRate).toEqual(0)
+    expect(centerPlotData.upPlantDrainRate).toEqual(0)
+    expect(centerPlotData.downPlantDrainRate).toEqual(0)
+    expect(centerPlotData.leftPlantDrainRate).toEqual(0)
+    expect(centerPlotData.rightPlantDrainRate).toEqual(0)
+
+    if (surroundingPlotIds[0]) {
+      const upPlotData = await program.account.plot.fetch(surroundingPlotIds[0])
+      expect(upPlotData.centerPlantDrainRate).toEqual(0)
+      expect(upPlotData.upPlantDrainRate).toEqual(0)
+      expect(upPlotData.downPlantDrainRate).toEqual(0)
+      expect(upPlotData.leftPlantDrainRate).toEqual(0)
+      expect(upPlotData.rightPlantDrainRate).toEqual(0)
+    }
+
+    if (surroundingPlotIds[1]) {
+      const downPlotData = await program.account.plot.fetch(surroundingPlotIds[1])
+      expect(downPlotData.centerPlantDrainRate).toEqual(0)
+      expect(downPlotData.upPlantDrainRate).toEqual(0)
+      expect(downPlotData.downPlantDrainRate).toEqual(0)
+      expect(downPlotData.leftPlantDrainRate).toEqual(0)
+      expect(downPlotData.rightPlantDrainRate).toEqual(0)
+    }
+    if (surroundingPlotIds[2]) {
+      const leftPlotData = await program.account.plot.fetch(surroundingPlotIds[2])
+      expect(leftPlotData.centerPlantDrainRate).toEqual(0)
+      expect(leftPlotData.upPlantDrainRate).toEqual(0)
+      expect(leftPlotData.downPlantDrainRate).toEqual(0)
+      expect(leftPlotData.leftPlantDrainRate).toEqual(0)
+      expect(leftPlotData.rightPlantDrainRate).toEqual(0)
+    }
+    if (surroundingPlotIds[3]) {
+      const rightPlotData = await program.account.plot.fetch(surroundingPlotIds[3])
+      expect(rightPlotData.centerPlantDrainRate).toEqual(0)
+      expect(rightPlotData.upPlantDrainRate).toEqual(0)
+      expect(rightPlotData.downPlantDrainRate).toEqual(0)
+      expect(rightPlotData.leftPlantDrainRate).toEqual(0)
+      expect(rightPlotData.rightPlantDrainRate).toEqual(0)
+    }
   }, 1000000)
 })

@@ -123,4 +123,13 @@ pub mod farm {
         ctx.accounts.harvest_plant(plot_x, plot_y, plot_currency, ctx.program_id)
     }
 
+    pub fn revert_plant(
+        ctx: Context<RevertPlant>,
+        plot_x: u32,
+        plot_y: u32,
+        plot_currency: Pubkey
+    ) -> Result<()> {
+        ctx.accounts.revertPlant(plot_x, plot_y, plot_currency, ctx.program_id)
+    }
+
 }
