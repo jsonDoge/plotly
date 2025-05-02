@@ -98,7 +98,10 @@ export const mintAndBuyPlot = async (
     throw error
   }
 
+  const plotMintIds = []
+  const plotIds = []
   // Mint neighbors
+  // left/up/down/right
   for (let x = -1; x <= 1; x += 1) {
     for (let y = -1; y <= 1; y += 1) {
       if (Math.abs(x) + Math.abs(y) !== 1) {
@@ -119,6 +122,14 @@ export const mintAndBuyPlot = async (
         program.programId,
       )
 
+      plotMintIds.push(neighborPlotMint)
+
+      const [plotId] = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from('plot'), neighborPlotMint.toBuffer()],
+        program.programId,
+      )
+
+      plotIds.push(plotId)
       try {
         // eslint-disable-next-line no-await-in-loop
         await wrapTx(
@@ -140,11 +151,15 @@ export const mintAndBuyPlot = async (
   try {
     await wrapTx(
       program.methods
-        .acquirePlot(plotX, plotY, plotCurrency)
+        .acquirePlot(plotX, plotY)
         .accounts({
           user: userWallet.publicKey,
           plotMint,
           plotCurrencyMint: plotCurrency,
+          plotLeft: plotIds[0],
+          plotUp: plotIds[1],
+          plotDown: plotIds[2],
+          plotRight: plotIds[3],
         })
         .signers([userWallet.payer]),
     )
@@ -244,7 +259,7 @@ export const plantSeed = async (
 
   console.log(`center x: ${plotX}, y: ${plotY}`)
 
-  // right/up/down/left
+  // left/up/down/right
   for (let x = -1; x <= 1; x += 1) {
     for (let y = -1; y <= 1; y += 1) {
       // skip the center and diagonal
@@ -346,7 +361,7 @@ export const tendPlant = async (
 
   console.log(`center x: ${plotX}, y: ${plotY}`)
 
-  // right/up/down/left
+  // left/up/down/right
   for (let x = -1; x <= 1; x += 1) {
     for (let y = -1; y <= 1; y += 1) {
       // skip the center and diagonal
@@ -444,7 +459,7 @@ export const harvestPlant = async (
 
   console.log(`center x: ${plotX}, y: ${plotY}`)
 
-  // right/up/down/left
+  // left/up/down/right
   for (let x = -1; x <= 1; x += 1) {
     for (let y = -1; y <= 1; y += 1) {
       // skip the center and diagonal
@@ -550,7 +565,7 @@ export const revertPlant = async (
 
   console.log(`center x: ${plotX}, y: ${plotY}`)
 
-  // right/up/down/left
+  // left/up/down/right
   for (let x = -1; x <= 1; x += 1) {
     for (let y = -1; y <= 1; y += 1) {
       // skip the center and diagonal

@@ -53,10 +53,9 @@ pub mod farm {
         ctx: Context<AcquirePlot>,
         plot_x: u32,
         plot_y: u32,
-        plot_currency: Pubkey,
     ) -> Result<()> {
         ctx.accounts
-            .acquire_plot(plot_x, plot_y, plot_currency, ctx.program_id)
+            .acquire_plot(plot_x, plot_y, ctx.program_id)
     }
 
     // add balance

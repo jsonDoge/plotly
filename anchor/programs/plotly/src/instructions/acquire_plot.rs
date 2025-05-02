@@ -14,18 +14,12 @@ use anchor_spl::{
     },
 };
 use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
-// use anchor_lang::system_program::{create_account, CreateAccount};
-// use anchor_spl::token::{initialize_mint, InitializeMint, Mint as SplMint, Token as SplToken};
-// use anchor_spl::token_interface::Mint;
-// use mpl_token_metadata::instructions::CreateMetadataAccountV3CpiBuilder;
-// use mpl_token_metadata::types::DataV2;
-// use mpl_token_metadata::ID as TOKEN_METADATA_PROGRAM_ID;
 
 use crate::state::{AccWithBump, Plot};
 use crate::{errors::ErrorCode, state::Farm};
 
 #[derive(Accounts)]
-#[instruction(plot_x: u32, plot_y: u32, plot_currency: Pubkey)]
+#[instruction(plot_x: u32, plot_y: u32)]
 pub struct AcquirePlot<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -34,7 +28,7 @@ pub struct AcquirePlot<'info> {
     pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,   
 
     #[account(
-        seeds = [b"farm", plot_currency.as_ref()],
+        seeds = [b"farm", plot_currency_mint.key().as_ref()],
         bump,
     )]
     pub farm: Box<Account<'info, Farm>>,
@@ -81,7 +75,7 @@ pub struct AcquirePlot<'info> {
 
     #[account(
         mut,
-        associated_token::mint = plot_currency,
+        associated_token::mint = plot_currency_mint,
         associated_token::authority = user,
     )]
     pub user_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
@@ -90,7 +84,7 @@ pub struct AcquirePlot<'info> {
 
     #[account(
         mut,
-        associated_token::mint = plot_currency,
+        associated_token::mint = plot_currency_mint,
         associated_token::authority = farm_auth,
     )]
     pub farm_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
@@ -128,7 +122,6 @@ impl<'info> AcquirePlot<'info> {
         &mut self,
         plot_x: u32,
         plot_y: u32,
-        plot_currency: Pubkey,
         program_id: &Pubkey,
     ) -> Result<()> {
         // TODO: add deposit balance

@@ -9,7 +9,7 @@ import { PublicKey } from '@solana/web3.js'
 import assert from 'node:assert'
 import { Farm } from '../target/types/farm'
 import { setupFarm, setupMint } from './setup'
-import { increasedCUTxWrap, toLeBytes } from './helpers'
+import { increasedCUTxWrap, mintAndBuyPlot, toLeBytes } from './helpers'
 
 describe('farm', () => {
   // Configure the client to use the local cluster.
@@ -30,7 +30,6 @@ describe('farm', () => {
   }, 10000000)
 
   it('Should mint the same plot NFT only ONCE', async () => {
-    console.log('Running test')
     const plotX = 1
     const plotY = 1
 
@@ -48,34 +47,7 @@ describe('farm', () => {
     //   program.programId,
     // )
 
-    try {
-      await wrapTx(
-        program.methods
-          .mintPlot(plotX, plotY, plotCurrency)
-          .accounts({
-            user: userWallet.publicKey,
-            plotMint,
-          })
-          .signers([userWallet.payer]),
-      )
-    } catch (error) {
-      console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
-    }
-
-    try {
-      await wrapTx(
-        program.methods
-          .acquirePlot(plotX, plotY, plotCurrency)
-          .accounts({
-            user: userWallet.publicKey,
-            plotMint,
-            plotCurrencyMint: plotCurrency,
-          })
-          .signers([userWallet.payer]),
-      )
-    } catch (error) {
-      console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
-    }
+    await mintAndBuyPlot(provider, program, plotCurrency, plotX, plotY, userWallet)
 
     const userTokenAccount = await getAssociatedTokenAddress(
       plotMint, // your SPL token mint public key
@@ -111,7 +83,8 @@ describe('farm', () => {
 
     console.log('Collection size:', value)
 
-    assert(new anchor.BN(value.size).eq(new anchor.BN(1)), 'Collection should have 1 NFT')
+    // because we also minted neighbors
+    assert(new anchor.BN(value.size).eq(new anchor.BN(5)), 'Collection should have 1 NFT')
 
     const [plotId] = anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from('plot'), plotMint.toBuffer()],
@@ -128,15 +101,53 @@ describe('farm', () => {
 
     // console.log('Your transaction signature', tx)
 
+    const plotMintIds: PublicKey[] = []
+    const plotIds: PublicKey[] = []
+    for (let x = -1; x <= 1; x += 1) {
+      for (let y = -1; y <= 1; y += 1) {
+        if (Math.abs(x) + Math.abs(y) !== 1) {
+          continue
+        }
+        if (plotX + x < 0 || plotY + y < 0) {
+          continue
+        }
+        if (plotX + x > 999 || plotY + y > 999) {
+          continue
+        }
+
+        const neighborX = plotX + x
+        const neighborY = plotY + y
+
+        const [neighborPlotMint] = anchor.web3.PublicKey.findProgramAddressSync(
+          [Buffer.from('plot_mint'), toLeBytes(neighborX), toLeBytes(neighborY), farm.toBuffer()],
+          program.programId,
+        )
+
+        plotMintIds.push(neighborPlotMint)
+
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        const [plotId_] = anchor.web3.PublicKey.findProgramAddressSync(
+          [Buffer.from('plot'), neighborPlotMint.toBuffer()],
+          program.programId,
+        )
+
+        plotIds.push(plotId_)
+      }
+    }
+
     let txFailed = false
     try {
-      await wrapTx(
+      const res = await wrapTx(
         program.methods
-          .acquirePlot(plotX, plotY, plotCurrency)
+          .acquirePlot(plotX, plotY)
           .accounts({
             user: userWallet.publicKey,
             plotMint,
             plotCurrencyMint: plotCurrency,
+            plotLeft: plotIds[0],
+            plotUp: plotIds[1],
+            plotDown: plotIds[2],
+            plotRight: plotIds[3],
           })
           .signers([userWallet.payer]),
       )
@@ -144,7 +155,7 @@ describe('farm', () => {
       txFailed = true
     }
 
-    assert(txFailed, 'Transaction should have failed')
+    expect(txFailed).toBe(true)
 
     userTokenAccountInfo = await program.provider.connection.getTokenAccountBalance(userTokenAccount)
 
@@ -165,34 +176,7 @@ describe('farm', () => {
       program.programId,
     )
 
-    try {
-      await wrapTx(
-        program.methods
-          .mintPlot(plotX5, plotY5, plotCurrency)
-          .accounts({
-            user: userWallet.publicKey,
-            plotMint: plotMint55,
-          })
-          .signers([userWallet.payer]),
-      )
-    } catch (error) {
-      console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
-    }
-
-    try {
-      await wrapTx(
-        program.methods
-          .acquirePlot(plotX5, plotY5, plotCurrency)
-          .accounts({
-            user: userWallet.publicKey,
-            plotMint: plotMint55,
-            plotCurrencyMint: plotCurrency,
-          })
-          .signers([userWallet.payer]),
-      )
-    } catch (error) {
-      console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
-    }
+    await mintAndBuyPlot(provider, program, plotCurrency, plotX5, plotY5, userWallet)
 
     const plotX2 = 2
     const plotY3 = 3
@@ -202,34 +186,7 @@ describe('farm', () => {
       program.programId,
     )
 
-    try {
-      await wrapTx(
-        program.methods
-          .mintPlot(plotX2, plotY3, plotCurrency)
-          .accounts({
-            user: userWallet.publicKey,
-            plotMint: plotMint23,
-          })
-          .signers([userWallet.payer]),
-      )
-    } catch (error) {
-      console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
-    }
-
-    try {
-      await wrapTx(
-        program.methods
-          .acquirePlot(plotX2, plotY3, plotCurrency)
-          .accounts({
-            user: userWallet.publicKey,
-            plotMint: plotMint23,
-            plotCurrencyMint: plotCurrency,
-          })
-          .signers([userWallet.payer]),
-      )
-    } catch (error) {
-      console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
-    }
+    await mintAndBuyPlot(provider, program, plotCurrency, plotX2, plotY3, userWallet)
 
     const userTokenAccount11 = await getAssociatedTokenAddress(plotMint55, userWallet.publicKey)
 
@@ -260,6 +217,6 @@ describe('farm', () => {
 
     console.log('Collection size:', value)
 
-    assert(new anchor.BN(value.size).eq(new anchor.BN(2)), 'Correctly increments collection size')
+    expect(new anchor.BN(value.size).toString()).toEqual(new anchor.BN(10).toString())
   }, 1000000)
 })

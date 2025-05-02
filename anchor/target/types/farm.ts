@@ -426,8 +426,8 @@ export type Farm = {
                 ]
               },
               {
-                "kind": "arg",
-                "path": "plotCurrency"
+                "kind": "account",
+                "path": "plotCurrencyMint"
               }
             ]
           }
@@ -684,8 +684,8 @@ export type Farm = {
                 ]
               },
               {
-                "kind": "arg",
-                "path": "plotCurrency"
+                "kind": "account",
+                "path": "plotCurrencyMint"
               }
             ],
             "program": {
@@ -774,8 +774,8 @@ export type Farm = {
                 ]
               },
               {
-                "kind": "arg",
-                "path": "plotCurrency"
+                "kind": "account",
+                "path": "plotCurrencyMint"
               }
             ],
             "program": {
@@ -883,10 +883,6 @@ export type Farm = {
         {
           "name": "plotY",
           "type": "u32"
-        },
-        {
-          "name": "plotCurrency",
-          "type": "pubkey"
         }
       ]
     },

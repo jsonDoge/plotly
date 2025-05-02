@@ -420,8 +420,8 @@
                 ]
               },
               {
-                "kind": "arg",
-                "path": "plot_currency"
+                "kind": "account",
+                "path": "plot_currency_mint"
               }
             ]
           }
@@ -678,8 +678,8 @@
                 ]
               },
               {
-                "kind": "arg",
-                "path": "plot_currency"
+                "kind": "account",
+                "path": "plot_currency_mint"
               }
             ],
             "program": {
@@ -768,8 +768,8 @@
                 ]
               },
               {
-                "kind": "arg",
-                "path": "plot_currency"
+                "kind": "account",
+                "path": "plot_currency_mint"
               }
             ],
             "program": {
@@ -877,10 +877,6 @@
         {
           "name": "plot_y",
           "type": "u32"
-        },
-        {
-          "name": "plot_currency",
-          "type": "pubkey"
         }
       ]
     },
