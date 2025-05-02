@@ -148,13 +148,13 @@ pub mod farm {
         )
     }
 
-    pub fn mint_recipe(
-        ctx: Context<MintRecipe>,
+    pub fn follow_recipe(
+        ctx: Context<FollowRecipe>,
         plot_currency: Pubkey,
         ingredient_amounts: [u64; 2],
         result_token_receive: u64,
     ) -> Result<()> {
-        ctx.accounts.mint_recipe(
+        ctx.accounts.follow_recipe(
             plot_currency,
             ingredient_amounts,
             result_token_receive,
@@ -179,4 +179,52 @@ pub mod farm {
             ctx.program_id,
         )
     }
+
+
+    // OFFER
+    pub fn create_offer(
+        ctx: Context<CreateOffer>,
+        price_amount_per_token: u64,
+        result_token_deposit: u64,
+    ) -> Result<()> {
+        ctx.accounts.create_offer(
+            price_amount_per_token,
+            result_token_deposit,
+            ctx.bumps.offer,
+            ctx.program_id,
+        )
+    }
+
+    pub fn refill_offer(
+        ctx: Context<RefillOffer>,
+        price_amount_per_token: u64, // used in seeds
+        result_token_deposit: u64,
+    ) -> Result<()> {
+        ctx.accounts.refill_offer(
+            price_amount_per_token,
+            result_token_deposit,
+            ctx.program_id,
+        )
+    }
+
+    pub fn accept_offer(
+        ctx: Context<AcceptOffer>,
+        price_amount_per_token: u64, // used in seeds
+        result_token_to_receive: u64,
+    ) -> Result<()> {
+        ctx.accounts.accept_offer(
+            price_amount_per_token,
+            result_token_to_receive,
+            ctx.program_id,
+        )
+    }
+
+    pub fn cancel_offer(
+        ctx: Context<CancelOffer>,
+        price_amount_per_token: u64, // used in seeds
+    ) -> Result<()> {
+        ctx.accounts.cancel_offer()
+    }
+
+
 }

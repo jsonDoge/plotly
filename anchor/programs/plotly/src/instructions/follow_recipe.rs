@@ -22,7 +22,7 @@ use crate::{errors::ErrorCode, state::Farm};
     plot_currency: Pubkey,
     ingredient_amounts: [u64; 2],
 )]
-pub struct MintRecipe<'info> {
+pub struct FollowRecipe<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
 
@@ -119,8 +119,8 @@ pub struct MintRecipe<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-impl<'info> MintRecipe<'info> {
-    pub fn mint_recipe(
+impl<'info> FollowRecipe<'info> {
+    pub fn follow_recipe(
         &mut self,
         plot_currency: Pubkey,
         // TODO: later can increase to more if time left
@@ -263,7 +263,7 @@ impl<'info> MintRecipe<'info> {
 
         self.recipe.result_token_balance -= result_token_receive;
 
-        msg!("Token crafted by recipe!");
+        msg!("Recipe used: {:?}", self.recipe.key());
 
         Ok(())
     }

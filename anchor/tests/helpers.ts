@@ -4,6 +4,8 @@ import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token
 // import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { Connection, Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js'
 
+const farmIdl = require('../target/idl/farm.json') as anchor.Idl
+
 export function toLeBytes(value: number, byteLength = 4, signed = false) {
   const buffer = Buffer.alloc(byteLength)
 
@@ -59,7 +61,7 @@ export const increasedCUTxWrap = (connection: Connection, payer: Keypair) => asy
 
 export const mintAndBuyPlot = async (
   provider: anchor.AnchorProvider,
-  program: anchor.Program<Farm>,
+  program: anchor.Program<Farm> | anchor.Program<typeof farmIdl>,
   plotCurrency: PublicKey,
   plotX: number,
   plotY: number,

@@ -68,6 +68,24 @@ pub enum ErrorCode {
     RecipeDoesntHaveEnoughTokens,
     #[msg("Cant refill by 0 tokens")]
     CantRefillByZeroTokens,
+    #[msg("Neighbor plot not minted")]
+    NeighborPlotNotMinted,
+    
+    // OFFERS
+    #[msg("Result token is not a seed or minted by the farm program")]
+    InvalidResultToken,
+    #[msg("Non-existing offer")]
+    OfferDoesntExist,
+    #[msg("Offer doesnt have enough tokens")]
+    OfferDoesntHaveEnoughTokens,
+    #[msg("Invalid ATA account")]
+    InvalidATAAccount,
+    #[msg("Insufficient balance to complete offer")]
+    InsufficientBalanceToCompleteOffer,
+    #[msg("Offer already exists")]
+    OfferAlreadyExists,
+
+
     // INTERNAL ERRORS (Unexpected)
     #[msg("INTERNAL: water calculation error")]
     WaterCalculationError,

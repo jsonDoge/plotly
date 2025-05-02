@@ -31,7 +31,7 @@ pub struct AcquirePlot<'info> {
     pub user: Signer<'info>,
 
     // value same as plot_currency
-    pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,
+    pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,   
 
     #[account(
         seeds = [b"farm", plot_currency.as_ref()],
@@ -95,6 +95,19 @@ pub struct AcquirePlot<'info> {
     )]
     pub farm_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
 
+    // Surrounding plots
+    #[account()]
+    pub plot_up: Box<Account<'info, Plot>>,
+
+    #[account()]
+    pub plot_right: Box<Account<'info, Plot>>,
+
+    #[account()]
+    pub plot_left: Box<Account<'info, Plot>>,
+
+    #[account()]
+    pub plot_down: Box<Account<'info, Plot>>,
+
     // PDA authority
 
     #[account(
@@ -119,7 +132,23 @@ impl<'info> AcquirePlot<'info> {
         program_id: &Pubkey,
     ) -> Result<()> {
         // TODO: add deposit balance
-        // TODO: add verification that neighbor plots are minted!
+
+        // TODO: improve verification that neighbor plots are minted!
+        if plot_y > 0 && self.plot_up.last_claimer == Pubkey::default() {
+            return Err(ErrorCode::NeighborPlotNotMinted.into());
+        }
+
+        if plot_y < 999 && self.plot_down.last_claimer == Pubkey::default() {
+            return Err(ErrorCode::NeighborPlotNotMinted.into());
+        }
+
+        if plot_x > 0 && self.plot_left.last_claimer == Pubkey::default() {
+            return Err(ErrorCode::NeighborPlotNotMinted.into());
+        }
+
+        if plot_x < 999 && self.plot_right.last_claimer == Pubkey::default() {
+            return Err(ErrorCode::NeighborPlotNotMinted.into());
+        }
 
         if self.farm_associated_plot_account.amount == 0 {
             // Plot already minted

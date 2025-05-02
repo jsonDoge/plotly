@@ -1,45 +1,40 @@
 use anchor_lang::{accounts::program, prelude::*};
+use anchor_spl::metadata::Metadata;
 use anchor_spl::token_interface::Mint as MintInterface;
 use anchor_spl::{
     associated_token::{spl_associated_token_account, AssociatedToken},
     metadata::{
         create_master_edition_v3, create_metadata_accounts_v3, mpl_token_metadata::types::DataV2,
         verify_sized_collection_item, CreateMasterEditionV3, CreateMetadataAccountsV3,
-        MasterEditionAccount, Metadata, MetadataAccount, VerifySizedCollectionItem,
+        MasterEditionAccount, MetadataAccount, VerifySizedCollectionItem,
     },
     token::{
         self, mint_to, spl_token, Mint, MintTo, SetAuthority, Token, TokenAccount, TransferChecked,
     },
 };
-use mpl_token_metadata::accounts::Metadata as MplMetadata;
 use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 
-use crate::state::{AccWithBump, Recipe, SeedMintInfo};
+use crate::state::{AccWithBump, Offer, SeedMintInfo};
 use crate::{errors::ErrorCode, state::Farm};
 
 #[derive(Accounts)]
 #[instruction(
-    plot_currency: Pubkey,
-    ingredient_amounts: [u64; 2],
+    price_amount_per_token: u64,
 )]
-pub struct CreateRecipe<'info> {
+pub struct CreateOffer<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
 
+    pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,
+
     // FARM
     #[account(
-        seeds = [b"farm", plot_currency.as_ref()],
+        seeds = [b"farm", plot_currency_mint.key().as_ref()],
         bump,
     )]
     pub farm: Box<Account<'info, Farm>>,
 
-    // INGREDIENTS
-    #[account()]
-    pub ingredient_0_mint: Box<Account<'info, Mint>>,
-
-    #[account()]
-    pub ingredient_1_mint: Box<Account<'info, Mint>>,
-
+    // RESULT
     #[account()]
     pub result_mint: Box<Account<'info, Mint>>,
 
@@ -48,38 +43,36 @@ pub struct CreateRecipe<'info> {
     #[account(
         init,
         seeds = [
-            b"recipe",
-            ingredient_0_mint.key().as_ref(),
-            &ingredient_amounts[0].to_le_bytes()[..],
-            ingredient_1_mint.key().as_ref(),
-            &ingredient_amounts[1].to_le_bytes()[..],
+            b"offer",
+            &price_amount_per_token.to_le_bytes()[..],
             result_mint.key().as_ref(),
-            user_associated_ingredient_0_token_account.key().as_ref(),
-            user_associated_ingredient_1_token_account.key().as_ref(),
+            user_treasury.key().as_ref(),
             farm.key().as_ref()
         ],
-        space = 8 + std::mem::size_of::<Recipe>(),
+        space = 8 + std::mem::size_of::<Offer>(),
         payer = user,
         bump,
     )]
-    pub recipe: Box<Account<'info, Recipe>>,
+    pub offer: Box<Account<'info, Offer>>,
 
-    // USER INGREDIENT TOKEN ATA
+    #[account(
+        seeds = [
+            b"metadata",
+            token_metadata_program.key().as_ref(),
+            result_mint.key().as_ref()
+        ],
+        bump,
+    )]
+    pub offer_metadata: Box<Account<'info, MetadataAccount>>,
+
+    // TREASURY
     #[account(
         init_if_needed,
         payer = user,
-        associated_token::mint = ingredient_0_mint,
+        associated_token::mint = plot_currency_mint,
         associated_token::authority = user,
     )]
-    pub user_associated_ingredient_0_token_account: Box<Account<'info, TokenAccount>>,
-
-    #[account(
-        init_if_needed,
-        payer = user,
-        associated_token::mint = ingredient_1_mint,
-        associated_token::authority = user,
-    )]
-    pub user_associated_ingredient_1_token_account: Box<Account<'info, TokenAccount>>,
+    pub user_treasury: Box<Account<'info, TokenAccount>>,
 
     // USER RESULT TOKEN ATA
     #[account(
@@ -113,29 +106,21 @@ pub struct CreateRecipe<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-impl<'info> CreateRecipe<'info> {
-    pub fn create_recipe(
+impl<'info> CreateOffer<'info> {
+    pub fn create_offer(
         &mut self,
-        plot_currency: Pubkey,
         // TODO: later can increase to more if time left
-        ingredient_amounts: [u64; 2],
+        price_amount_per_token: u64,
         result_token_deposit: u64,
-        recipe_bump: u8,
+        offer_bump: u8,
         program_id: &Pubkey,
     ) -> Result<()> {
 
-        if self.ingredient_0_mint.key() == Pubkey::default() || self.ingredient_1_mint.key() == Pubkey::default() {
-            return Err(ErrorCode::InvalidIngredientData.into());
-        }
 
-        if ingredient_amounts[0] == 0 || ingredient_amounts[1] == 0 {
+        if self.user_treasury.key() == Pubkey::default() {
             return Err(ErrorCode::InvalidIngredientData.into());
         }
-
-        if self.user_associated_ingredient_0_token_account.key() == Pubkey::default() {
-            return Err(ErrorCode::InvalidIngredientData.into());
-        }
-        if self.user_associated_ingredient_1_token_account.key() == Pubkey::default() {
+        if self.user_associated_result_token_account.key() == Pubkey::default() {
             return Err(ErrorCode::InvalidIngredientData.into());
         }
 
@@ -144,9 +129,22 @@ impl<'info> CreateRecipe<'info> {
         }
 
         // already exists
-        if self.recipe.ingredient_0 != Pubkey::default() || self.recipe.ingredient_1 != Pubkey::default() {
-            return Err(ErrorCode::RecipeAlreadyExists.into());
+        if self.offer.result_token != Pubkey::default() {
+            return Err(ErrorCode::OfferAlreadyExists.into());
         }
+
+        // VERIFY if seed mint and made by the farm program
+
+        if self.offer_metadata.key() == Pubkey::default() || self.offer_metadata.mint != self.result_mint.key() {
+            return Err(ErrorCode::InvalidResultToken.into());
+        }
+
+        let creators = self.offer_metadata.creators.as_ref().ok_or(ErrorCode::InvalidResultToken)?;
+        if creators.len() != 1 || creators[0].address != *program_id || !creators[0].verified {
+            return Err(ErrorCode::InvalidResultToken.into());
+        }
+
+        // TRANSFER REesult token to farm (seed)
 
         msg!(
             "Transferring result token to farm... {}",
@@ -168,22 +166,15 @@ impl<'info> CreateRecipe<'info> {
             self.result_mint.decimals,
         )?;
 
-        self.recipe.ingredient_0 = self.ingredient_0_mint.key();
-        self.recipe.ingredient_1 = self.ingredient_1_mint.key();
+        self.offer.price_amount_per_token = price_amount_per_token;
         
-        self.recipe.ingredient_0_amount_per_1_result_token = ingredient_amounts[0];
-        self.recipe.ingredient_1_amount_per_1_result_token = ingredient_amounts[1];
-        
-        self.recipe.result_token = self.result_mint.key();
+        self.offer.result_token = self.result_mint.key();
+        self.offer.result_token_balance = result_token_deposit;
 
-        self.recipe.result_token_balance = result_token_deposit;
+        self.offer.treasury = self.user_treasury.key();
+        self.offer.bump = offer_bump;
 
-        self.recipe.ingredient_0_treasury = self.user_associated_ingredient_0_token_account.key();
-        self.recipe.ingredient_1_treasury = self.user_associated_ingredient_1_token_account.key();
-
-        self.recipe.bump = recipe_bump;
-
-        msg!("Recipe created: {:?}", self.recipe.key());
+        msg!("Offer created: {:?}", self.offer.key());
 
         Ok(())
     }

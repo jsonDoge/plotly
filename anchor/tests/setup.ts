@@ -155,7 +155,7 @@ export const setupFarm = async (
       .initializeFarm(plotCurrency, plotPrice)
       .accounts({
         user: payer,
-        plotCurrencyMint: plotCurrency
+        plotCurrencyMint: plotCurrency,
       })
       .transaction()
 

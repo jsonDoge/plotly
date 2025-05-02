@@ -1,7 +1,7 @@
 import { AnchorProvider, Idl, Program, Wallet, web3 } from '@coral-xyz/anchor'
 import path from 'path'
 import fs from 'fs'
-import { increasedCUTxWrap, toLeBytes } from '../tests/helpers'
+import { increasedCUTxWrap, mintAndBuyPlot, toLeBytes } from '../tests/helpers'
 
 // so that the plotCurrency address would be the same
 const localnetPlotCurrencyKeypairPath = './localnet/plotCurrency.json'
@@ -49,42 +49,23 @@ async function main() {
     program.programId,
   )
 
-  const plotX = 3
-  const plotY = 3
+  const [farmAuth] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('farm_auth'), farm.toBuffer()],
+    program.programId,
+  )
+
+  console.log('Farm:', farm.toString())
+  console.log('Farm auth:', farmAuth.toString())
+
+  const plotX = 5
+  const plotY = 5
 
   const [plotMint] = anchor.web3.PublicKey.findProgramAddressSync(
     [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
     program.programId,
   )
 
-  try {
-    await wrapTx(
-      program.methods
-        .mintPlot(plotX, plotY, plotCurrency)
-        .accounts({
-          user: userWallet.publicKey,
-          plotMint,
-        })
-        .signers([userWallet.payer]),
-    )
-  } catch (error) {
-    console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
-  }
-
-  try {
-    await wrapTx(
-      program.methods
-        .acquirePlot(plotX, plotY, plotCurrency)
-        .accounts({
-          user: userWallet.publicKey,
-          plotMint,
-          plotCurrencyMint: plotCurrency,
-        })
-        .signers([userWallet.payer]),
-    )
-  } catch (error) {
-    console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
-  }
+  await mintAndBuyPlot(provider, program, plotCurrency, plotX, plotY, userWallet)
 
   console.log('succsessfully acquired plot:', plotMint.toString())
   // Add your deploy script here.

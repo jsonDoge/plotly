@@ -126,6 +126,24 @@ pub struct Recipe {
     pub bump: u8,
 }
 
+
+#[account]
+#[derive(Default, InitSpace)]
+pub struct Offer {
+    // in plot currency
+    pub price_amount_per_token: u64,
+
+    // only seeds
+    pub result_token: Pubkey,
+    pub result_token_balance: u64,
+
+    pub supplier: Pubkey,
+
+    pub treasury: Pubkey,
+    pub bump: u8,
+}
+
+
 #[account]
 #[derive(Default, InitSpace)]
 pub struct AccWithBump {

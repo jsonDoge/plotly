@@ -464,7 +464,7 @@ describe('Planting', () => {
     }
   }, 1000000)
 
-  it.only('Should plant a seed -> tend once -> revert plant ', async () => {
+  it('Should plant a seed -> tend once -> revert plant ', async () => {
     console.log('Running plant seed test')
     const plotX = 1
     const plotY = 1
