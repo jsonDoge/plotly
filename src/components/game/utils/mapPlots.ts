@@ -4,10 +4,10 @@ import getConfig from 'next/config'
 // import { SEED_TYPE } from '../../../utils/constants'
 import { mapRawPlotOwnership } from '@/services/web3Utils'
 import { PublicKey } from '@solana/web3.js'
-import { Coordinates, MappedPlotInfos, RawPlant, RawPlot } from './interfaces'
+import { Coordinates, MappedPlotInfos, PlotInfo, RawPlant, RawPlot } from './interfaces'
 import { getDefaultPlotColor, getPlotColor } from './plotColors'
 import { PlantState, PlotBalanceState, PlotWaterRegenerationState, PlotWaterState } from '@/utils/enums'
-import { BN } from 'bn.js'
+import BN from 'bn.js'
 
 const { publicRuntimeConfig } = getConfig()
 
@@ -220,6 +220,123 @@ const estimatePlantAndPlotWater = (
   throw new Error(`Invalid plot water level ${plotWater})`)
 }
 
+// returns [absorbed, newPlotBalance, blocksAbsorbed]
+const estimatePlotBalance = (
+  plantBalance: BN,
+  plotBalance: BN,
+  plantAbsorbRate: BN,
+  balancePerTend: BN,
+  timesTended: number,
+  maxTends: number,
+  balanceTillFull: BN,
+  blocksPassed: BN,
+): [BN, BN, BN] => {
+  const ZERO = new BN(0);
+
+  if (plotBalance.eq(ZERO) || blocksPassed.eq(ZERO) || balanceTillFull.eq(ZERO)) {
+    return [ZERO, plotBalance, ZERO];
+  }
+
+  if (timesTended === maxTends) {
+    const maxAvailable = BN.min(balanceTillFull, plotBalance);
+    const absorbed = BN.min(plantAbsorbRate.mul(blocksPassed), maxAvailable);
+    const absorbedBlocks = absorbed.add(plantAbsorbRate).subn(1).div(plantAbsorbRate);
+    return [absorbed, plotBalance.sub(absorbed), absorbedBlocks];
+  }
+
+  const nextTendBalance = balancePerTend.muln(timesTended + 1);
+  const isInOverage = plantBalance.gte(nextTendBalance);
+
+  if (isInOverage) {
+    return getBalanceCollectedAtOverage(
+      plantBalance,
+      plotBalance,
+      plantAbsorbRate,
+      balancePerTend,
+      blocksPassed,
+      balanceTillFull
+    );
+  }
+
+  const balanceTillOverage = nextTendBalance.sub(plantBalance);
+  const blocksUntilOverage = BN.max(
+    balanceTillOverage.add(plantAbsorbRate).subn(1).div(plantAbsorbRate),
+    new BN(1)
+  );
+
+  if (blocksUntilOverage.gte(blocksPassed)) {
+    const maxAvailable = BN.min(balanceTillFull, plotBalance);
+    const absorbed = BN.min(plantAbsorbRate.mul(blocksPassed), maxAvailable);
+    const absorbedBlocks = absorbed.add(plantAbsorbRate).subn(1).div(plantAbsorbRate);
+    return [absorbed, plotBalance.sub(absorbed), absorbedBlocks];
+  }
+
+  const maxAvailable = BN.min(balanceTillFull, plotBalance);
+  const absorbed = BN.min(plantAbsorbRate.mul(blocksUntilOverage), maxAvailable);
+
+  if (absorbed.gte(plotBalance)) {
+    const absorbedBlocks = absorbed.add(plantAbsorbRate).subn(1).div(plantAbsorbRate);
+    return [plotBalance, ZERO, absorbedBlocks];
+  }
+
+  const newPlotBalance = plotBalance.sub(absorbed);
+  const newPlantBalance = plantBalance.add(absorbed);
+  const remainingBlocks = blocksPassed.sub(blocksUntilOverage);
+  const newBalanceTillFull = balanceTillFull.sub(absorbed);
+
+  const [extraAbsorbed, finalPlotBalance, extraBlocks] = getBalanceCollectedAtOverage(
+    newPlantBalance,
+    newPlotBalance,
+    plantAbsorbRate,
+    balancePerTend,
+    remainingBlocks,
+    newBalanceTillFull
+  );
+
+  return [
+    absorbed.add(extraAbsorbed),
+    finalPlotBalance,
+    blocksUntilOverage.add(extraBlocks),
+  ];
+}
+
+export const getBalanceCollectedAtOverage = (
+  plantBalance: BN,
+  plotBalance: BN,
+  plantAbsorbRate: BN,
+  balancePerTend: BN,
+  blocksInOverage: BN,
+  balanceTillFull: BN
+): [BN, BN, BN] => {
+  const ZERO = new BN(0);
+
+  if (balanceTillFull.eq(ZERO)) {
+    return [ZERO, plotBalance, ZERO];
+  }
+
+  const overage = plantBalance.mod(balancePerTend);
+  const overageStep = balancePerTend.divn(4);
+
+  if (overage.gte(overageStep)) {
+    return [ZERO, plotBalance, ZERO];
+  }
+
+  const overageAbsorbRate = plantAbsorbRate.divn(2);
+  const blocksUntilStop = overageStep.sub(overage).add(overageAbsorbRate).subn(1).div(overageAbsorbRate);
+  const maxAvailable = BN.min(balanceTillFull, plotBalance);
+  const absorbCap = overageStep.sub(overage);
+
+  if (blocksUntilStop.lte(blocksInOverage)) {
+    const absorbed = BN.min(absorbCap, maxAvailable);
+    const absorbedBlocks = absorbed.add(overageAbsorbRate).subn(1).div(overageAbsorbRate);
+    return [absorbed, plotBalance.sub(absorbed), absorbedBlocks];
+  }
+
+  const absorbed = BN.min(overageAbsorbRate.mul(blocksInOverage), maxAvailable);
+  const absorbedBlocks = absorbed.add(overageAbsorbRate).subn(1).div(overageAbsorbRate);
+  return [absorbed, plotBalance.sub(absorbed), absorbedBlocks];
+}
+
 // TODO: function is growing too big, refactor
 // TODO: move this to blockchain once water is implemented
 export const reduceProgramPlots = (
@@ -325,17 +442,23 @@ export const reduceProgramPlots = (
 
     // const plotWater = plot.water    
 
-    if (rawPlants[i] && rawPlants[i].data) {
+    
+    if (rawPlants[i]?.data && rawPlants[i]?.data?.seedMint.toString() !== PublicKey.default.toString()) {
       const plant = rawPlants[i].data;
 
+      console.log('Seed mint', rawPlants[i]?.data?.seedMint.toString())
+      console.log('default', PublicKey.default.toString())
+      console.log('Seed mint is NOT default?', rawPlants[i]?.data?.seedMint !== PublicKey.default)
+
+      // Next tend is from the slot you are allowed to tend (Not when balance absorb rate drops)
       let nextTendAvailableFrom = 0
       let tendEffectStartsFrom = 0
-      if (plant.timesToTend !== 0) {
+      if (plant.timesTended !== plant.timesToTend) {
         const balancePerTend = plant.balanceRequired.div(new BN(plant.timesToTend).add(new BN(1)))
 
         const tendAllowedBeforeBuffer = balancePerTend.div(new BN(4)) // 25% earlier
         tendEffectStartsFrom = new BN(plant.timesTended).add(new BN(1)).mul(balancePerTend).toNumber()
-        nextTendAvailableFrom = new BN(plant.timesTended).add(new BN(1)).mul(balancePerTend).sub(tendAllowedBeforeBuffer).toNumber()
+        nextTendAvailableFrom = new BN(plant.timesTended).add(new BN(1)).mul(balancePerTend).sub(tendAllowedBeforeBuffer).add(plot.lastUpdateBlock).toNumber()
       }
 
       // water calculations
@@ -347,6 +470,7 @@ export const reduceProgramPlots = (
           const data = lowerPlot.data
           const totalDrainRate = data.leftPlantDrainRate + data.rightPlantDrainRate + data.upPlantDrainRate + data.downPlantDrainRate + data.centerPlantDrainRate
           updatedPlantWater += estimatePlantAndPlotWater(data.water, 90, totalDrainRate, plant.neighborWaterDrainRate, currentBlock - (data.lastUpdateBlock.toNumber() || 0))[0]
+          updatedPlantWater += lowerPlot.data.upPlantWaterCollected
         }
       }
 
@@ -356,6 +480,7 @@ export const reduceProgramPlots = (
           const data = upperPlot.data
           const totalDrainRate = data.leftPlantDrainRate + data.rightPlantDrainRate + data.upPlantDrainRate + data.downPlantDrainRate + data.centerPlantDrainRate
           updatedPlantWater += estimatePlantAndPlotWater(data.water, 90, totalDrainRate, plant.neighborWaterDrainRate, currentBlock - (data.lastUpdateBlock.toNumber() || 0))[0]
+          updatedPlantWater += upperPlot.data.downPlantWaterCollected
         }
       }
 
@@ -365,6 +490,7 @@ export const reduceProgramPlots = (
           const data = leftPlot.data
           const totalDrainRate = data.leftPlantDrainRate + data.rightPlantDrainRate + data.upPlantDrainRate + data.downPlantDrainRate + data.centerPlantDrainRate
           updatedPlantWater += estimatePlantAndPlotWater(data.water, 90, totalDrainRate, plant.neighborWaterDrainRate, currentBlock - (data.lastUpdateBlock.toNumber() || 0))[0]
+          updatedPlantWater += leftPlot.data.rightPlantWaterCollected
         }
       }
 
@@ -374,6 +500,7 @@ export const reduceProgramPlots = (
           const data = rightPlot.data
           const totalDrainRate = data.leftPlantDrainRate + data.rightPlantDrainRate + data.upPlantDrainRate + data.downPlantDrainRate + data.centerPlantDrainRate
           updatedPlantWater += estimatePlantAndPlotWater(data.water, 90, totalDrainRate, plant.neighborWaterDrainRate, currentBlock - (data.lastUpdateBlock.toNumber() || 0))[0]
+          updatedPlantWater += rightPlot.data.leftPlantWaterCollected
         }
       }
       // center plot is rawPlot[i] (plot)
@@ -383,12 +510,57 @@ export const reduceProgramPlots = (
         90,
         totalDrainRate,
         100 - (plant.neighborWaterDrainRate * 4),
-        currentBlock - (plot.lastUpdateBlock.toNumber() || 0),
+        new BN(currentBlock).sub(plot.lastUpdateBlock).toNumber(),
       )
       let updatedPlotWater = updatedWaterStats[1];
-      updatedPlantWater += updatedWaterStats[0]
+      updatedPlantWater += updatedWaterStats[0] + plot.centerPlantWaterCollected
       
-      // TODO add up to date balance
+      // estimate plant/plot balance
+      const balancePerTend = plant.balanceRequired.div(new BN(plant.timesToTend).add(new BN(1)))
+      const blocksPassed = new BN(currentBlock).sub(plot.lastUpdateBlock)
+      const balanceUpdate = estimatePlotBalance(
+        plant.balance,
+        plot.balance,
+        plant.balanceAbsorbRate,
+        balancePerTend,
+        plant.timesTended,
+        plant.timesToTend,
+        plant.balanceRequired.sub(plant.balance),
+        blocksPassed,
+      )
+
+      const plantBalance = plant.balance.add(balanceUpdate[0])
+      let plotBalance = balanceUpdate[1]
+
+      console.log("plotBalance after estimate ", plotBalance.toString())
+
+      const blocksAbsorbed = balanceUpdate[2]
+      // apply rent if applies
+      if (blocksAbsorbed.lt(blocksPassed) && plotBalance.lt(new BN(publicRuntimeConfig.PLOT_FREE_RENT_LIMIT))) {
+        const rentDrain = blocksPassed.sub(blocksAbsorbed);
+        const balanceDrained = plotBalance.gt(rentDrain) ? rentDrain : plotBalance;
+        plotBalance = plotBalance.sub(balanceDrained);
+      }
+
+      console.log("plotBalance after rent ", plotBalance.toString())
+
+
+      let totalMissingNeighbors = 0
+      if (coords.x === 0) {
+        totalMissingNeighbors += 1
+      }
+      if (coords.x === 999) {
+        totalMissingNeighbors += 1
+      }
+      if (coords.y === 0) {
+        totalMissingNeighbors += 1
+      }
+      if (coords.y === 999) {
+        totalMissingNeighbors += 1
+      }
+
+      // because at the sides of map there simply is no neighbor
+      const actualWaterAbsorbRate = 100 - (plant.neighborWaterDrainRate * totalMissingNeighbors)
 
       updatedMp[mapPlotCoords.x][mapPlotCoords.y] = {
         isOwner: plotOwnership.isOwner,
@@ -401,9 +573,13 @@ export const reduceProgramPlots = (
         nextTendFrom: nextTendAvailableFrom, // 0 or slot
         timesToTend: plant.timesToTend,
         timesTended: plant.timesTended,
-        balanceAbsorbed: plant.balance,
+        balanceAbsorbed: plantBalance,
         waterAbsorbed: plant.water,
-        state: tendEffectStartsFrom < currentBlock ? PlantState.NEEDS_TENDING : PlantState.GROWING,
+        state: nextTendAvailableFrom !== 0 && nextTendAvailableFrom < currentBlock ? PlantState.NEEDS_TENDING : PlantState.GROWING,
+        balanceRequired: plant.balanceRequired,
+        balanceAbsorbRate: plant.balanceAbsorbRate,
+        waterRequired: plant.waterRequired,
+        actualWaterAbsorbRate
        },
           
        // plot states
@@ -425,7 +601,7 @@ export const reduceProgramPlots = (
   
        // stats
        lastStateUpdateBlock: plot.lastUpdateBlock.toNumber(),
-       balance: plot.balance,
+       balance: plotBalance,
        waterLevel: updatedPlotWater,
        waterRegen: 90, // currently always 90
   
@@ -445,7 +621,19 @@ export const reduceProgramPlots = (
       currentBlock - (plot.lastUpdateBlock.toNumber() || 0),
     )[1]
 
-    console.log('updatedWaterLevel', updatedWaterLevel)
+    // estimate plant/plot balance
+    const blocksPassed = new BN(currentBlock - (plot.lastUpdateBlock.toNumber() || 0))
+
+    let plotBalance = plot.balance
+    // apply rent if applies
+    if (plotBalance.lt(new BN(publicRuntimeConfig.PLOT_FREE_RENT_LIMIT))) {
+      const rentDrain = blocksPassed;
+      const balanceDrained = plotBalance.gt(rentDrain) ? rentDrain : plotBalance;
+      plotBalance = plotBalance.sub(balanceDrained);
+    }
+
+    
+
     updatedMp[mapPlotCoords.x][mapPlotCoords.y] = {
       isOwner: plotOwnership.isOwner,
       isPlantOwner: plotOwnership.isPlantOwner,
@@ -458,7 +646,12 @@ export const reduceProgramPlots = (
      // plot states
      waterState,
      waterRegenerationState,
-     balanceState: PlotBalanceState.CAN_BE_REVOKED,
+     balanceState: plotBalance.lt(new BN(publicRuntimeConfig.PLOT_FREE_RENT_LIMIT)) ?
+      PlotBalanceState.BELOW_FREE_RENT :
+        plotBalance.lt(new BN(publicRuntimeConfig.PLOT_MINIMUM_BALANCE).divn(10)) ?
+          PlotBalanceState.CAN_BE_REVOKED :
+          PlotBalanceState.ABOVE_FREE_RENT,
+
 
      centerPlantDrainRate: plot.centerPlantDrainRate,
      centerPlantWaterCollected: plot.centerPlantWaterCollected,
@@ -472,8 +665,8 @@ export const reduceProgramPlots = (
      downPlantWaterCollected: plot.downPlantWaterCollected,
 
      // stats
-     lastStateUpdateBlock: 0,
-     balance: plot.balance,
+     lastStateUpdateBlock: plot.lastUpdateBlock.toNumber(),
+     balance: plotBalance,
      waterLevel: updatedWaterLevel,
      waterRegen: 90, // currently always 90
 
@@ -567,21 +760,37 @@ export const reduceProgramPlots = (
     // return updatedMp
   }, {})
 
-export const getEmptyPlotInfo = () => ({
+export const getEmptyPlotInfo = (): PlotInfo => ({
   isOwner: false,
   isPlantOwner: false,
   isFarmOwner: false,
-  isUnminted: true,
+  isUnminted: false,
 
-  // plant
-  seedType: undefined,
-  plantState: undefined,
-  waterAbsorbed: undefined,
-  plantedBlockNumber: undefined,
-  overgrownBlockNumber: undefined,
+ // plant
+ plant: null,
+    
+ // plot states
+ waterState: PlotWaterState.GOOD,
+ waterRegenerationState: PlotWaterRegenerationState.REGENERATING,
+ balanceState: PlotBalanceState.CAN_BE_REVOKED,
 
-  lastStateChangeBlock: 0,
-  waterLevel: parseInt(publicRuntimeConfig.PLOT_MAX_WATER, 10),
+
+ centerPlantDrainRate: 0,
+ centerPlantWaterCollected: 0,
+ leftPlantDrainRate: 0,
+ leftPlantWaterCollected: 0,
+ rightPlantDrainRate: 0,
+ rightPlantWaterCollected: 0,
+ upPlantDrainRate: 0,
+ upPlantWaterCollected: 0,
+ downPlantDrainRate: 0,
+ downPlantWaterCollected: 0,
+
+ // stats
+ lastStateUpdateBlock: 0,
+ balance: new BN(0),
+ waterLevel: parseInt(publicRuntimeConfig.PLOT_MAX_WATER, 10),
+ waterRegen: 90, // currently always 90
 
   // plot
   color: getDefaultPlotColor(),

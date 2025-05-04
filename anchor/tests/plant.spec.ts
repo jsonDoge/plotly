@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop */
 import * as anchor from '@coral-xyz/anchor'
-import { ASSOCIATED_TOKEN_PROGRAM_ID, getAccount, TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { ASSOCIATED_TOKEN_PROGRAM_ID, getAccount, getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 
 import { Connection, Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js'
@@ -821,5 +821,114 @@ describe('Planting', () => {
       expect(rightPlotData.leftPlantDrainRate).toEqual(0)
       expect(rightPlotData.rightPlantDrainRate).toEqual(0)
     }
+  }, 1000000)
+
+
+  it('Should allow plant a seed ->  revert plant -> plant again (if NFT didnt send back)', async () => {
+    console.log('Running plant seed test')
+    const plotX = 1
+    const plotY = 1
+
+    const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('farm'), plotCurrency.toBuffer()],
+      program.programId,
+    )
+
+    const [plotMint] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
+      program.programId,
+    )
+
+    const [plotId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot'), plotMint.toBuffer()],
+      program.programId,
+    )
+
+    const [plantId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plant'), plotMint.toBuffer()],
+      program.programId,
+    )
+
+    console.log('minting plots and buying')
+    await mintAndBuyPlot(provider, program, plotCurrency, plotX, plotY, userWallet)
+
+    const seedsToMint = 5
+    const plantTokensPerSeed = 10000000
+    const growthBlockDuration = 101
+    const waterDrainRate = 10
+    const timesToTend = 1
+    const balanceAbsorbRate = 2
+
+    console.log('setting up plant mint')
+    const plantMint = await setupMint(provider, TOKEN_PROGRAM_ID)
+
+    console.log('creating seed')
+
+    const seedMint = await mintSeeds(
+      provider,
+      program,
+      plotCurrency,
+      plantMint,
+      userWallet,
+      seedsToMint,
+      plantTokensPerSeed,
+      growthBlockDuration,
+      waterDrainRate,
+      timesToTend,
+      balanceAbsorbRate,
+    )
+
+    const [seedInfoId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('seed_mint_info'), seedMint.toBuffer()],
+      program.programId,
+    )
+    const seedInfo = await program.account.seedMintInfo.fetch(seedInfoId)
+    const plantTokenMintId = seedInfo.plantMint
+
+    const [userPlantTokenAta] = anchor.web3.PublicKey.findProgramAddressSync(
+      [userWallet.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), plantTokenMintId.toBuffer()],
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+
+    // TODO: check if treasury gets the plot currency
+    // const [plantTreasuryAta] = anchor.web3.PublicKey.findProgramAddressSync(
+    //   [userWallet.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), plotCurrency.toBuffer()],
+    //   ASSOCIATED_TOKEN_PROGRAM_ID,
+    // )
+
+    const [userSeedAta] = anchor.web3.PublicKey.findProgramAddressSync(
+      [userWallet.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), seedMint.toBuffer()],
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+
+    console.log('planting seed')
+
+    // const plantSlot = await provider.connection.getSlot()
+
+    await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
+
+    await waitForSlots(provider, await provider.connection.getSlot(), 45) // plot balance should fall below rent
+    console.log('tending plant')
+
+    await revertPlant(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
+
+   const [plotMint55] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
+      program.programId,
+    )
+
+      const userPlotAta = await getAssociatedTokenAddress(plotMint55, userWallet.publicKey)
+    
+    const userPlotAtaInfo = await provider.connection.getTokenAccountBalance(userPlotAta)
+
+    // user should not longer own NFT, but still be able to plant
+    expect(parseInt(userPlotAtaInfo.value.amount, 10)).toEqual(0);
+
+    await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
+
+    const plantData = await program.account.plant.fetch(plantId)
+
+    // reset plant data
+    expect(plantData.seedMint).toEqual(seedMint)
   }, 1000000)
 })

@@ -195,8 +195,7 @@ impl<'info> PlantSeed<'info> {
     ) -> Result<()> {
         msg!("Planting seed...");
         // user not owner
-        if self.farm_associated_plot_account.amount == 1
-            || self.user_associated_plot_account.amount == 0
+        if (self.user_associated_plot_account.amount == 0) && (self.plot.last_claimer != self.user.key())
         {
             return Err(ErrorCode::UserNotPlotOwner.into());
         }
@@ -218,23 +217,25 @@ impl<'info> PlantSeed<'info> {
 
         // TRANSFER PLOT (to farm)
 
-        // Cross Program Invocation (CPI)
-        // Invoking the mint_to instruction on the token program
-        let cpi_accounts = TransferChecked {
-            mint: self.plot_mint.to_account_info(),
-            from: self.user_associated_plot_account.to_account_info(),
-            to: self.farm_associated_plot_account.to_account_info(),
-            authority: self.user.to_account_info(),
-        };
+        // if farm is not already the owner
+        if (self.farm_associated_plot_account.amount == 0) {
+            // Cross Program Invocation (CPI)
+            // Invoking the mint_to instruction on the token program
+            let cpi_accounts = TransferChecked {
+                mint: self.plot_mint.to_account_info(),
+                from: self.user_associated_plot_account.to_account_info(),
+                to: self.farm_associated_plot_account.to_account_info(),
+                authority: self.user.to_account_info(),
+            };
 
-        let cpi_program = self.token_program.to_account_info();
+            let cpi_program = self.token_program.to_account_info();
 
-        // If authority is a PDA, you can pass seeds in a signer context here
+            // If authority is a PDA, you can pass seeds in a signer context here
 
-        msg!("Transferring plot NFT to farm...");
+            msg!("Transferring plot NFT to farm...");
 
-        token::transfer_checked(CpiContext::new(cpi_program, cpi_accounts), 1, 0)?;
-
+            token::transfer_checked(CpiContext::new(cpi_program, cpi_accounts), 1, 0)?;
+        }
         // TRANSFER 1 SEED (to farm)
 
         let cpi_accounts = TransferChecked {

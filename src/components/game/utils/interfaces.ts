@@ -75,6 +75,10 @@ export interface PlotInfo {
     balanceAbsorbed: BN
     waterAbsorbed: number
     state: PlantState
+    balanceRequired: BN
+    balanceAbsorbRate: BN
+    waterRequired: number
+    actualWaterAbsorbRate: number
   } | null
 
   waterState: PlotWaterState

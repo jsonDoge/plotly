@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 
 import Button from '../utils/button'
+import { PlotInfo } from '../game/utils/interfaces'
 
 interface Props {
   isLoading: boolean
@@ -8,8 +9,7 @@ interface Props {
   onDeposit: (amount: number) => void
   onReturn: () => void
   onCancel?: () => void
-  waterLevel: number
-  balance: number
+  plotInfo: PlotInfo
 }
 
 const OwnedPlotModal: React.FC<Props> = ({
@@ -18,14 +18,20 @@ const OwnedPlotModal: React.FC<Props> = ({
   onDeposit,
   onReturn,
   onCancel,
-  waterLevel,
-  balance,
+  plotInfo,
 }) => {
   const [seedMintId, setSeedMintId] = useState<string>('')
   const [depositAmount, setDepositAmount] = useState<number>(1)
 
+  // dumb way to fix typescript TODO: do it properly later
+  if (!plotInfo) {
+    return null
+  }
+
   const tabs = ['Plant', 'Deposit', 'Return']
   const [activeTab, setActiveTab] = useState(tabs[0])
+
+  const waterRegen = plotInfo.waterRegen - plotInfo.centerPlantDrainRate + plotInfo.leftPlantDrainRate + plotInfo.rightPlantDrainRate + plotInfo.upPlantDrainRate + plotInfo.downPlantDrainRate
 
   return (
     <div
@@ -52,8 +58,14 @@ const OwnedPlotModal: React.FC<Props> = ({
           ))}
 
           <div className="mt-2 text-center">
-            <p className="text-gray-500">{`Plot water level: ${waterLevel} 🚰`}</p>
-            <p className="text-gray-500">{`Plot balance: ${balance} 💰`}</p>
+            <p className="text-gray-500">{`Plot water level (1M max): ${plotInfo.waterLevel} 🚰`}</p>
+            <p className="text-gray-500">
+              <span>Plot balance (Rent free >1M): </span>
+              <span className={ plotInfo.balance.ltn(1000000) ? 'text-red-500 font-bold' : '' }>
+                {plotInfo.balance.toString()} 💰
+                </span>
+            </p>
+            <p className="text-gray-500">{`Water regen (90 max): ${waterRegen} 📈`}</p>
           </div>
 
           {activeTab === tabs[0] && (
@@ -104,33 +116,31 @@ const OwnedPlotModal: React.FC<Props> = ({
           {activeTab === tabs[1] && (
             <div>
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Deposit to plot 💰
-                    </h3>
-                    <div className="mt-2">
-                      <p className="mt-5">
-                        <label htmlFor="seedType" className="block text-sm font-medium text-gray-700">
-                          Amount to deposit
-                        </label>
-                        <input
-                          className="w-full rounded-sm"
-                          id="DepositAmount"
-                          name="DepositAmount"
-                          type="number"
-                          min={1}
-                          value={depositAmount}
-                          onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            setDepositAmount(parseInt(e.target.value, 10))
-                          }}
-                        />
-                      </p>
-                      <p className="text-sm text-gray-500" />
-                      <p>
-                        <span className="text-gray-400 text-sm">*make sure you have enough tokens</span>
-                      </p>
-                    </div>
+                <div className="mt-3 text-center sm:mt-0 sm:ml-4">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                    Deposit to plot 💰
+                  </h3>
+                  <div className="mt-2">
+                    <p className="mt-5">
+                      <label htmlFor="seedType" className="block text-sm font-medium text-gray-700">
+                        Amount to deposit
+                      </label>
+                      <input
+                        className="w-full rounded-sm"
+                        id="DepositAmount"
+                        name="DepositAmount"
+                        type="number"
+                        min={1}
+                        value={depositAmount}
+                        onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          setDepositAmount(parseInt(e.target.value, 10))
+                        }}
+                      />
+                    </p>
+                    <p className="text-sm text-gray-500" />
+                    <p>
+                      <span className="text-gray-400 text-sm">*make sure you have enough tokens</span>
+                    </p>
                   </div>
                 </div>
               </div>
@@ -144,14 +154,12 @@ const OwnedPlotModal: React.FC<Props> = ({
           {activeTab === tabs[2] && (
             <div>
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Return plot to Plotly 🏡
-                    </h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500" />
-                    </div>
+                <div className="mt-3 text-center">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                    Return plot to Plotly 🏡
+                  </h3>
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500" />
                   </div>
                 </div>
               </div>

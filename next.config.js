@@ -23,5 +23,8 @@ module.exports = {
     PLOT_WATER_30_THRESHOLD: process.env.PLOT_WATER_30_THRESHOLD,
     PLOT_WATER_10_THRESHOLD: process.env.PLOT_WATER_10_THRESHOLD,
     PLOT_MAX_WATER: process.env.PLOT_MAX_WATER,
+
+    // balances
+    PLOT_FREE_RENT_LIMIT: process.env.PLOT_FREE_RENT_LIMIT,
   },
 }

@@ -1,7 +1,9 @@
 import { AnchorProvider, Idl, Program, Wallet, web3 } from '@coral-xyz/anchor'
 import path from 'path'
 import fs from 'fs'
-import { increasedCUTxWrap, mintAndBuyPlot, toLeBytes } from '../tests/helpers'
+import { Farm } from '@project/anchor'
+import { increasedCUTxWrap, mintAndBuyPlot, mintSeeds, plantSeed, toLeBytes } from '../tests/helpers'
+import FarmIDL from '../target/idl/farm.json'
 
 // so that the plotCurrency address would be the same
 const localnetPlotCurrencyKeypairPath = './localnet/plotCurrency.json'
@@ -10,10 +12,9 @@ const localnetPlotCurrencyKeypairPath = './localnet/plotCurrency.json'
 const farmIdl = require('../target/idl/farm.json') as Idl
 const anchor = require('@coral-xyz/anchor')
 
-function getFarmProgram(provider: AnchorProvider): Program<typeof farmIdl> {
-  return new Program<typeof farmIdl>(farmIdl, provider)
+function getFarmProgram(provider: AnchorProvider): Program<Farm> {
+  return new Program(FarmIDL as Farm, provider)
 }
-
 async function main() {
   // Configure client to use the provider.
   // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
@@ -65,9 +66,34 @@ async function main() {
     program.programId,
   )
 
+  const seedsToMint = 25
+  const plantTokensPerSeed = 5
+  const growthBlockDuration = 1008
+  const waterDrainRate = 10
+  const timesToTend = 1
+  const balanceAbsorbRate = 2 // highly consuming
+
+  const seedMint = await mintSeeds(
+    provider,
+    program,
+    plotCurrency,
+    plotCurrency,
+    userWallet,
+    seedsToMint,
+    plantTokensPerSeed,
+    growthBlockDuration,
+    waterDrainRate,
+    timesToTend,
+    balanceAbsorbRate,
+  )
+
   await mintAndBuyPlot(provider, program, plotCurrency, plotX, plotY, userWallet)
+  await mintAndBuyPlot(provider, program, plotCurrency, plotX + 2, plotY + 2, userWallet)
+
+  await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
 
   console.log('succsessfully acquired plot:', plotMint.toString())
+  console.log('seed mint:', seedMint.toString())
   // Add your deploy script here.
 }
 

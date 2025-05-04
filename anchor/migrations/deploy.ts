@@ -3,7 +3,7 @@
 // configured from the workspace's Anchor.toml.
 
 import { AnchorProvider, Idl, Program, web3 } from '@coral-xyz/anchor'
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { getAssociatedTokenAddress, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { PublicKey } from '@solana/web3.js'
 import path from 'path'
 import fs from 'fs'
@@ -12,6 +12,7 @@ import { setupFarm, setupMint } from '../tests/setup'
 
 // so that the plotCurrency address would be the same
 const localnetPlotCurrencyKeypairPath = './anchor/localnet/plotCurrency.json'
+const userKeypairPath = './anchor/localnet/testUser.json'
 
 // eslint-disable-next-line global-require
 const farmIdl = require('../target/idl/farm.json') as Idl
@@ -52,6 +53,11 @@ module.exports = async function (provider_: AnchorProvider) {
 
   const { wallet } = provider
 
+  if (!wallet.payer) {
+    console.log('Couldnt find payer');
+    return;
+  }
+
   const program = getFarmProgram(provider)
 
   const plotlyId = getFarmProgramId(network)
@@ -61,6 +67,23 @@ module.exports = async function (provider_: AnchorProvider) {
   console.log('setting up plot currency mint:', keypair.publicKey.toString())
 
   const plotCurrency = await setupMint(provider, TOKEN_PROGRAM_ID, 6, keypair)
+
+  const otherUserKeypairData = JSON.parse(fs.readFileSync(path.join(process.cwd(), userKeypairPath), 'utf8'))
+  const otherUserKeypair = web3.Keypair.fromSecretKey(new Uint8Array(otherUserKeypairData))
+
+
+  const ata = await getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    wallet.payer,
+    plotCurrency,
+    otherUserKeypair.publicKey,
+    false,
+    undefined,
+    undefined,
+  )
+  // send to other user
+  await mintTo(provider.connection, wallet.payer, plotCurrency, ata.address, wallet.payer, 100_000_000)
+
 
   console.log('Currency setup successfully:', plotCurrency.toString())
 

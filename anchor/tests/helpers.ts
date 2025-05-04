@@ -4,7 +4,7 @@ import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token
 // import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { Connection, Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js'
 
-const farmIdl = require('../target/idl/farm.json') as anchor.Idl
+const farmIdl = require('../target/idl/farm.json') as Farm
 
 export function toLeBytes(value: number | bigint, byteLength = 4, signed = false) {
   const buffer = Buffer.alloc(byteLength)
@@ -217,9 +217,47 @@ export const returnPlot = async (
   }
 }
 
+export const depositToPlot = async (
+  provider: anchor.AnchorProvider,
+  program: anchor.Program<Farm> | anchor.Program<typeof farmIdl>,
+  plotCurrency: PublicKey,
+  plotX: number,
+  plotY: number,
+  userWallet: anchor.Wallet,
+  amount: number,
+) => {
+  const wrapTx = increasedCUTxWrap(provider.connection, userWallet.payer)
+
+  const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('farm'), plotCurrency.toBuffer()],
+    program.programId,
+  )
+
+  const [plotMint] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
+    program.programId,
+  )
+
+  try {
+    await wrapTx(
+      program.methods
+        .depositToPlot(plotX, plotY, new anchor.BN(amount))
+        .accounts({
+          user: userWallet.publicKey,
+          plotMint,
+          plotCurrencyMint: plotCurrency,
+        })
+        .signers([userWallet.payer]),
+    )
+  } catch (error) {
+    console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
+    throw error
+  }
+}
+
 export const mintSeeds = async (
   provider: anchor.AnchorProvider,
-  program: anchor.Program<Farm>,
+  program: anchor.Program<Farm> | anchor.Program<typeof farmIdl>,
   plotCurrency: PublicKey,
   plantMint: PublicKey,
   userWallet: anchor.Wallet,
@@ -288,7 +326,7 @@ export const mintSeeds = async (
 
 export const plantSeed = async (
   provider: anchor.AnchorProvider,
-  program: anchor.Program<Farm>,
+  program: anchor.Program<Farm> | anchor.Program<typeof farmIdl>,
   plotX: number,
   plotY: number,
   plotCurrency: PublicKey,
@@ -461,7 +499,7 @@ export const tendPlant = async (
   try {
     await wrapTx(
       program.methods
-        .tendPlant(plotX, plotY, plotCurrency)
+        .tendPlant(plotX, plotY)
         .accountsPartial({
           user: userWallet.publicKey,
           plotMintLeft: neighborPlotMints[0],
@@ -565,7 +603,7 @@ export const harvestPlant = async (
   try {
     await wrapTx(
       program.methods
-        .harvestPlant(plotX, plotY, plotCurrency)
+        .harvestPlant(plotX, plotY)
         .accountsPartial({
           user: userWallet.publicKey,
           seedMint,
@@ -711,5 +749,41 @@ export const waitForSlots = async (provider: anchor.AnchorProvider, startSlot: n
     }
     // eslint-disable-next-line no-promise-executor-return, no-await-in-loop
     await new Promise((resolve) => setTimeout(resolve, 1000))
+  }
+}
+
+/// RECIPE
+
+export const createRecipe = async (
+  provider: anchor.AnchorProvider,
+  program: anchor.Program<Farm>,
+  plotCurrency: PublicKey,
+  resultToken: PublicKey,
+  ingredient0: PublicKey,
+  ingredient1: PublicKey,
+  ingredient0AmountPer: anchor.BN,
+  ingredient1AmountPer: anchor.BN,
+  resultTokenToDeposit: anchor.BN,
+  userWallet: anchor.Wallet,
+  recipeId: PublicKey,
+) => {
+  const wrapTx = increasedCUTxWrap(provider.connection, userWallet.payer)
+
+  try {
+    await wrapTx(
+      program.methods
+        .createRecipe(plotCurrency, ingredient0AmountPer, ingredient1AmountPer, resultTokenToDeposit)
+        .accountsPartial({
+          user: userWallet.publicKey,
+          ingredient0Mint: ingredient0,
+          ingredient1Mint: ingredient1,
+          resultMint: resultToken,
+          recipe: recipeId,
+        })
+        .signers([userWallet.payer]),
+    )
+  } catch (error) {
+    console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
+    throw error
   }
 }

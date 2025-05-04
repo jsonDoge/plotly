@@ -16,6 +16,7 @@ pub struct Farm {
 pub struct SeedMintInfo {
     // Seed growth result
     // improve name since it's a RESULTING token from a plant != plant
+    // Gezus this bad naming... plant_mint as in plants result mint
     pub plant_mint: Pubkey,
     pub plant_mint_decimals: u8,
     pub plant_tokens_per_seed: u64,

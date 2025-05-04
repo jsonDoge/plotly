@@ -21,7 +21,7 @@ use crate::state::{AccWithBump, Plant, Plot};
 use crate::{errors::ErrorCode, state::Farm};
 
 #[derive(Accounts)]
-#[instruction(plot_x: u32, plot_y: u32, plot_currency: Pubkey)]
+#[instruction(plot_x: u32, plot_y: u32)]
 pub struct TendPlant<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -30,7 +30,7 @@ pub struct TendPlant<'info> {
     pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,
 
     #[account(
-        seeds = [b"farm", plot_currency.as_ref()],
+        seeds = [b"farm", plot_currency_mint.key().as_ref()],
         bump,
     )]
     pub farm: Box<Account<'info, Farm>>,
@@ -155,7 +155,6 @@ impl<'info> TendPlant<'info> {
         &mut self,
         plot_x: u32,
         plot_y: u32,
-        plot_currency: Pubkey,
         program_id: &Pubkey,
     ) -> Result<()> {
         if self.plant.treasury != self.plant_treasury.key() {

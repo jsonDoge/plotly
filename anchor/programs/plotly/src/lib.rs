@@ -75,9 +75,15 @@ pub mod farm {
             .revoke_plot(plot_x, plot_y, ctx.program_id)
     }
 
-    // add balance
-    // returns plot to farm
-    // revokes plot
+    pub fn deposit_to_plot(
+        ctx: Context<DepositToPlot>,
+        plot_x: u32,
+        plot_y: u32,
+        amount_to_deposit: u64,
+    ) -> Result<()> {
+        ctx.accounts
+            .deposit_to_plot(plot_x, plot_y, amount_to_deposit, ctx.program_id)
+    }
 
     // SEEDS
 
@@ -125,18 +131,16 @@ pub mod farm {
         ctx: Context<TendPlant>,
         plot_x: u32,
         plot_y: u32,
-        plot_currency: Pubkey
     ) -> Result<()> {
-        ctx.accounts.tend_plant(plot_x, plot_y, plot_currency, ctx.program_id)
+        ctx.accounts.tend_plant(plot_x, plot_y, ctx.program_id)
     }
 
     pub fn harvest_plant(
         ctx: Context<HarvestPlant>,
         plot_x: u32,
         plot_y: u32,
-        plot_currency: Pubkey
     ) -> Result<()> {
-        ctx.accounts.harvest_plant(plot_x, plot_y, plot_currency, ctx.program_id)
+        ctx.accounts.harvest_plant(plot_x, plot_y, ctx.program_id)
     }
 
     pub fn revert_plant(
@@ -152,12 +156,14 @@ pub mod farm {
     pub fn create_recipe(
         ctx: Context<CreateRecipe>,
         plot_currency: Pubkey,
-        ingredient_amounts: [u64; 2],
+        ingredient_0_amount: u64,
+        ingredient_1_amount: u64,
         result_token_deposit: u64,
     ) -> Result<()> {
         ctx.accounts.create_recipe(
             plot_currency,
-            ingredient_amounts,
+            ingredient_0_amount,
+            ingredient_1_amount,
             result_token_deposit,
             ctx.bumps.recipe,
             ctx.program_id,

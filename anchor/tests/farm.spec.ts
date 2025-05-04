@@ -9,7 +9,7 @@ import { PublicKey } from '@solana/web3.js'
 import assert from 'node:assert'
 import { Farm } from '../target/types/farm'
 import { setupFarm, setupMint } from './setup'
-import { increasedCUTxWrap, mintAndBuyPlot, returnPlot, toLeBytes } from './helpers'
+import { depositToPlot, increasedCUTxWrap, mintAndBuyPlot, returnPlot, toLeBytes } from './helpers'
 
 describe('farm', () => {
   // Configure the client to use the local cluster.
@@ -257,6 +257,56 @@ describe('farm', () => {
     expect(parseInt(plotCurrencyBalanceAfterReturn.value.amount, 10)).toEqual(
       parseInt(plotCurrencyBalanceBeforeReturn.value.amount, 10) + 1000000,
     )
+
+  }, 1000000)
+
+
+  it('Should be able to deposit extra tokens to plot balance', async () => {
+    const plotX5 = 5
+    const plotY5 = 5
+
+    const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('farm'), plotCurrency.toBuffer()],
+      program.programId,
+    )
+
+    const [plotMint55] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot_mint'), toLeBytes(plotX5), toLeBytes(plotY5), farm.toBuffer()],
+      program.programId,
+    )
+
+    const [userPlotCurrencyTokenAta] = anchor.web3.PublicKey.findProgramAddressSync(
+      [userWallet.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), plotCurrency.toBuffer()],
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+
+    await mintAndBuyPlot(provider, program, plotCurrency, plotX5, plotY5, userWallet)
+
+    const plotCurrencyBalanceBeforeReturn = await provider.connection.getTokenAccountBalance(userPlotCurrencyTokenAta)
+
+    await depositToPlot(provider, program, plotCurrency, plotX5, plotY5, userWallet, 1000000)
+
+    const plotCurrencyBalanceAfterReturn = await provider.connection.getTokenAccountBalance(userPlotCurrencyTokenAta)
+
+    const userTokenAccount55 = await getAssociatedTokenAddress(plotMint55, userWallet.publicKey)
+
+    const userTokenAccountInfo55 = await program.provider.connection.getTokenAccountBalance(userTokenAccount55)
+
+    expect(parseInt(userTokenAccountInfo55.value.amount, 10)).toEqual(1);
+
+    expect(parseInt(plotCurrencyBalanceAfterReturn.value.amount, 10)).toEqual(
+      parseInt(plotCurrencyBalanceBeforeReturn.value.amount, 10) - 1000000,
+    )
+
+    const [plotId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot'), plotMint55.toBuffer()],
+      program.programId,
+    )
+
+
+    const plotAccount = await program.account.plot.fetch(plotId)
+
+    expect(plotAccount.balance.toNumber()).toEqual(2000000)
 
   }, 1000000)
 })

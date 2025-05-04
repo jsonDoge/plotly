@@ -14,5 +14,8 @@ node_modules
 .env.production.local
 .env.testnet
 
+# Anchor
+anchor/localnet/testUser.json
+
 #IDE
 .vscode

@@ -15,12 +15,12 @@ use anchor_spl::{
 };
 use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 
-use crate::state::{AccWithBump, Plot};
+use crate::state::{AccWithBump, Plant, Plot};
 use crate::{errors::ErrorCode, state::Farm};
 
 #[derive(Accounts)]
-#[instruction(plot_x: u32, plot_y: u32, plot_currency: Pubkey)]
-pub struct AddPlotBalance<'info> {
+#[instruction(plot_x: u32, plot_y: u32)]
+pub struct DepositToPlot<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
 
@@ -28,7 +28,7 @@ pub struct AddPlotBalance<'info> {
     pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,
 
     #[account(
-        seeds = [b"farm", plot_currency.as_ref()],
+        seeds = [b"farm", plot_currency_mint.key().as_ref()],
         bump,
     )]
     pub farm: Box<Account<'info, Farm>>,
@@ -52,6 +52,15 @@ pub struct AddPlotBalance<'info> {
     )]
     pub plot: Box<Account<'info, Plot>>,
 
+    #[account(
+        init_if_needed,
+        payer = user,
+        seeds = [b"plant", plot_mint.key().as_ref()],
+        bump,
+        space = 8 + std::mem::size_of::<Plant>(),
+    )]
+    pub plant: Box<Account<'info, Plant>>,
+
     // Create associated token account, if needed
     // This is the account that will hold the NFT
     #[account(
@@ -73,7 +82,7 @@ pub struct AddPlotBalance<'info> {
     // User plot currency account
     #[account(
         mut,
-        associated_token::mint = plot_currency,
+        associated_token::mint = plot_currency_mint,
         associated_token::authority = user,
     )]
     pub user_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
@@ -81,7 +90,7 @@ pub struct AddPlotBalance<'info> {
     // Farm plot currency TREASURY
     #[account(
         mut,
-        associated_token::mint = plot_currency,
+        associated_token::mint = plot_currency_mint,
         associated_token::authority = farm_auth,
     )]
     pub farm_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
@@ -100,12 +109,11 @@ pub struct AddPlotBalance<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-impl<'info> AddPlotBalance<'info> {
-    pub fn add_plot_balance(
+impl<'info> DepositToPlot<'info> {
+    pub fn deposit_to_plot(
         &mut self,
         plot_x: u32,
         plot_y: u32,
-        plot_currency: Pubkey,
         balance_to_add: u64,
         program_id: &Pubkey,
     ) -> Result<()> {
@@ -116,8 +124,7 @@ impl<'info> AddPlotBalance<'info> {
         // TODO: we'd normally also need to update plant balance consumption/and neighbor waters but for MVP we can ignore it
 
         // either has NFT or has a low-balance/plant on it (last_claimer + farm ownership)
-        if self.user_associated_plot_account.amount == 0
-            || self.plot.last_claimer == self.user.key() && self.farm_associated_plot_account.amount == 1
+        if self.user_associated_plot_account.amount == 0 && self.plot.last_claimer != self.user.key()
         {
             return Err(ErrorCode::UserNotPlotOwner.into());
         }
@@ -152,6 +159,35 @@ impl<'info> AddPlotBalance<'info> {
             balance_to_add,
             6,
         )?;
+
+
+        // IF FARM WAS THE OWNER and there is no plant on the plot, send NFT BACK to user
+
+        if (self.farm_associated_plot_account.amount == 1 && self.plant.seed_mint != Pubkey::default() && self.plot.last_claimer == self.user.key()) {
+            let cpi_accounts = TransferChecked {
+                mint: self.plot_mint.to_account_info(),
+                from: self.farm_associated_plot_account.to_account_info(),
+                to: self.user_associated_plot_account.to_account_info(),
+                authority: self.farm_auth.to_account_info(),
+            };
+
+            let cpi_program = self.token_program.to_account_info();
+
+            // If authority is a PDA, you can pass seeds in a signer context here
+
+            msg!("Transferring plot NFT to user...");
+
+            token::transfer_checked(CpiContext::new_with_signer(
+                cpi_program,
+                cpi_accounts,
+                &[&[
+                    b"farm_auth",
+                    self.farm.key().as_ref(),
+                    &[self.farm_auth.bump],
+                ]],
+            ), 1, 0)?;
+
+        }
 
         self.plot.balance += balance_to_add;
 

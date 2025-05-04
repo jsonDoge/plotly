@@ -8,16 +8,17 @@ import { faBars } from '@fortawesome/free-solid-svg-icons'
 import { WalletButton } from '@/context/solana'
 import { useSnapshot } from 'valtio'
 import { walletStore } from '@/stores/wallet'
-import { appRouteStore, appRouteStoreActions, Route } from '@/stores/appRoute'
+import { appRouteStoreActions, Route } from '@/stores/appRoute'
 import BlockCounter from './blockCounter'
 import PlotActionModals from './plotActionModals'
 import Lab from './lab'
 // import Shop from './shop'
 // import Bank from './bank'
+import Help from './help'
+import Kitchen from './kitchen'
+
 import CenterPlotNavigator from './plots/centerPlotNavigator'
 import CenterPlotCoordsDisplay from './plots/centerPlotCoordsDisplay'
-// import Kitchen from './kitchen'
-import Help from './help'
 import ChainName from './chainName'
 import WalletIntroModal from './walletIntroModal'
 
@@ -93,16 +94,6 @@ const Layout: React.FC = () => {
               Plots
             </span>
           </div>
-          {/* <div className={`px-2 rounded-sm ${tab === 'shop' && 'bg-green-200 text-black'}`}>
-            <span role="button" onClick={() => setTab('shop')} tabIndex={0} className="text-bold">
-              Shop
-            </span>
-          </div> */}
-          {/* <div className={`px-2 rounded-sm ${tab === 'barn' && 'bg-green-200 text-black'}`}>
-            <span role="button" onClick={() => setTab('barn')} tabIndex={0} className="text-bold">
-              Barn
-            </span>
-          </div> */}
           <div className={`px-2 rounded-sm ${tab === 'lab' && 'bg-green-200 text-black'}`}>
             <span
               role="button"
@@ -273,11 +264,11 @@ const Layout: React.FC = () => {
             <Lab />
           </div>
         )}
-        {/* {tab === 'kitchen' && (
-          <div className="px-3 flex grow flex-col justify-center w-full lg:aaw-96 lg:justify-start">
+        {tab === 'kitchen' && (
+          <div className="px-3 flex grow flex-col justify-center w-full lg:w-96 lg:justify-start">
             <Kitchen />
           </div>
-        )} */}
+        )}
         {/* {tab === 'shop' && (
           <div className="px-3 flex grow flex-col justify-center w-full lg:w-96 lg:justify-start">
             <Shop />

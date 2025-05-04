@@ -12,7 +12,7 @@ pub mod revert_plant;
 // plot
 pub mod mint_plot;
 pub mod acquire_plot;
-pub mod add_plot_balance;
+pub mod deposit_to_plot;
 pub mod return_plot;
 pub mod revoke_plot;
 
@@ -44,7 +44,7 @@ pub use revert_plant::*;
 // plot
 pub use mint_plot::*;
 pub use acquire_plot::*;
-pub use add_plot_balance::*;
+pub use deposit_to_plot::*;
 pub use return_plot::*;
 pub use revoke_plot::*;
 

@@ -23,7 +23,7 @@ use crate::helpers::{get_balance_collected, get_plot_water_collected};
 use crate::state::{AccWithBump, Farm, Plant, Plot, SeedMintInfo};
 
 #[derive(Accounts)]
-#[instruction(plot_x: u32, plot_y: u32, plot_currency: Pubkey)]
+#[instruction(plot_x: u32, plot_y: u32)]
 pub struct HarvestPlant<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -43,7 +43,7 @@ pub struct HarvestPlant<'info> {
 
     // FARM
     #[account(
-        seeds = [b"farm", plot_currency.as_ref()],
+        seeds = [b"farm", plot_currency_mint.key().as_ref()],
         bump,
     )]
     pub farm: Box<Account<'info, Farm>>,
@@ -161,7 +161,7 @@ pub struct HarvestPlant<'info> {
     // FARM PLOT CURRENCY ATA
     #[account(
         mut,
-        associated_token::mint = plot_currency,
+        associated_token::mint = plot_currency_mint,
         associated_token::authority = farm_auth,
     )]
     pub farm_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
@@ -210,7 +210,6 @@ impl<'info> HarvestPlant<'info> {
         &mut self,
         plot_x: u32,
         plot_y: u32,
-        plot_currency: Pubkey,
         program_id: &Pubkey,
     ) -> Result<()> {
         msg!("Harvesting plant...");

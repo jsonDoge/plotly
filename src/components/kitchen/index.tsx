@@ -1,174 +1,274 @@
-import React, { useEffect, useState } from 'react';
-import Button from '../utils/button';
-import Spinner from '../utils/spinner';
-import { craftDish, getDishBalance } from '../../services/kitchen';
-import { useWallet } from '../../context/wallet';
-import { toSentenceCase } from '../../utils';
-import { PRODUCT_TYPE } from '../../utils/constants';
+import React, { useState } from 'react'
+// import { convertToSeed, getProductBalance } from '../../services/barn'
+import { useAnchorProvider } from '@/context/solana'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { PublicKey } from '@solana/web3.js'
+import { isValidPublicKey } from '@/services/utils'
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { BN } from 'bn.js'
+import { craftRecipeTx } from '@/services/farm'
+import getConfig from 'next/config'
+import Button from '../utils/button'
+import Spinner from '../utils/spinner'
+import HelperTooltip from '../utils/helperTooltip'
+
+const { publicRuntimeConfig } = getConfig()
 
 const Kitchen = () => {
-  const { wallet } = useWallet();
-  const [isLoading, setIsLoading] = useState(false);
+  const wallet = useWallet()
+  const provider = useAnchorProvider()
+  const [isLoading, setIsLoading] = useState(false)
 
-  const [error, setError] = useState('');
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
 
-  const [potatoDishBalance, setPotatoDishBalance] = useState(0);
-  const [carrotDishBalance, setCarrotDishBalance] = useState(0);
-  const [cornDishBalance, setCornDishBalance] = useState(0);
-  const [weedDishBalance, setWeedDishBalance] = useState(0);
+  // const [productType, setProductType] = useState(PRODUCT_TYPE.CARROT)
+  const [resultTokenId, setResultTokenId] = useState('')
+  const [resultTokensToDeposit, setResultTokensToDeposit] = useState(1)
 
-  const [productType0, setProductType0] = useState(PRODUCT_TYPE.CARROT);
-  const [quantity0, setQuantity0] = useState(0);
-  const [productType1, setProductType1] = useState(PRODUCT_TYPE.CARROT);
-  const [quantity1, setQuantity1] = useState(0);
-  const [productType2, setProductType2] = useState(PRODUCT_TYPE.CARROT);
-  const [quantity2, setQuantity2] = useState(0);
+  const [ingredient0Id, setIngredient0Id] = useState('')
+  const [ingredient0AmountPer, setIngredient0AmountPer] = useState(1)
 
-  const refreshBalances = async (walletAddress: string) => {
-    getDishBalance(walletAddress, PRODUCT_TYPE.POTATO).then(setPotatoDishBalance);
-    getDishBalance(walletAddress, PRODUCT_TYPE.CARROT).then(setCarrotDishBalance);
-    getDishBalance(walletAddress, PRODUCT_TYPE.CORN).then(setCornDishBalance);
-    getDishBalance(walletAddress, PRODUCT_TYPE.WEED).then(setWeedDishBalance);
-  };
+  const [ingredient1Id, setIngredient1Id] = useState('')
+  const [ingredient1AmountPer, setIngredient1AmountPer] = useState(1)
 
-  useEffect(() => {
-    if (!wallet?.address) {
-      return;
+  const craftRecipe = async () => {
+    setMessage('')
+    if (!wallet || !wallet?.connected || !wallet?.publicKey || !wallet?.signTransaction) {
+      setError('Wallet not loaded yet... Please try again later')
+      return
     }
 
-    refreshBalances(wallet.address);
-  }, [wallet?.address]);
-
-  const onDishCraft = async (
-    productTypes: string[],
-    quantities: number[],
-    walletAddress: string,
-    privateKey: string | undefined,
-  ) => {
-    setError('');
-    if (!privateKey) {
-      return;
+    if (!isValidPublicKey(resultTokenId)) {
+      setError('Invalid result token address')
+      return
     }
-    setIsLoading(true);
 
-    const nonZeroQuantities = quantities.filter((q) => q > 0);
-    const nonZeroQuantityIndexes = quantities.map((q, i) => (q > 0 ? i : -1)).filter((i) => i > -1);
-    const nonZeroQuantityProductTypes = productTypes.filter((_, i) => nonZeroQuantityIndexes.includes(i));
+    if (!isValidPublicKey(ingredient0Id)) {
+      setError('Invalid first ingredient token address')
+      return
+    }
 
+    if (!isValidPublicKey(ingredient1Id)) {
+      setError('Invalid second ingredient token address')
+      return
+    }
+
+    if (resultTokensToDeposit === 0 || ingredient0AmountPer === 0 || ingredient1AmountPer === 0) {
+      setError('Neigher ingredient requirements nor the result token deposit cant be zero')
+      return
+    }
+
+    // check that result token is an SPL token
+
+    let accountInfo
     try {
-      await craftDish(nonZeroQuantityProductTypes, nonZeroQuantities, walletAddress, privateKey);
+      accountInfo = await provider.connection.getAccountInfo(new PublicKey(resultTokenId))
+      if (!accountInfo) {
+        setError('Account for result token address not found')
+        return
+      }
     } catch (e) {
-      setError('Craft failed or non-existent combo');
-      setIsLoading(false);
-      return;
+      setError('Failed to fetch account info for result token address')
+      return
     }
-    refreshBalances(walletAddress);
-    setIsLoading(false);
-  };
+
+    const isSplToken = accountInfo.owner.equals(TOKEN_PROGRAM_ID)
+    if (!isSplToken) {
+      setError('Result token address is not an SPL token')
+      return
+    }
+
+    const [resultTokenAta] = PublicKey.findProgramAddressSync(
+      [wallet.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), new PublicKey(resultTokenId).toBuffer()],
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+
+    let balance
+    try {
+      balance = await provider.connection.getTokenAccountBalance(resultTokenAta)
+    } catch (e) {
+      setError('Failed to fetch token account balance')
+      return
+    }
+
+    const balanceBN = new BN(balance.value.amount)
+
+    if (balanceBN.ltn(resultTokensToDeposit)) {
+      setError('Not enough result token balance to deposit for the recipe')
+      return
+    }
+
+    // check that first ingredient is an SPL token
+
+    let ingredient0accountInfo
+    try {
+      ingredient0accountInfo = await provider.connection.getAccountInfo(new PublicKey(resultTokenId))
+      if (!ingredient0accountInfo) {
+        setError('Account for first ingredient token address not found')
+        return
+      }
+    } catch (e) {
+      setError('Failed to fetch account info for first ingredient address')
+      return
+    }
+
+    if (!ingredient0accountInfo.owner.equals(TOKEN_PROGRAM_ID)) {
+      setError('First ingredient token address is not an SPL token')
+      return
+    }
+
+    // check that second ingredient is an SPL token
+
+    let ingredient1accountInfo
+    try {
+      ingredient1accountInfo = await provider.connection.getAccountInfo(new PublicKey(resultTokenId))
+      if (!ingredient1accountInfo) {
+        setError('Account for first ingredient token address not found')
+        return
+      }
+    } catch (e) {
+      setError('Failed to fetch account info for first ingredient address')
+      return
+    }
+
+    if (!ingredient1accountInfo.owner.equals(TOKEN_PROGRAM_ID)) {
+      setError('First ingredient token address is not an SPL token')
+      return
+    }
+
+    const { tx, recipeId } = await craftRecipeTx(
+      wallet.publicKey,
+      provider,
+      new PublicKey(ingredient0Id),
+      new BN(ingredient0AmountPer),
+      new PublicKey(ingredient1Id),
+      new BN(ingredient1AmountPer),
+      new PublicKey(resultTokenId),
+      new BN(resultTokensToDeposit),
+      new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID),
+    )
+
+    tx.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash
+
+    tx.feePayer = wallet.publicKey
+    const signedTx = await wallet?.signTransaction(tx)
+    const rawTransaction = signedTx.serialize()
+    try {
+      setIsLoading(true)
+      await provider.connection.sendRawTransaction(rawTransaction)
+    } catch (e) {
+      setIsLoading(false)
+      setError('Failed to send transaction')
+      return
+    }
+    setIsLoading(false)
+    setError('')
+
+    setMessage(`Recipe created!: ${recipeId.toString()}`)
+  }
 
   return (
     <div className="flex flex-col">
       <div className="text-left text-white">
         <div className="text-2xl">Kitchen</div>
       </div>
-      <div className="flex justify-start items-start mt-5 text-white">
-        <div className="text-xl">Craft dish (NFT)</div>
-      </div>
-      <div className="mb-2">
-        <div className="mt-2 text-white">Ingredients</div>
-        <div className="text-white text-sm">0 will be ignored</div>
-        <div className="grid grid-cols-3 gap-3 bg-green-200 px-2 py-3 rounded-sm">
+      <div className="mt-2">
+        <div className="text-xl text-white">Craft a recipe</div>
+        <div className="bg-green-800 px-2 py-3 rounded-sm">
           <div className="text-center">
+            <div className="text-white text-left">
+              Result token ID{' '}
+              <HelperTooltip message="Token which the farmers are going to receive if they grow the seed to the end. The tokens you are now going to have to deposit (only SPL tokens allows/non-2022)." />
+            </div>
             <input
-              className="w-full"
-              id="quantity0"
-              name="quantity0"
-              max={100}
-              min={0}
-              type="number"
-              value={quantity0}
-              onInput={(e: React.ChangeEvent<HTMLInputElement>) => setQuantity0(parseInt(e.target.value || '0', 10))}
-            />
-            <select
-              className="w-full mt-2"
-              onChange={(e) => {
-                setProductType0(e.target.value);
+              className="w-full rounded-sm"
+              id="ResultTokenId"
+              name="ResultTokenId"
+              type="string"
+              value={resultTokenId}
+              onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setResultTokenId(e.target.value)
               }}
-              value={productType0}
-            >
-              {Object.values(PRODUCT_TYPE).map((v) => (
-                <option key={v} value={v}>
-                  {toSentenceCase(v)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="text-center">
+            />
+            <div className="text-white text-left">Result tokens to deposit</div>
             <input
-              className="w-full"
-              id="quantity1"
-              name="quantity1"
-              max={100}
-              min={0}
+              className="w-full rounded-sm"
+              id="seeds to craft / min: 1"
+              name="seeds to craft  / min: 1"
+              max={1000000000}
+              min={1}
               type="number"
-              value={quantity1}
-              onInput={(e: React.ChangeEvent<HTMLInputElement>) => setQuantity1(parseInt(e.target.value, 10))}
+              value={resultTokensToDeposit}
+              onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setResultTokensToDeposit(parseInt(e.target.value || '0', 10))
+              }
             />
-            <select
-              className="w-full mt-2"
-              onChange={(e) => {
-                setProductType1(e.target.value);
-              }}
-              value={productType1}
-            >
-              {Object.values(PRODUCT_TYPE).map((v) => (
-                <option key={v} value={v}>
-                  {toSentenceCase(v)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="text-center">
+
+            <div className="text-white text-left">
+              Ingredient 0 ID
+              <HelperTooltip message="First ingredient SPL token ID to craft the recipe" />
+            </div>
             <input
-              className="w-full"
-              id="quantity2"
-              name="quantity2"
-              max={100}
-              min={0}
-              type="number"
-              value={quantity2}
-              onInput={(e: React.ChangeEvent<HTMLInputElement>) => setQuantity2(parseInt(e.target.value, 10))}
-            />
-            <select
-              className="w-full mt-2"
-              onChange={(e) => {
-                setProductType2(e.target.value);
+              className="w-full rounded-sm"
+              id="Ingredient0Id"
+              name="Ingredient0Id"
+              type="string"
+              value={ingredient0Id}
+              onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setIngredient0Id(e.target.value)
               }}
-              value={productType2}
-            >
-              {Object.values(PRODUCT_TYPE).map((v) => (
-                <option key={v} value={v}>
-                  {toSentenceCase(v)}
-                </option>
-              ))}
-            </select>
+            />
+            <div className="text-white text-left">`Ingredient 0` tokens needed to get 1 result token</div>
+            <input
+              className="w-full rounded-sm"
+              id="Ingredient0IdAmount"
+              name="Ingredient0IdAmount"
+              max={1000000000}
+              min={1}
+              type="number"
+              value={ingredient0AmountPer}
+              onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setIngredient0AmountPer(parseInt(e.target.value || '0', 10))
+              }
+            />
+
+            <div className="text-white text-left">
+              Ingredient 1 <HelperTooltip message="Second ingredient SPL token ID to craft the recipe" />
+            </div>
+            <input
+              className="w-full rounded-sm"
+              id="Ingredient1Id"
+              name="Ingredient1Id"
+              type="string"
+              value={ingredient1Id}
+              onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setIngredient1Id(e.target.value)
+              }}
+            />
+            <div className="text-white text-left">`Ingredient 1` tokens needed to get 1 result token</div>
+            <input
+              className="w-full rounded-sm"
+              id="Ingredient1IdAmount"
+              name="Ingredient1IdAmount"
+              max={1000000000}
+              min={1}
+              type="number"
+              value={ingredient1AmountPer}
+              onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setIngredient1AmountPer(parseInt(e.target.value || '0', 10))
+              }
+            />
+
+            <div className="mt-5">*Ingredients cant be the same ID and cant be zero.</div>
           </div>
         </div>
       </div>
       <div className="flex flex-col mt-5">
         <div className="text-right">
-          {wallet?.address ? (
-            <Button
-              onClick={() =>
-                onDishCraft(
-                  [productType0, productType1, productType2],
-                  [quantity0, quantity1, quantity2],
-                  wallet.address,
-                  wallet.privateKey,
-                )
-              }
-            >
-              {!isLoading && <div>Try craft dish</div>}
+          {wallet?.publicKey ? (
+            <Button onClick={() => craftRecipe()}>
+              {!isLoading && <div>Craft Seed</div>}
               {isLoading && <Spinner />}
             </Button>
           ) : (
@@ -178,29 +278,17 @@ const Kitchen = () => {
         <div className="text-center mt-5 bg-black bg-opacity-50">
           {error && <div className="text-red-500">{error}</div>}
         </div>
+        <div className="text-center mt-5 bg-black bg-opacity-50">
+          {message && <div className="text-green-500">{message}</div>}
+        </div>
       </div>
-      <div className="flex flex-col justify-start items-start mt-4 text-white">
-        <div className="text-lg">Dishes</div>
-        <div>(owned)</div>
-      </div>
-      <div className="flex flex-row bg-green-200 py-5 rounded-sm">
-        <div className="font-bold w-1/3 text-center">3x Potato</div>
-        <div className="w-2/3 text-right px-10">{potatoDishBalance}</div>
-      </div>
-      <div className="flex flex-row bg-green-200 py-5 mt-2 rounded-sm">
-        <div className="font-bold w-1/3 text-center">3x Carrot</div>
-        <div className="w-2/3 text-right px-10">{carrotDishBalance}</div>
-      </div>
-      <div className="flex flex-row bg-green-200 py-5 mt-2 rounded-sm">
-        <div className="font-bold w-1/3 text-center">3x Corn</div>
-        <div className="w-2/3 text-right px-10">{cornDishBalance}</div>
-      </div>
-      <div className="flex flex-row bg-green-200 py-5 mt-2 rounded-sm">
-        <div className="font-bold w-1/3 text-center">3x Weed</div>
-        <div className="w-2/3 text-right px-10">{weedDishBalance}</div>
-      </div>
-    </div>
-  );
-};
 
-export default Kitchen;
+      {/* <div className="flex flex-col justify-start items-start text-white mt-5">
+        <div className="text-lg">Products</div>
+        <div>(owned)</div>
+      </div> */}
+    </div>
+  )
+}
+
+export default Kitchen

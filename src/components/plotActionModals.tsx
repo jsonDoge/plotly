@@ -7,7 +7,7 @@ import { useWallet } from '@solana/wallet-adapter-react'
 
 // import { buyPlot, harvest, plant } from '../services/farm'
 import { subscribeKey } from 'valtio/utils'
-import { buyPlotTx, getSurroundingPlotMintIxs, plantSeedTx } from '@/services/farm'
+import { buyPlotTx, depositToPlotTx, getSurroundingPlotMintIxs, harvestPlantTx, plantSeedTx, returnPlotTx, revertPlantTx, tendPlantTx } from '@/services/farm'
 import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js'
 import { AnchorProvider } from '@coral-xyz/anchor'
 import { useAnchorProvider } from '@/context/solana'
@@ -32,9 +32,11 @@ import { SelectedPlot, selectedPlotStore } from '../stores/selectedPlot'
 import { Coordinates, PlotInfo } from './game/utils/interfaces'
 
 // constants
-import HarvestModal from './plotActionModals/harvestModal'
+import HarvestModal from './plotActionModals/ownedPlantedModal'
 import { getEmptyPlotInfo } from './game/utils/mapPlots'
 import OwnedPlotModal from './plotActionModals/ownedPlotModal'
+import { depositToPlot } from 'anchor/tests/helpers'
+import OwnedPlantedModal from './plotActionModals/ownedPlantedModal'
 
 const { publicRuntimeConfig } = getConfig()
 
@@ -60,6 +62,7 @@ const PlotActionModals: React.FC = () => {
   const [isSurroundingPlotModalShown, setSurroundingPlotModalShown] = useState(false)
   const [surroundingPlotMintIxs, setSurroundingPlotMintIxs] = useState<TransactionInstruction[]>([])
   const [isOwnedPlotModalShown, setIsOwnedPlotModalShown] = useState(false)
+  const [isOwnedPlantedModalShown, setIsOwnedPlantedModalShown] = useState(false)
   // const [isHarvestModalShown, setIsHarvestModalShown] = useState(false)
   // const [seasonSeedTypes, setSeasonSeedTypes] = useState<SeedType[]>([])
 
@@ -68,10 +71,12 @@ const PlotActionModals: React.FC = () => {
   const [balance, setBalance] = useState(0)
 
   //
+  const [selectedPlotInfo, setSelectedPlotInfo] = useState<PlotInfo>(getEmptyPlotInfo()) 
   const [selectedCoords, setSelectedCoords] = useState<Coordinates>()
-  const [currentPlotInfo, setCurrentPlotInfo] = useState<PlotInfo>(getEmptyPlotInfo())
 
   const onPlotSelect = (x: number, y: number, plotInfo: PlotInfo, currentBlock_: number) => {
+    setSelectedPlotInfo(plotInfo)
+
     if (!wallet || !wallet?.connected || !wallet?.publicKey || !wallet?.signTransaction) {
       setError('Wallet not loaded yet... Please try again later')
       return
@@ -80,6 +85,7 @@ const PlotActionModals: React.FC = () => {
     setSelectedCoords({ x, y })
 
     setWaterLevel(plotInfo.waterLevel)
+    setBalance(plotInfo.balance.toNumber())
 
     //   setSeasonSeedTypes(
     //     getSeasonSeedTypes(calculateSeason(currentBlock_, parseInt(publicRuntimeConfig.SEASON_DURATION_BLOCKS, 10))),
@@ -89,7 +95,13 @@ const PlotActionModals: React.FC = () => {
 
     // TODO: add please connect wallet
 
-    if (isUnminted) {
+    // if () {
+    //   setIsBuyPlotModalShown(true)
+    //   appRouteStoreActions.setCurrentRoute(Route.modalShown)
+    //   return
+    // }
+
+    if (isUnminted || isFarmOwner) {
       setIsLoading(true)
       getSurroundingPlotMintIxs(
         wallet.publicKey,
@@ -112,12 +124,21 @@ const PlotActionModals: React.FC = () => {
           setIsBuyPlotModalShown(true)
         }
       })
+      return
+    }
+
+    if (isOwner && !!plotInfo.plant) {
+      console.log('choosing wrong mondal', plotInfo.plant)
+      setIsOwnedPlantedModalShown(true)
+      appRouteStoreActions.setCurrentRoute(Route.modalShown)
+      return
     }
 
     // change to is planted?
-    if (isOwner && !isPlantOwner) {
+    if (isOwner) {
       setIsOwnedPlotModalShown(true)
       appRouteStoreActions.setCurrentRoute(Route.modalShown)
+      return
     }
 
     //   if (isPlantOwner) {
@@ -133,6 +154,7 @@ const PlotActionModals: React.FC = () => {
     setIsBuyPlotModalShown(false)
     setSurroundingPlotModalShown(false)
     setIsOwnedPlotModalShown(false)
+    setIsOwnedPlantedModalShown(false)
     setError('')
     setMessage('')
     appRouteStoreActions.setCurrentRoute(Route.plots)
@@ -215,6 +237,8 @@ const PlotActionModals: React.FC = () => {
       defaultBuyErrorMessage,
     )
   }
+
+  // OWNED PLOT
 
   const onPlantConfirm = async (coords_: Coordinates, seedMint_: string) => {
     if (!wallet || !wallet?.connected || !wallet?.publicKey || !wallet?.signTransaction) {
@@ -299,6 +323,139 @@ const PlotActionModals: React.FC = () => {
       // defaultPlantErrorMessage,
     )
   }
+
+  const onDepositToPlotConfirm = async (coords_: Coordinates, amount: number) => {
+    if (!wallet || !wallet?.connected || !wallet?.publicKey || !wallet?.signTransaction) {
+      setError('Wallet not loaded yet... Please try again later')
+      return
+    }
+
+    if (!amount || amount <= 0) {
+      setError('Invalid amount')
+      return
+    }
+
+    onModalConfirm(
+      () =>
+        depositToPlotTx(
+          //  verified above
+          wallet.publicKey as PublicKey,
+          provider,
+          coords_.x,
+          coords_.y,
+          new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID),
+          new BN(amount),
+        ),
+      () => {
+        setIsOwnedPlotModalShown(false)
+      },
+      'Depositing failed, check if you have necessary seed',
+
+      // (walletPrivateKey: string) => plant(coords.x, coords.y, seedType_, walletPrivateKey),
+      // () => setIsPlantModalShown(false),
+      // defaultPlantErrorMessage,
+    )
+  }
+
+  const onReturnPlotConfirm = async (coords_: Coordinates) => {
+    if (!wallet || !wallet?.connected || !wallet?.publicKey || !wallet?.signTransaction) {
+      setError('Wallet not loaded yet... Please try again later')
+      return
+    }
+
+    onModalConfirm(
+      () =>
+        returnPlotTx(
+          //  verified above
+          wallet.publicKey as PublicKey,
+          provider,
+          coords_.x,
+          coords_.y,
+          new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID),
+        ),
+      () => {
+        setIsOwnedPlotModalShown(false)
+      },
+      'Depositing failed, check if you have necessary seed',
+
+      // (walletPrivateKey: string) => plant(coords.x, coords.y, seedType_, walletPrivateKey),
+      // () => setIsPlantModalShown(false),
+      // defaultPlantErrorMessage,
+    )
+  }
+
+  // PLANTED MODALS
+
+  const onTendConfirm = async (coords_: Coordinates) => {
+    if (!wallet || !wallet?.connected || !wallet?.publicKey || !wallet?.signTransaction) {
+      setError('Wallet not loaded yet... Please try again later')
+      return
+    }
+
+    onModalConfirm(
+      () =>
+        tendPlantTx(
+          //  verified above
+          wallet.publicKey as PublicKey,
+          provider,
+          coords_.x,
+          coords_.y,
+          new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID),
+        ),
+      () => {
+        setIsOwnedPlantedModalShown(false)
+      },
+      'Tending failed, something went wrong',
+    )
+  }
+
+  const onHarvestConfirm = async (coords_: Coordinates) => {
+    if (!wallet || !wallet?.connected || !wallet?.publicKey || !wallet?.signTransaction) {
+      setError('Wallet not loaded yet... Please try again later')
+      return
+    }
+
+    onModalConfirm(
+      () =>
+        harvestPlantTx(
+          //  verified above
+          wallet.publicKey as PublicKey,
+          provider,
+          coords_.x,
+          coords_.y,
+          new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID),
+        ),
+      () => {
+        setIsOwnedPlantedModalShown(false)
+      },
+      'Harvesting failed, something went wrong',
+    )
+  }
+
+  const onRevertConfirm = async (coords_: Coordinates) => {
+    if (!wallet || !wallet?.connected || !wallet?.publicKey || !wallet?.signTransaction) {
+      setError('Wallet not loaded yet... Please try again later')
+      return
+    }
+
+    onModalConfirm(
+      () =>
+        revertPlantTx(
+          //  verified above
+          wallet.publicKey as PublicKey,
+          provider,
+          coords_.x,
+          coords_.y,
+          new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID),
+        ),
+      () => {
+        setIsOwnedPlantedModalShown(false)
+      },
+      'Revert failed, something went wrong',
+    )
+  }
+
+
   // const defaultPlantErrorMessage = 'Planting failed, check if you have necessary seed'
 
   // const defaultHarvestErrorMessage = 'Harvest failed :('
@@ -319,7 +476,7 @@ const PlotActionModals: React.FC = () => {
 
       console.log('plot:', plot.plotInfo)
 
-      setCurrentPlotInfo(plot.plotInfo)
+      setSelectedPlotInfo(plot.plotInfo)
       onPlotSelect(plot.x, plot.y, plot.plotInfo, currentBlock)
     })
 
@@ -364,14 +521,24 @@ const PlotActionModals: React.FC = () => {
         <OwnedPlotModal
           isLoading={isLoading}
           onPlant={(seedMint: string) => onPlantConfirm(selectedCoords, seedMint)}
-          onDeposit={(amount: number) => {}}
-          onReturn={() => {}}
+          onDeposit={(amount: number) => { onDepositToPlotConfirm(selectedCoords, amount) }}
+          onReturn={() => { onReturnPlotConfirm(selectedCoords) }}
           onCancel={() => hideModal()}
-          waterLevel={waterLevel}
-          balance={balance}
+          plotInfo={selectedPlotInfo}
         />
       )}
-      {isOwnedPlotModalShown || isBuyPlotModalShown || isSurroundingPlotModalShown ? (
+      {isOwnedPlantedModalShown && selectedCoords && (
+        <OwnedPlantedModal
+          isLoading={isLoading}
+          onTend={() => onTendConfirm(selectedCoords)}
+          onHarvest={() => { onHarvestConfirm(selectedCoords) }}
+          onRevert={() => { onRevertConfirm(selectedCoords) }}
+          onCancel={() => hideModal()}
+          plotInfo={selectedPlotInfo}
+          currentBlock={currentBlock}
+        />
+      )}
+      {isOwnedPlantedModalShown || isOwnedPlotModalShown || isBuyPlotModalShown || isSurroundingPlotModalShown ? (
         <div>
           <div className="text-center mt-5 bg-black bg-opacity-50">
             {error && <div className="text-red-500">{error}</div>}
@@ -383,6 +550,7 @@ const PlotActionModals: React.FC = () => {
       ) : (
         <div />
       )}
+      
       {/* {isHarvestModalShown && selectedCoords && (
         <HarvestModal
           title="Harvest? 👨‍🌾"
