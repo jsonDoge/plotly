@@ -2,7 +2,10 @@ import { AnchorProvider, Idl, Program, Wallet, web3 } from '@coral-xyz/anchor'
 import path from 'path'
 import fs from 'fs'
 import { Farm } from '@project/anchor'
-import { increasedCUTxWrap, mintAndBuyPlot, mintSeeds, plantSeed, toLeBytes } from '../tests/helpers'
+import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { PublicKey } from '@solana/web3.js'
+import { setupMint } from '../tests/setup'
+import { createRecipe, increasedCUTxWrap, mintAndBuyPlot, mintSeeds, plantSeed, toLeBytes } from '../tests/helpers'
 import FarmIDL from '../target/idl/farm.json'
 
 // so that the plotCurrency address would be the same
@@ -92,8 +95,48 @@ async function main() {
 
   await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
 
+  const ingredient0 = await setupMint(provider, TOKEN_PROGRAM_ID)
+  const ingredient1 = await setupMint(provider, TOKEN_PROGRAM_ID)
+
+  const ingredient0TokenAta = await getAssociatedTokenAddress(ingredient0, userWallet.publicKey)
+  const ingredient1TokenAta = await getAssociatedTokenAddress(ingredient1, userWallet.publicKey)
+
+  const [recipeId] = await PublicKey.findProgramAddressSync(
+    [
+      Buffer.from('recipe'),
+      ingredient0.toBuffer(),
+      toLeBytes(BigInt(new anchor.BN(2).toString()), 8),
+      ingredient1.toBuffer(),
+      toLeBytes(BigInt(new anchor.BN(4).toString()), 8),
+      plotCurrency.toBuffer(),
+      ingredient0TokenAta.toBuffer(),
+      ingredient1TokenAta.toBuffer(),
+      farm.toBuffer(),
+    ],
+    program.programId,
+  )
+
+  await createRecipe(
+    provider,
+    program,
+    plotCurrency,
+    plotCurrency,
+    ingredient0,
+    ingredient1,
+    new anchor.BN(2),
+    new anchor.BN(4),
+    new anchor.BN(100),
+    userWallet,
+    recipeId,
+  )
+
   console.log('succsessfully acquired plot:', plotMint.toString())
   console.log('seed mint:', seedMint.toString())
+  console.log('ingredient 0 ID:', ingredient0.toString())
+  console.log('ingredient 1 ID:', ingredient1.toString())
+  console.log('result PLOT currency ID:', plotCurrency.toString())
+
+  console.log('recipe ID:', recipeId.toString())
   // Add your deploy script here.
 }
 

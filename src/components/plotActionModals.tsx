@@ -7,7 +7,17 @@ import { useWallet } from '@solana/wallet-adapter-react'
 
 // import { buyPlot, harvest, plant } from '../services/farm'
 import { subscribeKey } from 'valtio/utils'
-import { buyPlotTx, depositToPlotTx, getSurroundingPlotMintIxs, harvestPlantTx, plantSeedTx, returnPlotTx, revertPlantTx, tendPlantTx } from '@/services/farm'
+import {
+  buyPlotTx,
+  depositToPlotTx,
+  getSurroundingPlotMintIxs,
+  harvestPlantTx,
+  plantSeedTx,
+  returnPlotTx,
+  revertPlantTx,
+  revokePlotTx,
+  tendPlantTx,
+} from '@/services/farm'
 import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js'
 import { AnchorProvider } from '@coral-xyz/anchor'
 import { useAnchorProvider } from '@/context/solana'
@@ -17,26 +27,24 @@ import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token
 import { isValidPublicKey } from '@/services/utils'
 import { BN } from 'bn.js'
 import { getFarmProgram } from '@project/anchor'
+import { depositToPlot } from 'anchor/tests/helpers'
 import PlantModal from './plotActionModals/ownedPlotModal'
 import Spinner from './utils/spinner'
 import PlotModal from './plotActionModals/plotModal'
 
 // context
 // import { useWallet } from '../context/wallet'
-import { useGame } from '../context/game'
 import { useBlockchain } from '../context/blockchain'
-import { useError } from '../context/error'
 import { SelectedPlot, selectedPlotStore } from '../stores/selectedPlot'
 
 // interfaces
 import { Coordinates, PlotInfo } from './game/utils/interfaces'
 
 // constants
-import HarvestModal from './plotActionModals/ownedPlantedModal'
 import { getEmptyPlotInfo } from './game/utils/mapPlots'
 import OwnedPlotModal from './plotActionModals/ownedPlotModal'
-import { depositToPlot } from 'anchor/tests/helpers'
 import OwnedPlantedModal from './plotActionModals/ownedPlantedModal'
+import NonOwnedPlotModal from './plotActionModals/nonOwnedPlotModal'
 
 const { publicRuntimeConfig } = getConfig()
 
@@ -63,15 +71,16 @@ const PlotActionModals: React.FC = () => {
   const [surroundingPlotMintIxs, setSurroundingPlotMintIxs] = useState<TransactionInstruction[]>([])
   const [isOwnedPlotModalShown, setIsOwnedPlotModalShown] = useState(false)
   const [isOwnedPlantedModalShown, setIsOwnedPlantedModalShown] = useState(false)
+  const [isNonOwnedModalShown, setIsNonOwnedModalShown] = useState(false)
   // const [isHarvestModalShown, setIsHarvestModalShown] = useState(false)
   // const [seasonSeedTypes, setSeasonSeedTypes] = useState<SeedType[]>([])
 
   // Selected plot properites
   const [waterLevel, setWaterLevel] = useState(0)
-  const [balance, setBalance] = useState(0)
+  // const [balance, setBalance] = useState(0)
 
   //
-  const [selectedPlotInfo, setSelectedPlotInfo] = useState<PlotInfo>(getEmptyPlotInfo()) 
+  const [selectedPlotInfo, setSelectedPlotInfo] = useState<PlotInfo>(getEmptyPlotInfo())
   const [selectedCoords, setSelectedCoords] = useState<Coordinates>()
 
   const onPlotSelect = (x: number, y: number, plotInfo: PlotInfo, currentBlock_: number) => {
@@ -85,7 +94,7 @@ const PlotActionModals: React.FC = () => {
     setSelectedCoords({ x, y })
 
     setWaterLevel(plotInfo.waterLevel)
-    setBalance(plotInfo.balance.toNumber())
+    // setBalance(plotInfo.balance.toNumber())
 
     //   setSeasonSeedTypes(
     //     getSeasonSeedTypes(calculateSeason(currentBlock_, parseInt(publicRuntimeConfig.SEASON_DURATION_BLOCKS, 10))),
@@ -141,6 +150,11 @@ const PlotActionModals: React.FC = () => {
       return
     }
 
+    if (!isOwner) {
+      setIsNonOwnedModalShown(true)
+      appRouteStoreActions.setCurrentRoute(Route.modalShown)
+    }
+
     //   if (isPlantOwner) {
     //     setIsHarvestModalShown(true)
     //     return
@@ -155,6 +169,7 @@ const PlotActionModals: React.FC = () => {
     setSurroundingPlotModalShown(false)
     setIsOwnedPlotModalShown(false)
     setIsOwnedPlantedModalShown(false)
+    setIsNonOwnedModalShown(false)
     setError('')
     setMessage('')
     appRouteStoreActions.setCurrentRoute(Route.plots)
@@ -455,6 +470,30 @@ const PlotActionModals: React.FC = () => {
     )
   }
 
+  // NON OWNED PLOT
+
+  const onRevokeConfirm = async (coords_: Coordinates) => {
+    if (!wallet || !wallet?.connected || !wallet?.publicKey || !wallet?.signTransaction) {
+      setError('Wallet not loaded yet... Please try again later')
+      return
+    }
+
+    onModalConfirm(
+      () =>
+        revokePlotTx(
+          //  verified above
+          wallet.publicKey as PublicKey,
+          provider,
+          coords_.x,
+          coords_.y,
+          new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID),
+        ),
+      () => {
+        setIsNonOwnedModalShown(false)
+      },
+      'Revert failed, something went wrong',
+    )
+  }
 
   // const defaultPlantErrorMessage = 'Planting failed, check if you have necessary seed'
 
@@ -521,8 +560,12 @@ const PlotActionModals: React.FC = () => {
         <OwnedPlotModal
           isLoading={isLoading}
           onPlant={(seedMint: string) => onPlantConfirm(selectedCoords, seedMint)}
-          onDeposit={(amount: number) => { onDepositToPlotConfirm(selectedCoords, amount) }}
-          onReturn={() => { onReturnPlotConfirm(selectedCoords) }}
+          onDeposit={(amount: number) => {
+            onDepositToPlotConfirm(selectedCoords, amount)
+          }}
+          onReturn={() => {
+            onReturnPlotConfirm(selectedCoords)
+          }}
           onCancel={() => hideModal()}
           plotInfo={selectedPlotInfo}
         />
@@ -531,11 +574,23 @@ const PlotActionModals: React.FC = () => {
         <OwnedPlantedModal
           isLoading={isLoading}
           onTend={() => onTendConfirm(selectedCoords)}
-          onHarvest={() => { onHarvestConfirm(selectedCoords) }}
-          onRevert={() => { onRevertConfirm(selectedCoords) }}
+          onHarvest={() => {
+            onHarvestConfirm(selectedCoords)
+          }}
+          onRevert={() => {
+            onRevertConfirm(selectedCoords)
+          }}
           onCancel={() => hideModal()}
           plotInfo={selectedPlotInfo}
           currentBlock={currentBlock}
+        />
+      )}
+      {isNonOwnedModalShown && selectedCoords && (
+        <NonOwnedPlotModal
+          isLoading={isLoading}
+          onRevoke={() => onRevokeConfirm(selectedCoords)}
+          onCancel={() => hideModal()}
+          plotInfo={selectedPlotInfo}
         />
       )}
       {isOwnedPlantedModalShown || isOwnedPlotModalShown || isBuyPlotModalShown || isSurroundingPlotModalShown ? (
@@ -550,7 +605,7 @@ const PlotActionModals: React.FC = () => {
       ) : (
         <div />
       )}
-      
+
       {/* {isHarvestModalShown && selectedCoords && (
         <HarvestModal
           title="Harvest? 👨‍🌾"

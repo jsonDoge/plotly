@@ -41,9 +41,9 @@ export interface RawPlot {
 export interface RawPlant {
   data: {
     balance: BN
-    balanceAbsorbRate: BN,
-    balanceRequired: BN,
-    lastUpdateBlock: BN, // should be ignored as all resources are updated in plot
+    balanceAbsorbRate: BN
+    balanceRequired: BN
+    lastUpdateBlock: BN // should be ignored as all resources are updated in plot
     neighborWaterDrainRate: number
     seedMint: PublicKey
     timesTended: number

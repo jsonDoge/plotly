@@ -12,14 +12,7 @@ interface Props {
   plotInfo: PlotInfo
 }
 
-const OwnedPlotModal: React.FC<Props> = ({
-  isLoading,
-  onPlant,
-  onDeposit,
-  onReturn,
-  onCancel,
-  plotInfo,
-}) => {
+const OwnedPlotModal: React.FC<Props> = ({ isLoading, onPlant, onDeposit, onReturn, onCancel, plotInfo }) => {
   const [seedMintId, setSeedMintId] = useState<string>('')
   const [depositAmount, setDepositAmount] = useState<number>(1)
 
@@ -31,7 +24,13 @@ const OwnedPlotModal: React.FC<Props> = ({
   const tabs = ['Plant', 'Deposit', 'Return']
   const [activeTab, setActiveTab] = useState(tabs[0])
 
-  const waterRegen = plotInfo.waterRegen - plotInfo.centerPlantDrainRate + plotInfo.leftPlantDrainRate + plotInfo.rightPlantDrainRate + plotInfo.upPlantDrainRate + plotInfo.downPlantDrainRate
+  const waterRegen =
+    plotInfo.waterRegen -
+    plotInfo.centerPlantDrainRate +
+    plotInfo.leftPlantDrainRate +
+    plotInfo.rightPlantDrainRate +
+    plotInfo.upPlantDrainRate +
+    plotInfo.downPlantDrainRate
 
   return (
     <div
@@ -60,10 +59,10 @@ const OwnedPlotModal: React.FC<Props> = ({
           <div className="mt-2 text-center">
             <p className="text-gray-500">{`Plot water level (1M max): ${plotInfo.waterLevel} 🚰`}</p>
             <p className="text-gray-500">
-              <span>Plot balance (Rent free >1M): </span>
-              <span className={ plotInfo.balance.ltn(1000000) ? 'text-red-500 font-bold' : '' }>
+              <span>Plot balance (Rent free &gt;1M): </span>
+              <span className={plotInfo.balance.ltn(1000000) ? 'text-red-500 font-bold' : ''}>
                 {plotInfo.balance.toString()} 💰
-                </span>
+              </span>
             </p>
             <p className="text-gray-500">{`Water regen (90 max): ${waterRegen} 📈`}</p>
           </div>

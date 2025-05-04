@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 
+import { PlantState } from '@/utils/enums'
 import Button from '../utils/button'
 import { PlotInfo } from '../game/utils/interfaces'
-import { PlantState } from '@/utils/enums'
 
 interface Props {
   isLoading: boolean
@@ -21,7 +21,7 @@ const OwnedPlantedModal: React.FC<Props> = ({
   onRevert,
   onCancel,
   plotInfo,
-  currentBlock
+  currentBlock,
 }) => {
   const tabs = ['Tend', 'Harvest', 'Revert']
   const [activeTab, setActiveTab] = useState(tabs[0])
@@ -31,17 +31,25 @@ const OwnedPlantedModal: React.FC<Props> = ({
     return null
   }
 
-  const waterRegen = plotInfo.waterRegen - plotInfo.centerPlantDrainRate + plotInfo.leftPlantDrainRate + plotInfo.rightPlantDrainRate + plotInfo.upPlantDrainRate + plotInfo.downPlantDrainRate
+  const waterRegen =
+    plotInfo.waterRegen -
+    plotInfo.centerPlantDrainRate +
+    plotInfo.leftPlantDrainRate +
+    plotInfo.rightPlantDrainRate +
+    plotInfo.upPlantDrainRate +
+    plotInfo.downPlantDrainRate
 
   // tend
   const tendTimesLeft = plotInfo.plant.timesToTend - plotInfo.plant.timesTended
   const canTend = plotInfo.plant.state === PlantState.NEEDS_TENDING
-  
 
   // harvest
   const balanceTillFinished = plotInfo.plant.balanceRequired.sub(plotInfo.plant.balanceAbsorbed)
   const balanceTillFinishedStr = balanceTillFinished.toString()
-  const waterTillFinished = plotInfo.plant.waterRequired - plotInfo.plant.waterAbsorbed < 0 ? 0 : plotInfo.plant.waterRequired - plotInfo.plant.waterAbsorbed
+  const waterTillFinished =
+    plotInfo.plant.waterRequired - plotInfo.plant.waterAbsorbed < 0
+      ? 0
+      : plotInfo.plant.waterRequired - plotInfo.plant.waterAbsorbed
   return (
     <div
       className="fixed z-10 inset-0 -top-20 overflow-y-auto"
@@ -69,11 +77,11 @@ const OwnedPlantedModal: React.FC<Props> = ({
           <div className="mt-2 text-center">
             <p className="text-gray-500">{`Plot water level (1M max): ${plotInfo.waterLevel} 🚰`}</p>
             <p className="text-gray-500">
-              <span>Plot balance (Rent free >1M): </span>
-              <span className={ plotInfo.balance.ltn(1000000) ? 'text-red-500 font-bold' : '' }>
+              <span>Plot balance (Rent free &gt;1M): </span>
+              <span className={plotInfo.balance.ltn(1000000) ? 'text-red-500 font-bold' : ''}>
                 {plotInfo.balance.toString()} 💰
-                </span>
-              </p>
+              </span>
+            </p>
             <p className="text-gray-500">{`Water regen (90 max): ${waterRegen} 📈`}</p>
           </div>
 
@@ -84,9 +92,11 @@ const OwnedPlantedModal: React.FC<Props> = ({
             <p className="text-gray-500">{`Water drain rate: ${plotInfo.plant?.actualWaterAbsorbRate} 🚰`}</p>
             <p className="text-gray-500">
               <span>Tending: </span>
-              { plotInfo.plant?.state === PlantState.NEEDS_TENDING ? (
-                <span className='text-red-500 font-bold'>Please tend to continue healthy growth!</span> ) : (<span>Tended</span>)
-              }
+              {plotInfo.plant?.state === PlantState.NEEDS_TENDING ? (
+                <span className="text-red-500 font-bold">Please tend to continue healthy growth!</span>
+              ) : (
+                <span>Tended</span>
+              )}
             </p>
           </div>
 
@@ -99,9 +109,11 @@ const OwnedPlantedModal: React.FC<Props> = ({
                       Tend to the plant 🌿
                     </h3>
                     <div className="text-sm text-gray-500">
-                      <span>Some plants may need tending so they would keep absorbing balance. Otherwise they'll stop :( Tending is only allowed at regular intervals.</span>
-                      {
-                      plotInfo.plant?.timesToTend > 0 ? (
+                      <span>
+                        Some plants may need tending so they would keep absorbing balance. Otherwise they&apos;ll stop
+                        :( Tending is only allowed at regular intervals.
+                      </span>
+                      {plotInfo.plant?.timesToTend > 0 ? (
                         <div>
                           <p className="text-sm text-gray-500">
                             {`This plant has been tended ${plotInfo.plant?.timesTended} times. It will still need to be tended ${tendTimesLeft} more times.`}
@@ -110,18 +122,17 @@ const OwnedPlantedModal: React.FC<Props> = ({
                             {`Next tending is available at block ${plotInfo.plant?.nextTendFrom} / now: ${currentBlock}.`}
                           </p>
                         </div>
-                        ) : (
-                          <p className="text-sm text-gray-500">
-                            {`This plant doesn't need tending :).`}
-                          </p>
-                        )
-                      }
+                      ) : (
+                        <p className="text-sm text-gray-500">{`This plant doesn't need tending :).`}</p>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <Button disabled={!canTend} onClick={() => onTend()}>Tend</Button>
+                <Button disabled={!canTend} onClick={() => onTend()}>
+                  Tend
+                </Button>
                 {onCancel && <Button onClick={() => onCancel()}>Close</Button>}
               </div>
             </div>
@@ -136,22 +147,23 @@ const OwnedPlantedModal: React.FC<Props> = ({
                       Harvest plant 🌾
                     </h3>
                     <div>
-                    <p className="text-sm text-gray-500">
-                      {`Once plants absorb enough water and balance they will be harvestable.`}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {`This plant still needs to absorb `}
-                      <b>{balanceTillFinishedStr}</b>
-                      {` balance and `}
-                      <b>{waterTillFinished}</b> {` water before it can be harvested.`}
-                    </p>
+                      <p className="text-sm text-gray-500">
+                        Once plants absorb enough water and balance they will be harvestable.
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {`This plant still needs to absorb `}
+                        <b>{balanceTillFinishedStr}</b>
+                        {` balance and `}
+                        <b>{waterTillFinished}</b> {` water before it can be harvested.`}
+                      </p>
+                    </div>
                   </div>
-                  </div>
-                 
                 </div>
               </div>
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <Button disabled={balanceTillFinished.gtn(0) || waterTillFinished > 0} onClick={() => onHarvest()}>It's harvestin time!</Button>
+                <Button disabled={balanceTillFinished.gtn(0) || waterTillFinished > 0} onClick={() => onHarvest()}>
+                  It&apos;s harvestin time!
+                </Button>
                 {onCancel && <Button onClick={() => onCancel()}>Close</Button>}
               </div>
             </div>
@@ -167,7 +179,8 @@ const OwnedPlantedModal: React.FC<Props> = ({
                     </h3>
                     <div>
                       <p className="text-sm text-gray-500">
-                        {`All water and balance absorbed will be lost. The plant will be reverted to a seed and sent back to your wallet. This can be done any time during growth.`}
+                        All water and balance absorbed will be lost. The plant will be reverted to a seed and sent back
+                        to your wallet. This can be done any time during growth.
                       </p>
                     </div>
                   </div>

@@ -330,6 +330,58 @@ export const craftRecipeTx = async (
   return { tx: transaction, recipeId }
 }
 
+export const followRecipeTx = async (
+  user: PublicKey,
+  provider: AnchorProvider,
+  ingredient0Mint: PublicKey,
+  ingredient0AmountPer: BN,
+  ingredient1Mint: PublicKey,
+  ingredient1AmountPer: BN,
+  resultTokenMint: PublicKey,
+  resultTokenToDeposit: BN,
+  plotCurrency: PublicKey,
+): Promise<{ tx: Transaction; recipeId: PublicKey }> => {
+  // NEED to check all neighboring plots that they should be minted
+
+  const farmId = new PublicKey(publicRuntimeConfig.FARM_ID)
+  const farm = getFarmProgram(provider)
+
+  const ingredient0TokenAta = await getAssociatedTokenAddress(ingredient0Mint, user)
+  const ingredient1TokenAta = await getAssociatedTokenAddress(ingredient1Mint, user)
+
+  const [recipeId] = await PublicKey.findProgramAddressSync(
+    [
+      Buffer.from('recipe'),
+      ingredient0Mint.toBuffer(),
+      toLeBytes(BigInt(new BN(2).toString()), 8),
+      ingredient1Mint.toBuffer(),
+      toLeBytes(BigInt(new BN(4).toString()), 8),
+      resultTokenMint.toBuffer(),
+      ingredient0TokenAta.toBuffer(),
+      ingredient1TokenAta.toBuffer(),
+      farmId.toBuffer(),
+    ],
+    farm.programId,
+  )
+
+  const transaction = new Transaction()
+
+  transaction.add(
+    await farm.methods
+      .createRecipe(plotCurrency, ingredient0AmountPer, ingredient1AmountPer, resultTokenToDeposit)
+      .accountsPartial({
+        user,
+        ingredient0Mint,
+        ingredient1Mint,
+        resultMint: resultTokenMint,
+        recipe: recipeId,
+      })
+      .instruction(),
+  )
+
+  return { tx: transaction, recipeId }
+}
+
 // PLANTING
 
 export const plantSeedTx = async (
@@ -513,6 +565,103 @@ export const returnPlotTx = async (
 
   return transaction
 }
+
+export const revokePlotTx = async (
+  user: PublicKey,
+  provider: AnchorProvider,
+  plotX: number,
+  plotY: number,
+  plotCurrency: PublicKey,
+) => {
+  const farmId = new PublicKey(publicRuntimeConfig.FARM_ID)
+  const farm = getFarmProgram(provider)
+
+  const transaction = new Transaction()
+
+  const [plotMintId] = PublicKey.findProgramAddressSync(
+    [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farmId.toBuffer()],
+    farm.programId,
+  )
+
+  const [plantId] = PublicKey.findProgramAddressSync([Buffer.from('plant'), plotMintId.toBuffer()], farm.programId)
+
+  const plotMintIds: PublicKey[] = []
+  const plotIds: PublicKey[] = []
+  for (let x = -1; x <= 1; x += 1) {
+    for (let y = -1; y <= 1; y += 1) {
+      if (Math.abs(x) + Math.abs(y) !== 1) {
+        continue
+      }
+      if (plotX + x < 0 || plotY + y < 0) {
+        plotMintIds.push(PublicKey.default)
+        plotIds.push(PublicKey.default)
+        continue
+      }
+      if (plotX + x > 999 || plotY + y > 999) {
+        plotMintIds.push(PublicKey.default)
+        plotIds.push(PublicKey.default)
+        continue
+      }
+
+      const neighborX = plotX + x
+      const neighborY = plotY + y
+
+      const [neighborPlotMint] = PublicKey.findProgramAddressSync(
+        [Buffer.from('plot_mint'), toLeBytes(neighborX), toLeBytes(neighborY), farmId.toBuffer()],
+        farm.programId,
+      )
+
+      plotMintIds.push(neighborPlotMint)
+
+      const [plotId_] = PublicKey.findProgramAddressSync(
+        [Buffer.from('plot'), neighborPlotMint.toBuffer()],
+        farm.programId,
+      )
+      plotIds.push(plotId_)
+    }
+  }
+
+  let plant
+  try {
+    plant = await farm.account.plant.fetch(plantId)
+  } catch (error) {
+    if (error?.message?.includes('Plant account does not exist')) {
+      // Account does not exist, which is expected for unminted plots
+      plant = null
+    } else {
+      throw error
+    }
+  }
+  if (!plant) {
+    throw new Error('Plant account does not exist')
+  }
+
+  transaction.add(
+    await farm.methods
+      .revokePlot(plotX, plotY)
+      .accountsPartial({
+        user,
+        plotMint: plotMintId,
+        plotCurrencyMint: plotCurrency,
+        seedMint: plant.seedMint,
+        plant: plantId,
+        plotMintLeft: plotMintIds[0],
+        plotMintUp: plotMintIds[1],
+        plotMintDown: plotMintIds[2],
+        plotMintRight: plotMintIds[3],
+        plotLeft: plotIds[0],
+        plotUp: plotIds[1],
+        plotDown: plotIds[2],
+        plotRight: plotIds[3],
+        plantTreasury: plant.treasury,
+      })
+      .instruction(),
+  )
+
+  return transaction
+}
+
+//
 
 export const tendPlantTx = async (
   user: PublicKey,

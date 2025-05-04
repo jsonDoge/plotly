@@ -3116,13 +3116,12 @@ export type Farm = {
           "type": "pubkey"
         },
         {
-          "name": "ingredientAmounts",
-          "type": {
-            "array": [
-              "u64",
-              2
-            ]
-          }
+          "name": "ingredient0Amount",
+          "type": "u64"
+        },
+        {
+          "name": "ingredient1Amount",
+          "type": "u64"
         },
         {
           "name": "resultTokenReceive",
@@ -6483,26 +6482,24 @@ export type Farm = {
           "type": "pubkey"
         },
         {
-          "name": "ingredientAmounts",
-          "type": {
-            "array": [
-              "u64",
-              2
-            ]
-          }
+          "name": "ingredient0Amount",
+          "type": "u64"
+        },
+        {
+          "name": "ingredient1Amount",
+          "type": "u64"
         },
         {
           "name": "resultTokenToAdd",
           "type": "u64"
         },
         {
-          "name": "treasuries",
-          "type": {
-            "array": [
-              "pubkey",
-              2
-            ]
-          }
+          "name": "ingredient0Treasury",
+          "type": "pubkey"
+        },
+        {
+          "name": "ingredient1Treasury",
+          "type": "pubkey"
         }
       ]
     },
@@ -7882,36 +7879,6 @@ export type Farm = {
           "writable": true
         },
         {
-          "name": "seedMintInfo",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  115,
-                  101,
-                  101,
-                  100,
-                  95,
-                  109,
-                  105,
-                  110,
-                  116,
-                  95,
-                  105,
-                  110,
-                  102,
-                  111
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "seedMint"
-              }
-            ]
-          }
-        },
-        {
           "name": "farm",
           "pda": {
             "seeds": [
@@ -8003,96 +7970,6 @@ export type Farm = {
                 "path": "plotMint"
               }
             ]
-          }
-        },
-        {
-          "name": "userAssociatedPlotAccount",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "user"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "plotMint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
           }
         },
         {
@@ -8366,13 +8243,14 @@ export type Farm = {
           }
         },
         {
-          "name": "userAssociatedSeedAccount",
+          "name": "lastClaimerAssociatedSeedAccount",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "user"
+                "path": "plot.last_claimer",
+                "account": "plot"
               },
               {
                 "kind": "const",

@@ -20,9 +20,11 @@ use crate::{errors::ErrorCode, state::Farm};
 #[derive(Accounts)]
 #[instruction(
     plot_currency: Pubkey,
-    ingredient_amounts: [u64; 2],
+    ingredient_0_amount: u64,
+    ingredient_1_amount: u64,
     __: u64,
-    treasuries: [Pubkey; 2],
+    ingredient_0_treasury: Pubkey,
+    ingredient_1_treasury: Pubkey,
 )]
 pub struct RefillRecipe<'info> {
     #[account(mut)]
@@ -52,12 +54,12 @@ pub struct RefillRecipe<'info> {
         seeds = [
             b"recipe",
             ingredient_0_mint.key().as_ref(),
-            &ingredient_amounts[0].to_le_bytes()[..],
+            &ingredient_0_amount.to_le_bytes()[..],
             ingredient_1_mint.key().as_ref(),
-            &ingredient_amounts[1].to_le_bytes()[..],
+            &ingredient_1_amount.to_le_bytes()[..],
             result_mint.key().as_ref(),
-            treasuries[0].as_ref(),
-            treasuries[1].as_ref(),
+            ingredient_0_treasury.as_ref(),
+            ingredient_1_treasury.as_ref(),
             farm.key().as_ref()
         ],
         space = 8 + std::mem::size_of::<Recipe>(),
@@ -102,9 +104,11 @@ impl<'info> RefillRecipe<'info> {
     pub fn refill_recipe(
         &mut self,
         plot_currency: Pubkey,
-        ingredient_amounts: [u64; 2],
+        ingredient_0_amount: u64,
+        ingredient_1_amount: u64,
         result_token_to_add: u64,
-        treasuries: [Pubkey; 2],
+        ingredient_0_treasury: Pubkey,
+        ingredient_1_treasury: Pubkey,
         recipe_bump: u8,
         program_id: &Pubkey,
     ) -> Result<()> {
@@ -117,14 +121,14 @@ impl<'info> RefillRecipe<'info> {
             return Err(ErrorCode::InvalidIngredientData.into());
         }
 
-        if ingredient_amounts[0] == 0 || ingredient_amounts[1] == 0 {
+        if ingredient_0_amount == 0 || ingredient_1_amount == 0 {
             return Err(ErrorCode::InvalidIngredientData.into());
         }
 
-        if treasuries[0] == Pubkey::default() {
+        if ingredient_0_treasury == Pubkey::default() {
             return Err(ErrorCode::InvalidIngredientData.into());
         }
-        if treasuries[1] == Pubkey::default() {
+        if ingredient_1_treasury == Pubkey::default() {
             return Err(ErrorCode::InvalidIngredientData.into());
         }
 

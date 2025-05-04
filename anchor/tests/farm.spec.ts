@@ -9,7 +9,17 @@ import { PublicKey } from '@solana/web3.js'
 import assert from 'node:assert'
 import { Farm } from '../target/types/farm'
 import { setupFarm, setupMint } from './setup'
-import { depositToPlot, increasedCUTxWrap, mintAndBuyPlot, returnPlot, toLeBytes } from './helpers'
+import {
+  depositToPlot,
+  increasedCUTxWrap,
+  mintAndBuyPlot,
+  mintSeeds,
+  plantSeed,
+  returnPlot,
+  revokePlot,
+  toLeBytes,
+  waitForSlots,
+} from './helpers'
 
 describe('farm', () => {
   // Configure the client to use the local cluster.
@@ -220,7 +230,6 @@ describe('farm', () => {
     expect(new anchor.BN(value.size).toString()).toEqual(new anchor.BN(10).toString())
   }, 1000000)
 
-
   it('Should be able to return plot and receive balance back', async () => {
     const plotX5 = 5
     const plotY5 = 5
@@ -252,14 +261,12 @@ describe('farm', () => {
 
     const userTokenAccountInfo55 = await program.provider.connection.getTokenAccountBalance(userTokenAccount55)
 
-    expect(parseInt(userTokenAccountInfo55.value.amount, 10)).toEqual(0);
+    expect(parseInt(userTokenAccountInfo55.value.amount, 10)).toEqual(0)
 
     expect(parseInt(plotCurrencyBalanceAfterReturn.value.amount, 10)).toEqual(
       parseInt(plotCurrencyBalanceBeforeReturn.value.amount, 10) + 1000000,
     )
-
   }, 1000000)
-
 
   it('Should be able to deposit extra tokens to plot balance', async () => {
     const plotX5 = 5
@@ -292,7 +299,7 @@ describe('farm', () => {
 
     const userTokenAccountInfo55 = await program.provider.connection.getTokenAccountBalance(userTokenAccount55)
 
-    expect(parseInt(userTokenAccountInfo55.value.amount, 10)).toEqual(1);
+    expect(parseInt(userTokenAccountInfo55.value.amount, 10)).toEqual(1)
 
     expect(parseInt(plotCurrencyBalanceAfterReturn.value.amount, 10)).toEqual(
       parseInt(plotCurrencyBalanceBeforeReturn.value.amount, 10) - 1000000,
@@ -303,10 +310,90 @@ describe('farm', () => {
       program.programId,
     )
 
-
     const plotAccount = await program.account.plot.fetch(plotId)
 
     expect(plotAccount.balance.toNumber()).toEqual(2000000)
+  }, 1000000)
 
+  it('Should be able to revoke plot and receive balance as reward', async () => {
+    const plotX = 5
+    const plotY = 5
+
+    const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('farm'), plotCurrency.toBuffer()],
+      program.programId,
+    )
+
+    const [farmAuth] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('farm_auth'), farm.toBuffer()],
+      program.programId,
+    )
+
+    const [plotMint55] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
+      program.programId,
+    )
+    const [plotId] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot'), plotMint55.toBuffer()],
+      program.programId,
+    )
+
+    const [userPlotCurrencyTokenAta] = anchor.web3.PublicKey.findProgramAddressSync(
+      [userWallet.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), plotCurrency.toBuffer()],
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+
+    await mintAndBuyPlot(provider, program, plotCurrency, plotX, plotY, userWallet)
+
+    const seedsToMint = 5
+    const plantTokensPerSeed = 10000000
+    const growthBlockDuration = 101
+    const waterDrainRate = 10
+    const timesToTend = 0
+    const balanceAbsorbRate = 200000
+
+    const plantMint = await setupMint(provider, TOKEN_PROGRAM_ID)
+
+    // we need to drop the balance below 10% threashold
+
+    const seedMint = await mintSeeds(
+      provider,
+      program,
+      plotCurrency,
+      plantMint,
+      userWallet,
+      seedsToMint,
+      plantTokensPerSeed,
+      growthBlockDuration,
+      waterDrainRate,
+      timesToTend,
+      balanceAbsorbRate,
+    )
+
+    await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
+
+    const plotCurrencyBalanceBeforeRevoke = await provider.connection.getTokenAccountBalance(userPlotCurrencyTokenAta)
+
+    await waitForSlots(provider, await provider.connection.getSlot(), 10)
+
+    await revokePlot(provider, program, plotCurrency, plotX, plotY, userWallet)
+
+    const plotCurrencyBalanceAfterRevoke = await provider.connection.getTokenAccountBalance(userPlotCurrencyTokenAta)
+
+    const userTokenAccount55 = await getAssociatedTokenAddress(plotMint55, userWallet.publicKey)
+
+    const userTokenAccountInfo55 = await program.provider.connection.getTokenAccountBalance(userTokenAccount55)
+
+    // should no longer posses the plot NFT
+    expect(parseInt(userTokenAccountInfo55.value.amount, 10)).toEqual(0)
+
+    // this check is invalid because the same user is the seed minter and receives the reward
+    expect(parseInt(plotCurrencyBalanceAfterRevoke.value.amount, 10)).toBeGreaterThan(
+      parseInt(plotCurrencyBalanceBeforeRevoke.value.amount, 10),
+    )
+
+    const plot = await program.account.plot.fetch(plotId)
+
+    expect(plot.lastClaimer.toString()).toEqual(farmAuth.toString())
   }, 1000000)
 })

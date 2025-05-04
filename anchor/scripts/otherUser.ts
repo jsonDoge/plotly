@@ -1,12 +1,12 @@
 import { AnchorProvider, Idl, Program, Wallet, web3 } from '@coral-xyz/anchor'
 import path from 'path'
 import fs from 'fs'
-import { increasedCUTxWrap, mintAndBuyPlot, mintSeeds, plantSeed, revertPlant, toLeBytes, waitForSlots } from '../tests/helpers'
-import { setupMint } from '../tests/setup'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import FarmIDL from '../target/idl/farm.json'
 import { Farm } from '@project/anchor'
 import { Connection, PublicKey } from '@solana/web3.js'
+import { increasedCUTxWrap, mintAndBuyPlot, mintSeeds, plantSeed, revertPlant, waitForSlots } from '../tests/helpers'
+import { setupMint } from '../tests/setup'
+import FarmIDL from '../target/idl/farm.json'
 
 // so that the plotCurrency address would be the same
 const localnetPlotCurrencyKeypairPath = './localnet/plotCurrency.json'
@@ -24,18 +24,18 @@ function getFarmProgram(provider: AnchorProvider): Program<Farm> {
 
 async function waitForBalance(connection: Connection, pubkey: PublicKey, expectedLamports: 1000, maxTries = 30) {
   for (let i = 0; i < maxTries; i++) {
-    const balance = await connection.getBalance(pubkey);
-    console.log(balance);
+    const balance = await connection.getBalance(pubkey)
+    console.log(balance)
     if (balance >= expectedLamports) {
       console.log('balance found!')
 
       return
-    };
+    }
     console.log('waiting for balance...')
 
-    await new Promise((res) => setTimeout(res, 1000)); // wait 0.5s
+    await new Promise((res) => setTimeout(res, 1000)) // wait 0.5s
   }
-  throw new Error("Balance did not arrive in time");
+  throw new Error('Balance did not arrive in time')
 }
 
 async function main() {
@@ -60,14 +60,17 @@ async function main() {
 
   const userWallet = provider.wallet as Wallet
 
-  const sig = await provider.connection.requestAirdrop(userWallet.publicKey, 1000_000_000_000);
-  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+  const sig = await provider.connection.requestAirdrop(userWallet.publicKey, 1000_000_000_000)
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash()
 
-  await provider.connection.confirmTransaction({
-    signature: sig,
-    blockhash,
-    lastValidBlockHeight
-  }, "finalized");
+  await provider.connection.confirmTransaction(
+    {
+      signature: sig,
+      blockhash,
+      lastValidBlockHeight,
+    },
+    'finalized',
+  )
 
   await waitForBalance(provider.connection, userWallet.publicKey, 1000)
 
@@ -102,7 +105,7 @@ async function main() {
 
   // random result token
   const plantMint = await setupMint(provider, TOKEN_PROGRAM_ID)
-  
+
   const seedsToMint = 5
   const plantTokensPerSeed = 10000000
   const growthBlockDuration = 101
@@ -110,24 +113,23 @@ async function main() {
   const timesToTend = 1
   const balanceAbsorbRate = 200000 // highly consuming
 
-
   const seedMint = await mintSeeds(
-      provider,
-      program,
-      plotCurrency,
-      plantMint,
-      userWallet,
-      seedsToMint,
-      plantTokensPerSeed,
-      growthBlockDuration,
-      waterDrainRate,
-      timesToTend,
-      balanceAbsorbRate,
-    )
+    provider,
+    program,
+    plotCurrency,
+    plantMint,
+    userWallet,
+    seedsToMint,
+    plantTokensPerSeed,
+    growthBlockDuration,
+    waterDrainRate,
+    timesToTend,
+    balanceAbsorbRate,
+  )
 
   await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
   await plantSeed(provider, program, plotX2, plotY2, plotCurrency, seedMint, userWallet)
-    
+
   await waitForSlots(provider, await provider.connection.getSlot(), 2)
 
   await revertPlant(provider, program, plotX2, plotY2, plotCurrency, seedMint, userWallet)

@@ -20,7 +20,8 @@ use crate::{errors::ErrorCode, state::Farm};
 #[derive(Accounts)]
 #[instruction(
     plot_currency: Pubkey,
-    ingredient_amounts: [u64; 2],
+    ingredient_0_amount: u64,
+    ingredient_1_amount: u64,
 )]
 pub struct FollowRecipe<'info> {
     #[account(mut)]
@@ -49,9 +50,9 @@ pub struct FollowRecipe<'info> {
         seeds = [
             b"recipe",
             ingredient_0_mint.key().as_ref(),
-            &ingredient_amounts[0].to_le_bytes()[..],
+            &ingredient_0_amount.to_le_bytes()[..],
             ingredient_1_mint.key().as_ref(),
-            &ingredient_amounts[1].to_le_bytes()[..],
+            &ingredient_1_amount.to_le_bytes()[..],
             result_mint.key().as_ref(),
             user_associated_ingredient_0_token_account.key().as_ref(),
             user_associated_ingredient_1_token_account.key().as_ref(),
@@ -124,7 +125,8 @@ impl<'info> FollowRecipe<'info> {
         &mut self,
         plot_currency: Pubkey,
         // TODO: later can increase to more if time left
-        ingredient_amounts: [u64; 2],
+        ingredient_0_amount: u64,
+        ingredient_1_amount: u64,
         result_token_receive: u64,
         recipe_bump: u8,
         program_id: &Pubkey,
@@ -135,7 +137,7 @@ impl<'info> FollowRecipe<'info> {
             return Err(ErrorCode::InvalidIngredientData.into());
         }
 
-        if ingredient_amounts[0] == 0 || ingredient_amounts[1] == 0 {
+        if ingredient_0_amount == 0 || ingredient_1_amount == 0 {
             return Err(ErrorCode::InvalidIngredientData.into());
         }
 

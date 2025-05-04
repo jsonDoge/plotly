@@ -40,11 +40,11 @@ pub struct RevokePlot<'info> {
     pub plant_treasury: Box<Account<'info, TokenAccount>>,
 
     // SEED
-    #[account(
-        seeds = [b"seed_mint_info", seed_mint.key().as_ref()],
-        bump,
-    )]
-    pub seed_mint_info: Box<Account<'info, SeedMintInfo>>,
+    // #[account(
+    //     seeds = [b"seed_mint_info", seed_mint.key().as_ref()],
+    //     bump,
+    // )]
+    // pub seed_mint_info: Box<Account<'info, SeedMintInfo>>,
 
     // FARM
     #[account(
@@ -141,14 +141,13 @@ pub struct RevokePlot<'info> {
 
     // Create associated token account, if needed
     // This is the account that will hold the NFT
-    #[account(
-        init_if_needed,
-        payer = user,
-        associated_token::mint = plot_mint,
-        associated_token::authority = user,
-    )]
-    pub user_associated_plot_account: Box<Account<'info, TokenAccount>>,
-
+    // #[account(
+    //     init_if_needed,
+    //     payer = user,
+    //     associated_token::mint = plot_mint,
+    //     associated_token::authority = user,
+    // )]
+    // pub user_associated_plot_account: Box<Account<'info, TokenAccount>>,
     #[account(
         init_if_needed,
         payer = user,
@@ -177,9 +176,9 @@ pub struct RevokePlot<'info> {
     #[account(
             mut,
             associated_token::mint = seed_mint,
-            associated_token::authority = user,
+            associated_token::authority = plot.last_claimer,
         )]
-    pub user_associated_seed_account: Box<Account<'info, TokenAccount>>,
+    pub last_claimer_associated_seed_account: Box<Account<'info, TokenAccount>>,
 
     // FARM SEED ATA
     #[account(
@@ -204,17 +203,7 @@ pub struct RevokePlot<'info> {
 }
 
 impl<'info> RevokePlot<'info> {
-    pub fn revoke_plot(
-        &mut self,
-        plot_x: u32,
-        plot_y: u32,
-        program_id: &Pubkey,
-    ) -> Result<()> {
-        // if plot balance is less than 10% of free rent, then it's up for grabs
-        if self.plot.balance > self.plot.balance_free_rent / 10 {
-            return Err(ErrorCode::PlotStillHasBalance.into());
-        }
-
+    pub fn revoke_plot(&mut self, plot_x: u32, plot_y: u32, program_id: &Pubkey) -> Result<()> {
         // either has the NFT or has a low-balance on it (last_claimer + farm ownership + NO PLANT)
 
         if self.farm_associated_plot_account.amount != 1 {
@@ -247,12 +236,16 @@ impl<'info> RevokePlot<'info> {
             self.plant.balance += new_balance_stats.0;
             self.plot.balance = new_balance_stats.1;
 
-
             let balance_blocks_absorbed = new_balance_stats.2;
 
-            if balance_blocks_absorbed < blocks_passed && self.plot.balance < BASE_BALANCE_FREE_RENT {
+            if balance_blocks_absorbed < blocks_passed && self.plot.balance < BASE_BALANCE_FREE_RENT
+            {
                 let farm_rent_drain = blocks_passed - balance_blocks_absorbed; // currently draining at 1 lamport per block
-                let drained_balance = if farm_rent_drain > self.plot.balance { self.plot.balance } else { farm_rent_drain };
+                let drained_balance = if farm_rent_drain > self.plot.balance {
+                    self.plot.balance
+                } else {
+                    farm_rent_drain
+                };
                 self.plot.balance -= drained_balance;
             }
 
@@ -522,12 +515,12 @@ impl<'info> RevokePlot<'info> {
 
             //  REVERT PLANT TO SEED and send back to user
 
-            msg!("Transferring reverted plant SEED tokens to user...");
+            msg!("Transferring reverted plant SEED tokens to the ORIGINAL user...");
 
             let cpi_accounts = TransferChecked {
                 mint: self.seed_mint.to_account_info(),
                 from: self.farm_associated_seed_account.to_account_info(),
-                to: self.user_associated_seed_account.to_account_info(),
+                to: self.last_claimer_associated_seed_account.to_account_info(),
                 authority: self.farm_auth.to_account_info(),
             };
 
@@ -569,7 +562,15 @@ impl<'info> RevokePlot<'info> {
 
             // TODO: store plot currency decimals in the farm
             token::transfer_checked(
-                CpiContext::new(cpi_program, cpi_accounts),
+                CpiContext::new_with_signer(
+                    cpi_program,
+                    cpi_accounts,
+                    &[&[
+                        b"farm_auth",
+                        self.farm.key().as_ref(),
+                        &[self.farm_auth.bump][..],
+                    ]],
+                ),
                 balance_to_send,
                 6,
             )?;
@@ -589,17 +590,24 @@ impl<'info> RevokePlot<'info> {
             self.plant.treasury_received_balance = 0;
             // bump doesn't change because plants <> plot one to one
         } else {
-            
-
             // if no plant check if rent was free
             if self.plot.balance < BASE_BALANCE_FREE_RENT {
                 let current_block = Clock::get()?.slot;
                 let blocks_passed = current_block - self.plot.last_update_block;
 
                 let farm_rent_drain = blocks_passed;
-                let drained_balance = if farm_rent_drain > self.plot.balance { self.plot.balance } else { farm_rent_drain };
+                let drained_balance = if farm_rent_drain > self.plot.balance {
+                    self.plot.balance
+                } else {
+                    farm_rent_drain
+                };
                 self.plot.balance -= drained_balance;
             }
+        }
+
+        // if plot balance is less than 10% of free rent, then it's up for grabs
+        if self.plot.balance > self.plot.balance_free_rent / 10 {
+            return Err(ErrorCode::PlotStillHasBalance.into());
         }
 
         // Transfer left-over balance to revoker
@@ -638,7 +646,7 @@ impl<'info> RevokePlot<'info> {
 
         self.plot.balance = 0;
         self.plot.last_claimer = self.farm_auth.key();
-        
+
         // last update block is updated after center water update
 
         Ok(())

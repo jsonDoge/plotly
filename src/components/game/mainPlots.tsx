@@ -76,9 +76,9 @@ const MainPlots = memo<Props>(({ mainPlotRefs, plotCenterRef }) => {
     currentPlantRefs: Array<Array<RefObject<THREE.Mesh>>>,
     currentWeedRefs: Array<Array<RefObject<THREE.Group>>>,
 
-    currentCornRefs: Array<Array<RefObject<THREE.Group>>>,
-    currentPotatoRefs: Array<Array<RefObject<THREE.Group>>>,
-    currentCarrotRefs: Array<Array<RefObject<THREE.Group>>>,
+    // currentCornRefs: Array<Array<RefObject<THREE.Group>>>,
+    // currentPotatoRefs: Array<Array<RefObject<THREE.Group>>>,
+    // currentCarrotRefs: Array<Array<RefObject<THREE.Group>>>,
 
     currentMappedPlotInfos: MappedPlotInfos,
   ): void => {
@@ -102,9 +102,9 @@ const MainPlots = memo<Props>(({ mainPlotRefs, plotCenterRef }) => {
           transparent: true,
         })
 
-        const { seedType, plantState } = currentMappedPlotInfos?.[x][y] || { seedType: undefined, state: undefined }
+        const { plant } = currentMappedPlotInfos?.[x][y] || { seedType: undefined, state: undefined }
 
-        setPlotItem(plantState === PlantState.GROWING, currentPlantRefs[x][y].current, mainPlotRefs_[y][x].current)
+        setPlotItem(!!plant, currentPlantRefs[x][y].current, mainPlotRefs_[y][x].current)
 
         // setPlotItem(
         //   seedType === SEED_TYPE.CORN && plantState === PlantState.READY,
@@ -124,7 +124,11 @@ const MainPlots = memo<Props>(({ mainPlotRefs, plotCenterRef }) => {
         //   mainPlotRefs_[y][x].current,
         // )
 
-        setPlotItem(plantState === PlantState.OVERGROWN, currentWeedRefs[x][y].current, mainPlotRefs_[y][x].current)
+        setPlotItem(
+          !!plant && plant.state === PlantState.NEEDS_TENDING,
+          currentWeedRefs[x][y].current,
+          mainPlotRefs_[y][x].current,
+        )
       }
     }
   }
@@ -146,9 +150,9 @@ const MainPlots = memo<Props>(({ mainPlotRefs, plotCenterRef }) => {
         mainPlotRefs,
         plantRefs.current,
         weedRefs.current,
-        cornRefs.current,
-        potatoRefs.current,
-        carrotRefs.current,
+        // cornRefs.current,
+        // potatoRefs.current,
+        // carrotRefs.current,
         mappedPlotInfos.current,
       )
     })

@@ -173,12 +173,14 @@ pub mod farm {
     pub fn follow_recipe(
         ctx: Context<FollowRecipe>,
         plot_currency: Pubkey,
-        ingredient_amounts: [u64; 2],
+        ingredient_0_amount: u64,
+        ingredient_1_amount: u64,
         result_token_receive: u64,
     ) -> Result<()> {
         ctx.accounts.follow_recipe(
             plot_currency,
-            ingredient_amounts,
+            ingredient_0_amount,
+ingredient_1_amount,
             result_token_receive,
             ctx.bumps.recipe,
             ctx.program_id,
@@ -188,15 +190,19 @@ pub mod farm {
     pub fn refill_recipe(
         ctx: Context<RefillRecipe>,
         plot_currency: Pubkey,
-        ingredient_amounts: [u64; 2],
+        ingredient_0_amount: u64,
+        ingredient_1_amount: u64,
         result_token_to_add: u64,
-        treasuries: [Pubkey; 2],
+        ingredient_0_treasury: Pubkey,
+        ingredient_1_treasury: Pubkey,
     ) -> Result<()> {
         ctx.accounts.refill_recipe(
             plot_currency,
-            ingredient_amounts,
+            ingredient_0_amount,
+            ingredient_1_amount,
             result_token_to_add,
-            treasuries,
+            ingredient_0_treasury,
+            ingredient_1_treasury,
             ctx.bumps.recipe,
             ctx.program_id,
         )
