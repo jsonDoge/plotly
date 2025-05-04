@@ -4,8 +4,8 @@ import React, { useState } from 'react'
 // import { useGame } from '../../context/game'
 import { teleportActions } from '@/stores/teleport'
 import { useError } from '../../context/error'
-import Input from '../input'
-import Button from '../button'
+import Input from '../utils/input'
+import Button from '../utils/button'
 import { PLOT_CENTER_AREA_LIMIT } from '../game/utils/constants'
 
 interface Props {
@@ -15,6 +15,7 @@ interface Props {
 const CenterPlotNavigator: React.FC<Props> = ({ isMobile = false }) => {
   // const centerCoords = useSnapshot(centerPlotCoordsStore)
   // const { submitNewPlotCenter, centerChanged } = useGame()
+
   const { error, setError } = useError()
 
   const [centerX, setCenterX] = useState(3)

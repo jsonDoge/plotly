@@ -29,8 +29,10 @@ import {
   updatePlotPositionAfterAscention,
 } from './utils/plots'
 import {
+  AMBIENT_LIGHT_INTENSITY,
   BACKGROUND_PLANT_OFFSET_X,
   BACKGROUND_PLANT_OFFSET_Y,
+  DIRECTIONAL_LIGHT_INTENSITY,
   DIRECTIONAL_LIGHT_OFFSET_X,
   DIRECTIONAL_LIGHT_OFFSET_Y,
   DIRECTIONAL_LIGHT_OFFSET_Z,
@@ -212,10 +214,10 @@ const Grid: React.FC<IGrid> = ({ plotCenterRef }) => {
 
   return (
     <>
-      <ambientLight intensity={0.05} />
+      <ambientLight intensity={AMBIENT_LIGHT_INTENSITY} />
       <directionalLight
         ref={lightRef}
-        intensity={2.2}
+        intensity={DIRECTIONAL_LIGHT_INTENSITY}
         color="#FDF3c6"
         castShadow
         position={[

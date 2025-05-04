@@ -1,4 +1,5 @@
 use anchor_lang::{accounts::program, prelude::*};
+use anchor_spl::token_interface::Mint as MintInterface;
 use anchor_spl::{
     associated_token::AssociatedToken,
     metadata::{
@@ -16,17 +17,19 @@ use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 // use mpl_token_metadata::types::DataV2;
 // use mpl_token_metadata::ID as TOKEN_METADATA_PROGRAM_ID;
 
-use crate::{constants::BASE_BALANCE_FREE_RENT, state::{AccWithBump, Plot}};
+use crate::{state::{AccWithBump, Plot}};
 use crate::{errors::ErrorCode, state::Farm};
 
 #[derive(Accounts)]
-#[instruction(plot_x: u32, plot_y: u32, plot_currency: Pubkey)]
+#[instruction(plot_x: u32, plot_y: u32)]
 pub struct MintPlot<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
 
+    pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,   
+
     #[account(
-        seeds = [b"farm", plot_currency.as_ref()],
+        seeds = [b"farm", plot_currency_mint.key().as_ref()],
         bump,
     )]
     pub farm: Box<Account<'info, Farm>>,
@@ -112,7 +115,6 @@ impl<'info> MintPlot<'info> {
         &mut self,
         plot_x: u32,
         plot_y: u32,
-        plot_currency: Pubkey,
         program_id: &Pubkey,
         plot_bump: u8,
     // returns plot mint address

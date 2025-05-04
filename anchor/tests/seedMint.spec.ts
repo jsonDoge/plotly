@@ -41,7 +41,7 @@ describe('seed minting', () => {
     const seedsToMint = 5
     const plantTokensPerSeed = 10000000
     const growthBlockDuration = 1000
-    const waterRate = 10
+    const neighborToCenterwaterRate = 10
     const timesToTend = 5
     const balanceDrainRate = 2
 
@@ -67,7 +67,7 @@ describe('seed minting', () => {
             new anchor.BN(seedsToMint),
             new anchor.BN(plantTokensPerSeed),
             growthBlockDuration,
-            waterRate,
+            neighborToCenterwaterRate,
             new anchor.BN(balanceDrainRate),
             timesToTend,
             userPlotCurrencyAta,

@@ -1,6 +1,6 @@
 import * as anchor from '@coral-xyz/anchor'
 // import { SystemProgram } from '@solana/web3.js'
-import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { fetchDigitalAsset, findMetadataPda } from '@metaplex-foundation/mpl-token-metadata'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { PublicKey as umiPublicKey } from '@metaplex-foundation/umi'
@@ -9,7 +9,7 @@ import { PublicKey } from '@solana/web3.js'
 import assert from 'node:assert'
 import { Farm } from '../target/types/farm'
 import { setupFarm, setupMint } from './setup'
-import { increasedCUTxWrap, mintAndBuyPlot, toLeBytes } from './helpers'
+import { increasedCUTxWrap, mintAndBuyPlot, returnPlot, toLeBytes } from './helpers'
 
 describe('farm', () => {
   // Configure the client to use the local cluster.
@@ -137,7 +137,7 @@ describe('farm', () => {
 
     let txFailed = false
     try {
-      const res = await wrapTx(
+      await wrapTx(
         program.methods
           .acquirePlot(plotX, plotY)
           .accounts({
@@ -218,5 +218,45 @@ describe('farm', () => {
     console.log('Collection size:', value)
 
     expect(new anchor.BN(value.size).toString()).toEqual(new anchor.BN(10).toString())
+  }, 1000000)
+
+
+  it('Should be able to return plot and receive balance back', async () => {
+    const plotX5 = 5
+    const plotY5 = 5
+
+    const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('farm'), plotCurrency.toBuffer()],
+      program.programId,
+    )
+
+    const [plotMint55] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('plot_mint'), toLeBytes(plotX5), toLeBytes(plotY5), farm.toBuffer()],
+      program.programId,
+    )
+
+    const [userPlotCurrencyTokenAta] = anchor.web3.PublicKey.findProgramAddressSync(
+      [userWallet.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), plotCurrency.toBuffer()],
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+
+    await mintAndBuyPlot(provider, program, plotCurrency, plotX5, plotY5, userWallet)
+
+    const plotCurrencyBalanceBeforeReturn = await provider.connection.getTokenAccountBalance(userPlotCurrencyTokenAta)
+
+    await returnPlot(provider, program, plotCurrency, plotX5, plotY5, userWallet)
+
+    const plotCurrencyBalanceAfterReturn = await provider.connection.getTokenAccountBalance(userPlotCurrencyTokenAta)
+
+    const userTokenAccount55 = await getAssociatedTokenAddress(plotMint55, userWallet.publicKey)
+
+    const userTokenAccountInfo55 = await program.provider.connection.getTokenAccountBalance(userTokenAccount55)
+
+    expect(parseInt(userTokenAccountInfo55.value.amount, 10)).toEqual(0);
+
+    expect(parseInt(plotCurrencyBalanceAfterReturn.value.amount, 10)).toEqual(
+      parseInt(plotCurrencyBalanceBeforeReturn.value.amount, 10) + 1000000,
+    )
+
   }, 1000000)
 })

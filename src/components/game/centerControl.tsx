@@ -22,6 +22,7 @@ interface Props {
   centerRef: React.MutableRefObject<{ x: number; y: number }>
   initialPlotCenter: { x: number; y: number }
   plotCenterChanged: (x: number, y: number) => void
+  pauseNavigationRef: React.MutableRefObject<boolean>
 }
 
 interface KeysDown {
@@ -31,7 +32,7 @@ interface KeysDown {
   d: boolean
 }
 
-const CenterControl = ({ centerRef, initialPlotCenter, plotCenterChanged }: Props) => {
+const CenterControl = ({ centerRef, initialPlotCenter, plotCenterChanged, pauseNavigationRef }: Props) => {
   console.info('Rendering centerControl')
 
   let previousPlotCenter: Coordinates = { ...initialPlotCenter }
@@ -107,6 +108,9 @@ const CenterControl = ({ centerRef, initialPlotCenter, plotCenterChanged }: Prop
   })
 
   useFrame(() => {
+    if (pauseNavigationRef.current) {
+      return
+    }
     centerRef.current = getNewPositionOnKeyDown(centerRef.current, keysDown.current)
   })
 

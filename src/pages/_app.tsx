@@ -13,7 +13,7 @@ import { SolanaProvider } from '../context/solana'
 import { ReactQueryProvider } from '../context/react-query'
 import ErrorProvider from '../context/error'
 import Layout from '../components/layout'
-import Spinner from '../components/spinner'
+import Spinner from '../components/utils/spinner'
 
 // const Game = dynamic(() => import('../components/game'), { suspense: true, ssr: false })
 

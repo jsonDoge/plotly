@@ -16,7 +16,7 @@ use anchor_spl::{
 use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 
 use crate::constants::{
-    MAX_PLOT_WATER, PLANT_WATER_ABSORB_RATE, WATER_10_THRESHOLD, WATER_30_THRESHOLD,
+    BASE_BALANCE_FREE_RENT, MAX_PLOT_WATER, PLANT_WATER_ABSORB_RATE, WATER_10_THRESHOLD, WATER_30_THRESHOLD
 };
 use crate::errors::ErrorCode;
 use crate::helpers::get_plot_water_collected;
@@ -206,6 +206,14 @@ impl<'info> PlantSeed<'info> {
             return Err(ErrorCode::PlotHasZeroBalance.into());
         }
 
+        // TODO: ideally check seed metadata if the creator is indeed the farm
+
+        // Tx would likely fail anyway
+        if self.seed_mint_info.plant_mint == Pubkey::default() {
+            return Err(ErrorCode::SeedInfoHasNoPlantToken.into());
+        }
+        // need to verify if actually seed
+
         msg!("Validation passed...");
 
         // TRANSFER PLOT (to farm)
@@ -245,6 +253,22 @@ impl<'info> PlantSeed<'info> {
         msg!("Transferring Seed token to farm...");
 
         token::transfer_checked(CpiContext::new(cpi_program, cpi_accounts), 1, 0)?;
+
+
+        // Update plot balance if rent applies
+        if self.plot.balance < BASE_BALANCE_FREE_RENT {
+            let current_block = Clock::get()?.slot;
+            let blocks_passed = current_block - self.plot.last_update_block;
+
+            let farm_rent_drain = blocks_passed;
+            let drained_balance = if farm_rent_drain > self.plot.balance { self.plot.balance } else { farm_rent_drain };
+            self.plot.balance -= drained_balance;
+        }
+
+        if self.plot.balance == 0 {
+            return Err(ErrorCode::PlotHasZeroBalance.into());
+        }
+
 
         // Set Plant to seed info
 

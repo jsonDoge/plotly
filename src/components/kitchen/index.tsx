@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import Button from '../button';
-import Spinner from '../spinner';
+import Button from '../utils/button';
+import Spinner from '../utils/spinner';
 import { craftDish, getDishBalance } from '../../services/kitchen';
 import { useWallet } from '../../context/wallet';
 import { toSentenceCase } from '../../utils';

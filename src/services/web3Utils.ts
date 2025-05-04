@@ -5,7 +5,10 @@ import { PLOTLY_PROGRAM_ID as programId, toLeBytes } from '@project/anchor'
 import * as anchor from '@coral-xyz/anchor'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
 import { PlotInfo, RawPlot } from '@/components/game/utils/interfaces'
-import { getPlotColor } from '@/components/game/utils/plotColors'
+import { getPlotColor, getPlotOpacity } from '@/components/game/utils/plotColors'
+import getConfig from 'next/config'
+
+const { publicRuntimeConfig } = getConfig()
 
 // services
 // import getProvider from './provider'
@@ -66,30 +69,18 @@ import { getPlotColor } from '@/components/game/utils/plotColors'
 //   return provider.getBlockHeight().send()
 // }
 
-export const mapRawPlotToPlotInfo = (
-  user: PublicKey,
-  rawPlot: RawPlot,
-): PlotInfo => {
+export const mapRawPlotOwnership = (user: PublicKey, rawPlot: RawPlot): { isOwner: boolean, isPlantOwner: boolean, isFarmOwner: boolean, isUnminted: boolean} => {
   const isOwner = !!rawPlot.data && rawPlot.data.lastClaimer.toString() === user.toString()
   const isPlantOwner = false
+  const isFarmOwner = !!rawPlot.data && rawPlot.data.lastClaimer.toString() === publicRuntimeConfig.FARM_AUTH_ID
+  // const is
   const isUnminted = !rawPlot.data
-  
+
   return {
     isOwner,
     isPlantOwner,
+    isFarmOwner,
     isUnminted,
-    seedType: undefined,
-
-    // plant
-    plantState: undefined,
-    plantedBlockNumber: undefined,
-    overgrownBlockNumber: undefined,
-    waterAbsorbed: undefined,
-
-    // plot
-    color: getPlotColor(isOwner, isPlantOwner, isUnminted),
-    lastStateChangeBlock: undefined,
-    waterLevel: 0,
   }
 }
 
@@ -125,6 +116,16 @@ export const getPlotMintId = (x: number, y: number, plotCurrencyId: PublicKey): 
 
   return plotMint
 }
+
+export const getPlantId = (plotMint: PublicKey): PublicKey => {
+  const [plantId] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('plant'), plotMint.toBuffer()],
+    programId,
+  )
+
+  return plantId
+}
+
 
 // neighbor account containing plot game info
 export const getPlotId = (plotMintId: PublicKey): PublicKey => {

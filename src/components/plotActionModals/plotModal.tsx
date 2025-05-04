@@ -1,25 +1,25 @@
-import React from 'react';
+import React from 'react'
 
-import Button from './button';
-import { SeedType } from '../utils/constants';
+import Button from '../utils/button'
+import { SeedType } from '../../utils/constants'
 
 interface Props {
-  title: string;
-  description: string;
-  confirmText: string | JSX.Element;
-  cancelText?: string;
-  onConfirm: () => void;
-  onCancel?: () => void;
-  seedType?: SeedType;
-  seasonSeedTypes?: SeedType[];
-  waterLevel: number;
-  waterAbsorbed?: number;
-  waterRequired?: number;
-  blocksGrown?: number;
-  blocksRequired?: number;
-  plantedOnBlock?: number;
-  blocksTillOvergrown?: number;
-  isButtonDisabled?: boolean;
+  title: string
+  description: string
+  confirmText: string | JSX.Element
+  cancelText?: string
+  onConfirm: () => void
+  onCancel?: () => void
+  seedType?: SeedType
+  seasonSeedTypes?: SeedType[]
+  waterLevel: number
+  waterAbsorbed?: number
+  waterRequired?: number
+  blocksGrown?: number
+  blocksRequired?: number
+  plantedOnBlock?: number
+  blocksTillOvergrown?: number
+  isButtonDisabled?: boolean
 }
 
 const PlotModal: React.FC<Props> = ({
@@ -40,11 +40,16 @@ const PlotModal: React.FC<Props> = ({
   blocksTillOvergrown,
   isButtonDisabled,
 }) => {
-  const confirm = () => onConfirm && onConfirm();
-  const cancel = () => onCancel && onCancel();
+  const confirm = () => onConfirm && onConfirm()
+  const cancel = () => onCancel && onCancel()
 
   return (
-    <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div
+      className="fixed z-10 inset-0 -top-20 overflow-y-auto"
+      aria-labelledby="modal-title"
+      role="dialog"
+      aria-modal="true"
+    >
       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div className="fixed inset-0 bg-opacity-75 transition-opacity" aria-hidden="true" />
         <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
@@ -99,7 +104,7 @@ const PlotModal: React.FC<Props> = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default PlotModal;
+export default PlotModal

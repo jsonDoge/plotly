@@ -113,6 +113,8 @@ impl<'info> AddPlotBalance<'info> {
             return Err(ErrorCode::ZeroBalance.into());
         }
 
+        // TODO: we'd normally also need to update plant balance consumption/and neighbor waters but for MVP we can ignore it
+
         // either has NFT or has a low-balance/plant on it (last_claimer + farm ownership)
         if self.user_associated_plot_account.amount == 0
             || self.plot.last_claimer == self.user.key() && self.farm_associated_plot_account.amount == 1

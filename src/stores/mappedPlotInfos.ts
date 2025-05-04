@@ -1,8 +1,10 @@
-import { MappedPlotInfos, RawPlot } from '@/components/game/utils/interfaces'
+import { MappedPlotInfos, RawPlant, RawPlot } from '@/components/game/utils/interfaces'
 import { proxy } from 'valtio'
 
 export interface RawPlotsAtCenter {
   rawPlots: RawPlot[]
+  rawPlants: RawPlant[]
+  outerRawPlots: RawPlot[]
   centerX: number
   centerY: number
 }
@@ -19,11 +21,13 @@ export const mappedPlotInfosActions = {
   setPlotInfos: (mpi: MappedPlotInfos) => {
     mappedPlotInfosStore.map = mpi
   },
-  setRawPlots: (centerX: number, centerY: number, rawPlots: RawPlot[]) => {
+  setRawPlotsAndPlants: (centerX: number, centerY: number, rawPlots: RawPlot[], rawPlants: RawPlant[], outerRawPlots: RawPlot[]) => {
     mappedPlotInfosStore.rawPlotsAtCenter = {
       centerX,
       centerY,
       rawPlots,
+      rawPlants,
+      outerRawPlots,
     }
   },
 }

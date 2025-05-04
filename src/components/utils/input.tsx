@@ -1,11 +1,11 @@
-import React from 'react';
+import React from 'react'
 
 interface Props {
-  onInput?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  type: string;
-  id?: string;
-  name?: string;
-  value: any;
+  onInput?: (e: React.ChangeEvent<HTMLInputElement>) => void
+  type: string
+  id?: string
+  name?: string
+  value: any
 }
 
 const Input: React.FC<Props> = ({ onInput, type, id, name, value }) => (
@@ -28,6 +28,6 @@ const Input: React.FC<Props> = ({ onInput, type, id, name, value }) => (
       focus:outline-none
       focus:shadow-outline"
   />
-);
+)
 
-export default Input;
+export default Input

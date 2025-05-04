@@ -15,9 +15,10 @@ interface Props {
   plotCenterChanged: (x: number, y: number) => void
   plotCenterRef: React.MutableRefObject<{ x: number; y: number }>
   centerRef: React.MutableRefObject<{ x: number; y: number }>
+  pauseNavigationRef: React.MutableRefObject<boolean>
 }
 
-const CanvasWrapper: React.FC<Props> = ({ plotCenterChanged, plotCenterRef, centerRef }) => {
+const CanvasWrapper: React.FC<Props> = ({ plotCenterChanged, plotCenterRef, centerRef, pauseNavigationRef }) => {
   console.info('Rendering canvasWrapper')
 
   // const { centerRef } = useGame()
@@ -31,6 +32,7 @@ const CanvasWrapper: React.FC<Props> = ({ plotCenterChanged, plotCenterRef, cent
     <Canvas shadows className="min-h-screen w-screen">
       {/* center control CHANGES centerRef */}
       <CenterControl
+        pauseNavigationRef={pauseNavigationRef}
         centerRef={centerRef}
         initialPlotCenter={plotCenterRef.current}
         plotCenterChanged={plotCenterChanged}

@@ -16,5 +16,12 @@ module.exports = {
 
     SEASON_DURATION_BLOCKS: process.env.SEASON_DURATION_BLOCKS,
     PLOT_CURRENCY_MINT_ID: process.env.PLOT_CURRENCY_MINT_ID,
+    FARM_AUTH_ID: process.env.FARM_AUTH_ID,
+    FARM_ID: process.env.FARM_ID,
+
+    // water threasholds
+    PLOT_WATER_30_THRESHOLD: process.env.PLOT_WATER_30_THRESHOLD,
+    PLOT_WATER_10_THRESHOLD: process.env.PLOT_WATER_10_THRESHOLD,
+    PLOT_MAX_WATER: process.env.PLOT_MAX_WATER,
   },
 }

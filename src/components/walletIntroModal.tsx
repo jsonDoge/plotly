@@ -1,6 +1,6 @@
 import React from 'react'
 
-import Button from './button'
+import Button from './utils/button'
 
 interface Props {
   onConfirm: () => void

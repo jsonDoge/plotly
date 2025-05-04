@@ -1,19 +1,19 @@
-import React from 'react';
+import React from 'react'
 
-import Button from './button';
+import Button from './button'
 
 interface Props {
-  title: string;
-  description: string;
-  confirmText: string | JSX.Element;
-  cancelText?: string;
-  onConfirm: () => void;
-  onCancel?: () => void;
+  title: string
+  description: string
+  confirmText: string | JSX.Element
+  cancelText?: string
+  onConfirm: () => void
+  onCancel?: () => void
 }
 
 const Modal: React.FC<Props> = ({ title, description, confirmText, cancelText, onConfirm, onCancel }) => {
-  const confirm = () => onConfirm && onConfirm();
-  const cancel = () => onCancel && onCancel();
+  const confirm = () => onConfirm && onConfirm()
+  const cancel = () => onCancel && onCancel()
 
   return (
     <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -43,7 +43,7 @@ const Modal: React.FC<Props> = ({ title, description, confirmText, cancelText, o
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Modal;
+export default Modal

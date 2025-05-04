@@ -38,12 +38,10 @@ pub mod farm {
         ctx: Context<MintPlot>,
         plot_x: u32,
         plot_y: u32,
-        plot_currency: Pubkey,
     ) -> Result<Pubkey> {
         ctx.accounts.mint_plot(
             plot_x,
             plot_y,
-            plot_currency,
             ctx.program_id,
             ctx.bumps.plot,
         )
@@ -56,6 +54,25 @@ pub mod farm {
     ) -> Result<()> {
         ctx.accounts
             .acquire_plot(plot_x, plot_y, ctx.program_id)
+    }
+
+
+    pub fn return_plot(
+        ctx: Context<ReturnPlot>,
+        plot_x: u32,
+        plot_y: u32,
+    ) -> Result<()> {
+        ctx.accounts
+            .return_plot(plot_x, plot_y, ctx.program_id)
+    }
+
+    pub fn revoke_plot(
+        ctx: Context<RevokePlot>,
+        plot_x: u32,
+        plot_y: u32,
+    ) -> Result<()> {
+        ctx.accounts
+            .revoke_plot(plot_x, plot_y, ctx.program_id)
     }
 
     // add balance

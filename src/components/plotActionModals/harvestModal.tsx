@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import getConfig from 'next/config';
+import React, { useEffect, useState } from 'react'
+import getConfig from 'next/config'
 
-import Button from './button';
-import { SeedType, SEED_TYPE } from '../utils/constants';
-import { PlotInfo } from './game/utils/interfaces';
-import { seedTypeToEmoji, toSentenceCase } from '../utils';
+import Button from '../utils/button'
+import { SeedType, SEED_TYPE } from '../../utils/constants'
+import { PlotInfo } from '../game/utils/interfaces'
+import { seedTypeToEmoji, toSentenceCase } from '../../utils'
 
-const { publicRuntimeConfig } = getConfig();
+const { publicRuntimeConfig } = getConfig()
 
 const getHarvestState = (
   seedType: SeedType,
@@ -21,7 +21,7 @@ const getHarvestState = (
     return {
       text: `${toSentenceCase(seedType)} has overgrown! You'll receive weeds once you harvest.`,
       isHarvestable: true,
-    };
+    }
   }
 
   if (blocksGrown >= blocksRequired && waterAbsorbed >= waterRequired) {
@@ -30,63 +30,63 @@ const getHarvestState = (
         ? `${toSentenceCase(seedType)} is ripe for harvest!`
         : `${toSentenceCase(seedType)} is ripe but now is not the right season to harvest. You'll get weeds if you do.`,
       isHarvestable: true,
-    };
+    }
   }
 
   // still growing
 
-  const conditions = [];
+  const conditions = []
   if (blocksGrown < blocksRequired) {
-    conditions.push('still needs time to grow');
+    conditions.push('still needs time to grow')
   }
 
   if (waterAbsorbed < waterRequired) {
-    conditions.push('needs more water');
+    conditions.push('needs more water')
   }
 
   return {
     text: `${toSentenceCase(seedType)} ${conditions.join(' and ')}.`,
     isHarvestable: false,
-  };
-};
+  }
+}
 
 const mapSeedTypeToWaterRequired = (seedType: SeedType) => {
   switch (seedType) {
     case SEED_TYPE.CARROT:
-      return parseInt(publicRuntimeConfig.CARROT_MIN_WATER || '0', 10);
+      return parseInt(publicRuntimeConfig.CARROT_MIN_WATER || '0', 10)
     case SEED_TYPE.CORN:
-      return parseInt(publicRuntimeConfig.CORN_MIN_WATER || '0', 10);
+      return parseInt(publicRuntimeConfig.CORN_MIN_WATER || '0', 10)
     case SEED_TYPE.POTATO:
-      return parseInt(publicRuntimeConfig.POTATO_MIN_WATER || '0', 10);
+      return parseInt(publicRuntimeConfig.POTATO_MIN_WATER || '0', 10)
     default:
-      return 0;
+      return 0
   }
-};
+}
 
 const mapSeedTypeToGrowthDuration = (seedType: SeedType) => {
   switch (seedType) {
     case SEED_TYPE.CARROT:
-      return parseInt(publicRuntimeConfig.CARROT_GROWTH_DURATION || '0', 10);
+      return parseInt(publicRuntimeConfig.CARROT_GROWTH_DURATION || '0', 10)
     case SEED_TYPE.CORN:
-      return parseInt(publicRuntimeConfig.CORN_GROWTH_DURATION || '0', 10);
+      return parseInt(publicRuntimeConfig.CORN_GROWTH_DURATION || '0', 10)
     case SEED_TYPE.POTATO:
-      return parseInt(publicRuntimeConfig.POTATO_GROWTH_DURATION || '0', 10);
+      return parseInt(publicRuntimeConfig.POTATO_GROWTH_DURATION || '0', 10)
     default:
-      return 0;
+      return 0
   }
-};
+}
 
 interface Props {
-  title: string;
-  description: string;
-  confirmText: string | JSX.Element;
-  cancelText?: string;
-  onConfirm: () => void;
-  onCancel?: () => void;
-  currentBlock: number;
-  plotInfo: PlotInfo;
-  seasonSeedTypes: SeedType[];
-  waterLevel: number;
+  title: string
+  description: string
+  confirmText: string | JSX.Element
+  cancelText?: string
+  onConfirm: () => void
+  onCancel?: () => void
+  currentBlock: number
+  plotInfo: PlotInfo
+  seasonSeedTypes: SeedType[]
+  waterLevel: number
 }
 
 const HarvestModal: React.FC<Props> = ({
@@ -101,17 +101,17 @@ const HarvestModal: React.FC<Props> = ({
   waterLevel,
   seasonSeedTypes,
 }) => {
-  const [seedType, setSeedType] = useState<SeedType>(plotInfo.seedType as SeedType);
+  const [seedType, setSeedType] = useState<SeedType>(plotInfo.seedType as SeedType)
   const [harvestState, setHarvestState] = useState<{ text: string; isHarvestable: boolean }>({
     text: '',
     isHarvestable: false,
-  });
-  const [waterRequired, setWaterRequired] = useState<number>(0);
-  const [blocksGrown, setBlocksGrown] = useState<number>(0);
-  const [blocksRequired, setBlockRequired] = useState<number>(0);
-  const [plantedOnBlock, setPlantedOnBlock] = useState<number>(0);
-  const [blocksTillOvergrown, setBlocksTillOvergrown] = useState<number>(0);
-  const [waterAbsorbed, setWaterAbsorbed] = useState<number>(0);
+  })
+  const [waterRequired, setWaterRequired] = useState<number>(0)
+  const [blocksGrown, setBlocksGrown] = useState<number>(0)
+  const [blocksRequired, setBlockRequired] = useState<number>(0)
+  const [plantedOnBlock, setPlantedOnBlock] = useState<number>(0)
+  const [blocksTillOvergrown, setBlocksTillOvergrown] = useState<number>(0)
+  const [waterAbsorbed, setWaterAbsorbed] = useState<number>(0)
 
   useEffect(() => {
     if (
@@ -121,25 +121,25 @@ const HarvestModal: React.FC<Props> = ({
       (!plotInfo.overgrownBlockNumber && plotInfo.overgrownBlockNumber !== 0) ||
       (!currentBlock && currentBlock !== 0)
     ) {
-      return;
+      return
     }
 
-    setSeedType(plotInfo.seedType as SeedType);
-    setWaterAbsorbed(plotInfo.waterAbsorbed);
-    setWaterRequired(mapSeedTypeToWaterRequired(plotInfo.seedType as SeedType));
+    setSeedType(plotInfo.seedType as SeedType)
+    setWaterAbsorbed(plotInfo.waterAbsorbed)
+    setWaterRequired(mapSeedTypeToWaterRequired(plotInfo.seedType as SeedType))
     // the game can lag behind the current block, so we need to make sure the plotsGrown is not negative
-    setBlocksGrown(Math.max(currentBlock - plotInfo.plantedBlockNumber, 0));
-    setBlockRequired(mapSeedTypeToGrowthDuration(plotInfo.seedType as SeedType));
+    setBlocksGrown(Math.max(currentBlock - plotInfo.plantedBlockNumber, 0))
+    setBlockRequired(mapSeedTypeToGrowthDuration(plotInfo.seedType as SeedType))
 
-    setBlocksTillOvergrown(Math.max(plotInfo.overgrownBlockNumber - currentBlock, 0));
-    setPlantedOnBlock(plotInfo.plantedBlockNumber);
+    setBlocksTillOvergrown(Math.max(plotInfo.overgrownBlockNumber - currentBlock, 0))
+    setPlantedOnBlock(plotInfo.plantedBlockNumber)
   }, [
     currentBlock,
     plotInfo?.seedType,
     plotInfo.waterAbsorbed,
     plotInfo.plantedBlockNumber,
     plotInfo.overgrownBlockNumber,
-  ]);
+  ])
 
   useEffect(() => {
     setHarvestState(
@@ -152,11 +152,11 @@ const HarvestModal: React.FC<Props> = ({
         waterRequired,
         blocksTillOvergrown,
       ),
-    );
-  }, [seedType, seasonSeedTypes, blocksGrown, blocksRequired, waterAbsorbed, waterRequired, blocksTillOvergrown]);
+    )
+  }, [seedType, seasonSeedTypes, blocksGrown, blocksRequired, waterAbsorbed, waterRequired, blocksTillOvergrown])
 
-  const confirm = () => onConfirm && onConfirm();
-  const cancel = () => onCancel && onCancel();
+  const confirm = () => onConfirm && onConfirm()
+  const cancel = () => onCancel && onCancel()
 
   return (
     <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -224,7 +224,7 @@ const HarvestModal: React.FC<Props> = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default HarvestModal;
+export default HarvestModal

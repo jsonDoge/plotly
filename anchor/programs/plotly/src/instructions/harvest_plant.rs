@@ -16,7 +16,7 @@ use anchor_spl::{
 use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 
 use crate::constants::{
-    MAX_PLOT_WATER, PLANT_WATER_ABSORB_RATE, WATER_10_THRESHOLD, WATER_30_THRESHOLD,
+    BASE_BALANCE_FREE_RENT, MAX_PLOT_WATER, PLANT_WATER_ABSORB_RATE, WATER_10_THRESHOLD, WATER_30_THRESHOLD
 };
 use crate::errors::ErrorCode;
 use crate::helpers::{get_balance_collected, get_plot_water_collected};
@@ -244,18 +244,30 @@ impl<'info> HarvestPlant<'info> {
             balance_per_tend,
             self.plant.times_tended,
             self.plant.times_to_tend,
+            self.plant.balance_required - self.plant.balance,
             blocks_passed,
         );
 
-        // get balance has no idea when the plant absorption ends (workaround maybe later include in the function)
-        let absorbed = if (self.plant.balance + new_balance_stats.0) > self.plant.balance_required {
-            self.plant.balance_required - self.plant.balance
-        } else {
-            new_balance_stats.0
-        };
+        // functionality was adjusted to take into account the balance required for the plant
+        // // get balance has no idea when the plant absorption ends (workaround maybe later include in the function)
+        // let absorbed = if (self.plant.balance + new_balance_stats.0) > self.plant.balance_required {
+        //     self.plant.balance_required - self.plant.balance
+        // } else {
+        //     new_balance_stats.0
+        // };
 
-        self.plant.balance += absorbed;
-        self.plot.balance = self.plot.balance - absorbed;
+        self.plant.balance += new_balance_stats.0;
+        self.plot.balance = new_balance_stats.1;
+
+        // RENT DRAIN if applies
+
+        let balance_blocks_absorbed = new_balance_stats.2;
+
+        if balance_blocks_absorbed < blocks_passed && self.plot.balance < BASE_BALANCE_FREE_RENT {
+            let farm_rent_drain = blocks_passed - balance_blocks_absorbed; // currently draining at 1 lamport per block
+            let drained_balance = if farm_rent_drain > self.plot.balance { self.plot.balance } else { farm_rent_drain };
+            self.plot.balance -= drained_balance;
+        }
 
         // UPDATE CENTER
 

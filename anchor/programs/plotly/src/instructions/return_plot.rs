@@ -20,7 +20,7 @@ use crate::state::{AccWithBump, Plant, Plot};
 use crate::{errors::ErrorCode, state::Farm};
 
 #[derive(Accounts)]
-#[instruction(plot_x: u32, plot_y: u32, plot_currency: Pubkey)]
+#[instruction(plot_x: u32, plot_y: u32)]
 pub struct ReturnPlot<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -29,7 +29,7 @@ pub struct ReturnPlot<'info> {
     pub plot_currency_mint: Box<InterfaceAccount<'info, MintInterface>>,
 
     #[account(
-        seeds = [b"farm", plot_currency.as_ref()],
+        seeds = [b"farm", plot_currency_mint.key().as_ref()],
         bump,
     )]
     pub farm: Box<Account<'info, Farm>>,
@@ -53,10 +53,13 @@ pub struct ReturnPlot<'info> {
     )]
     pub plot: Box<Account<'info, Plot>>,
 
-    // PLANT
+    // PLANT (need to init because plant may have never been planted)
     #[account(
+        init_if_needed,
+        payer = user,
         seeds = [b"plant", plot_mint.key().as_ref()],
         bump,
+        space = 8 + std::mem::size_of::<Plant>(),
     )]
     pub plant: Box<Account<'info, Plant>>,
 
@@ -81,7 +84,7 @@ pub struct ReturnPlot<'info> {
     // User plot currency account
     #[account(
         mut,
-        associated_token::mint = plot_currency,
+        associated_token::mint = plot_currency_mint,
         associated_token::authority = user,
     )]
     pub user_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
@@ -89,7 +92,7 @@ pub struct ReturnPlot<'info> {
     // Farm plot currency TREASURY
     #[account(
         mut,
-        associated_token::mint = plot_currency,
+        associated_token::mint = plot_currency_mint,
         associated_token::authority = farm_auth,
     )]
     pub farm_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
@@ -113,7 +116,6 @@ impl<'info> ReturnPlot<'info> {
         &mut self,
         plot_x: u32,
         plot_y: u32,
-        plot_currency: Pubkey,
         program_id: &Pubkey,
     ) -> Result<()> {
         // either has NFT or has a low-balance on it (last_claimer + farm ownership + NO PLANT)
@@ -143,9 +145,14 @@ impl<'info> ReturnPlot<'info> {
 
         // TODO: hardcoding decimals, but will update later
         token::transfer_checked(
-            CpiContext::new(
+            CpiContext::new_with_signer(
                 cpi_program,
                 cpi_accounts,
+                &[&[
+                    b"farm_auth",
+                    self.farm.key().as_ref(),
+                    &[self.farm_auth.bump],
+                ]],
                 // price should be scaled to decimals
             ),
             self.plot.balance,

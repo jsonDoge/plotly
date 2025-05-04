@@ -1,5 +1,7 @@
 import getConfig from 'next/config'
 
+import { PublicKey } from '@solana/web3.js'
+
 const { publicRuntimeConfig } = getConfig()
 
 export const getDishAddress = (type: string): string => {
@@ -31,3 +33,12 @@ export const getCoordinatesFromPlotId = (plotId: number): { x: number; y: number
   x: plotId % 1000,
   y: Math.floor(plotId / 1000),
 })
+
+export const isValidPublicKey = (str: string): boolean => {
+  try {
+    const _ = new PublicKey(str)
+  } catch {
+    return false
+  }
+  return true
+}

@@ -15,6 +15,7 @@ use anchor_spl::{
 };
 use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 
+use crate::constants::BASE_BALANCE_FREE_RENT;
 use crate::farm;
 use crate::helpers::{get_balance_collected, get_plot_water_collected};
 use crate::state::{AccWithBump, Plant, Plot, SeedMintInfo};
@@ -25,7 +26,7 @@ use crate::{errors::ErrorCode, state::Farm};
 // send left-over plot currency to revoker
 // reset plot to default state - 0 balance, last_claimer = farm_auth
 #[derive(Accounts)]
-#[instruction(plot_x: u32, plot_y: u32, plot_currency: Pubkey)]
+#[instruction(plot_x: u32, plot_y: u32)]
 pub struct RevokePlot<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -47,7 +48,7 @@ pub struct RevokePlot<'info> {
 
     // FARM
     #[account(
-        seeds = [b"farm", plot_currency.as_ref()],
+        seeds = [b"farm", plot_currency_mint.key().as_ref()],
         bump,
     )]
     pub farm: Box<Account<'info, Farm>>,
@@ -159,7 +160,7 @@ pub struct RevokePlot<'info> {
     // User plot currency account
     #[account(
         mut,
-        associated_token::mint = plot_currency,
+        associated_token::mint = plot_currency_mint,
         associated_token::authority = user,
     )]
     pub user_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
@@ -167,7 +168,7 @@ pub struct RevokePlot<'info> {
     // Farm plot currency TREASURY
     #[account(
         mut,
-        associated_token::mint = plot_currency,
+        associated_token::mint = plot_currency_mint,
         associated_token::authority = farm_auth,
     )]
     pub farm_associated_plot_currency_account: Box<Account<'info, TokenAccount>>,
@@ -207,7 +208,6 @@ impl<'info> RevokePlot<'info> {
         &mut self,
         plot_x: u32,
         plot_y: u32,
-        plot_currency: Pubkey,
         program_id: &Pubkey,
     ) -> Result<()> {
         // if plot balance is less than 10% of free rent, then it's up for grabs
@@ -240,11 +240,21 @@ impl<'info> RevokePlot<'info> {
                 balance_per_tend,
                 self.plant.times_tended,
                 self.plant.times_to_tend,
+                self.plant.balance_required - self.plant.balance,
                 blocks_passed,
             );
 
             self.plant.balance += new_balance_stats.0;
             self.plot.balance = new_balance_stats.1;
+
+
+            let balance_blocks_absorbed = new_balance_stats.2;
+
+            if balance_blocks_absorbed < blocks_passed && self.plot.balance < BASE_BALANCE_FREE_RENT {
+                let farm_rent_drain = blocks_passed - balance_blocks_absorbed; // currently draining at 1 lamport per block
+                let drained_balance = if farm_rent_drain > self.plot.balance { self.plot.balance } else { farm_rent_drain };
+                self.plot.balance -= drained_balance;
+            }
 
             // UPDATE CENTER PLOT
 
@@ -309,7 +319,7 @@ impl<'info> RevokePlot<'info> {
 
                 let mut plot = Plot::try_deserialize(&mut &self.plot_up.data.borrow()[..])?;
 
-                let blocks_passed = current_block - plot.last_update_block;
+                let blocks_passed: u64 = current_block - plot.last_update_block;
 
                 let water_updated_res = get_plot_water_collected(
                     plot.right_plant_drain_rate,
@@ -578,6 +588,18 @@ impl<'info> RevokePlot<'info> {
             self.plant.treasury = Pubkey::default();
             self.plant.treasury_received_balance = 0;
             // bump doesn't change because plants <> plot one to one
+        } else {
+            
+
+            // if no plant check if rent was free
+            if self.plot.balance < BASE_BALANCE_FREE_RENT {
+                let current_block = Clock::get()?.slot;
+                let blocks_passed = current_block - self.plot.last_update_block;
+
+                let farm_rent_drain = blocks_passed;
+                let drained_balance = if farm_rent_drain > self.plot.balance { self.plot.balance } else { farm_rent_drain };
+                self.plot.balance -= drained_balance;
+            }
         }
 
         // Transfer left-over balance to revoker
@@ -616,6 +638,8 @@ impl<'info> RevokePlot<'info> {
 
         self.plot.balance = 0;
         self.plot.last_claimer = self.farm_auth.key();
+        
+        // last update block is updated after center water update
 
         Ok(())
     }

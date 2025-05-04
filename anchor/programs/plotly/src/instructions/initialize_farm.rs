@@ -107,7 +107,7 @@ impl<'info> InitializeFarm<'info> {
     pub fn initialize_farm(
         &mut self,
         plot_currency: &Pubkey,
-        plot_price: u64,
+        plot_price: u64, // deploy script sets to 1_000_000
         farm_bump: u8,
         farm_auth: u8,
         program_id: &Pubkey,

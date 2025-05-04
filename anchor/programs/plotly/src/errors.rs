@@ -26,6 +26,8 @@ pub enum ErrorCode {
     InvalidPlotCurrency,
     #[msg("Plot price not divisible by 2")]
     InvalidPlotPrice,
+
+    // 
     #[msg("Invalid neighbor plot mint passed")]
     InvalidNeighborPlotMint,
     #[msg("Invalid neighbor plot passed")]
@@ -33,6 +35,8 @@ pub enum ErrorCode {
     #[msg("Invalid neighbor water drain rate passed")]
     InvalidNeighborWaterDrainRate,
     #[msg("Invalid treasury address")]
+
+    // PLANT
     InvalidTreasury,
     #[msg("Plant doesn't have enough water")]
     PlantNotEnoughWater,
@@ -44,12 +48,23 @@ pub enum ErrorCode {
     NoBlocksPassed,
     #[msg("Too early to tend")]
     TooEarlyToTend,
+
+    // SEED
+    #[msg("Invalid max tends")]
+    InvalidMaxTends,
     #[msg("Invalid balance absorb rate")]
     InvalidBalanceAbsorbRate,
     #[msg("Invalid growth duration")]
     InvalidGrowthDuration,
     #[msg("Zero balance")]
     ZeroBalance,
+    #[msg("Tending not allowed if absorb rate is 0")]
+    TendingNotAllowedIfAbsorbRateIsZero,
+    #[msg("Seed info has no plant token")]
+    SeedInfoHasNoPlantToken,
+
+
+
     #[msg("Plot still has balance")]
     PlotStillHasBalance,
     #[msg("Invalid ingredient data")]

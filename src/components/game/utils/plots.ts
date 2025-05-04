@@ -18,6 +18,52 @@ export const getAllPlotCoordinatesAround = (centerX: number, centerY: number): C
   return coordinates
 }
 
+export const getOuterBorderPlotCoordinatesAround = (centerX: number, centerY: number): Coordinates[] => {
+  const coordinates = []
+
+  if (centerY - 4 >= 0) {
+    for (let dx = -3; dx < 4; dx += 1) {
+      const sumX = centerX + dx
+      if (sumX > 999 || sumX < 0) {
+        continue
+      }
+      coordinates.push({ x: sumX, y: centerY - 4 })
+    }
+  }
+
+  if (centerY + 4 <= 999) {
+    for (let dx = -3; dx < 4; dx += 1) {
+      const sumX = centerX + dx
+      if (sumX > 999 || sumX < 0) {
+        continue
+      }
+      coordinates.push({ x: sumX, y: centerY + 4 })
+    }
+  }
+
+  if (centerX - 4 >= 0) {
+    for (let dy = -3; dy < 4; dy += 1) {
+      const sumY = centerY + dy
+      if (sumY > 999 || sumY < 0) {
+        continue
+      }
+      coordinates.push({ x: centerX - 4, y: sumY })
+    }
+  }
+
+  if (centerX + 4 <= 999) {
+    for (let dy = -3; dy < 4; dy += 1) {
+      const sumY = centerY + dy
+      if (sumY > 999 || sumY < 0) {
+        continue
+      }
+      coordinates.push({ x: centerX + 4, y: sumY })
+    }
+  }
+
+  return coordinates
+}
+
 export const fillGridPositions = (
   grid: Array<Array<RefObject<PlotMesh>>>,
   size: number,

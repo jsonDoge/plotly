@@ -6,9 +6,11 @@ export const PLOT_DESCEND_MAX = -0.11
 export const PLOT_RISE_STEP = 0.02
 
 // light
-export const DIRECTIONAL_LIGHT_OFFSET_X = 113.7
-export const DIRECTIONAL_LIGHT_OFFSET_Y = 73.7
-export const DIRECTIONAL_LIGHT_OFFSET_Z = 60
+export const DIRECTIONAL_LIGHT_OFFSET_X = 123.7
+export const DIRECTIONAL_LIGHT_OFFSET_Y = 3.7
+export const DIRECTIONAL_LIGHT_OFFSET_Z = 150
+export const DIRECTIONAL_LIGHT_INTENSITY = 1.5
+export const AMBIENT_LIGHT_INTENSITY = 0.05
 
 // background
 export const INVISIBLE_AREA_SIZE = 4

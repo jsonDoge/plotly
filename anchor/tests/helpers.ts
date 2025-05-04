@@ -6,27 +6,36 @@ import { Connection, Keypair, PublicKey, sendAndConfirmTransaction } from '@sola
 
 const farmIdl = require('../target/idl/farm.json') as anchor.Idl
 
-export function toLeBytes(value: number, byteLength = 4, signed = false) {
+export function toLeBytes(value: number | bigint, byteLength = 4, signed = false) {
   const buffer = Buffer.alloc(byteLength)
 
   let newVal: any = value
 
   switch (byteLength) {
     case 1:
-      buffer.writeUInt8(value, 0)
+      if (typeof value !== 'number') {
+        newVal = Number(value)
+      }
+      buffer.writeUInt8(newVal, 0)
       break
     case 2:
+      if (typeof value !== 'number') {
+        newVal = Number(value)
+      }
       if (signed) {
-        buffer.writeInt16LE(value, 0)
+        buffer.writeInt16LE(newVal, 0)
       } else {
-        buffer.writeUInt16LE(value, 0)
+        buffer.writeUInt16LE(newVal, 0)
       }
       break
     case 4:
+      if (typeof value !== 'number') {
+        newVal = Number(value)
+      }
       if (signed) {
-        buffer.writeInt32LE(value, 0)
+        buffer.writeInt32LE(newVal, 0)
       } else {
-        buffer.writeUInt32LE(value, 0)
+        buffer.writeUInt32LE(newVal, 0)
       }
       break
     case 8:
@@ -86,10 +95,11 @@ export const mintAndBuyPlot = async (
   try {
     await wrapTx(
       program.methods
-        .mintPlot(plotX, plotY, plotCurrency)
+        .mintPlot(plotX, plotY)
         .accounts({
           user: userWallet.publicKey,
           plotMint,
+          plotCurrencyMint: plotCurrency,
         })
         .signers([userWallet.payer]),
     )
@@ -134,10 +144,11 @@ export const mintAndBuyPlot = async (
         // eslint-disable-next-line no-await-in-loop
         await wrapTx(
           program.methods
-            .mintPlot(neighborX, neighborY, plotCurrency)
+            .mintPlot(neighborX, neighborY)
             .accounts({
               user: userWallet.publicKey,
               plotMint: neighborPlotMint,
+              plotCurrencyMint: plotCurrency,
             })
             .signers([userWallet.payer]),
         )
@@ -160,6 +171,43 @@ export const mintAndBuyPlot = async (
           plotUp: plotIds[1],
           plotDown: plotIds[2],
           plotRight: plotIds[3],
+        })
+        .signers([userWallet.payer]),
+    )
+  } catch (error) {
+    console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
+    throw error
+  }
+}
+
+export const returnPlot = async (
+  provider: anchor.AnchorProvider,
+  program: anchor.Program<Farm> | anchor.Program<typeof farmIdl>,
+  plotCurrency: PublicKey,
+  plotX: number,
+  plotY: number,
+  userWallet: anchor.Wallet,
+) => {
+  const wrapTx = increasedCUTxWrap(provider.connection, userWallet.payer)
+
+  const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('farm'), plotCurrency.toBuffer()],
+    program.programId,
+  )
+
+  const [plotMint] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
+    program.programId,
+  )
+
+  try {
+    await wrapTx(
+      program.methods
+        .returnPlot(plotX, plotY)
+        .accounts({
+          user: userWallet.publicKey,
+          plotMint,
+          plotCurrencyMint: plotCurrency,
         })
         .signers([userWallet.payer]),
     )

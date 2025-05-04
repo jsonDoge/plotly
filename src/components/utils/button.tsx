@@ -1,9 +1,9 @@
-import React from 'react';
+import React from 'react'
 
 interface Props {
-  children?: React.ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
+  children?: React.ReactNode
+  onClick?: () => void
+  disabled?: boolean
 }
 
 const Button: React.FC<Props> = ({ children, onClick, disabled = false }) => (
@@ -40,6 +40,6 @@ const Button: React.FC<Props> = ({ children, onClick, disabled = false }) => (
   >
     {children}
   </button>
-);
+)
 
-export default Button;
+export default Button

@@ -21,7 +21,6 @@ import { generateRefGrid } from './utils'
 
 // constants
 import { PLOT_GRID_SIZE } from './utils/constants'
-import { SEED_TYPE } from '../../utils/constants'
 import CornGroup from './groupedElements/cornGroup'
 import PotatoGroup from './groupedElements/potatoGroup'
 import CarrotGroup from './groupedElements/carrotGroup'
@@ -97,6 +96,11 @@ const MainPlots = memo<Props>(({ mainPlotRefs, plotCenterRef }) => {
         const plotRgb = currentMappedPlotInfos?.[x][y].color.rgb || getDefaultPlotColor().rgb
 
         mainPlotRefs_[y][x].current?.material.color.setRGB(plotRgb.r, plotRgb.g, plotRgb.b)
+        // mainPlotRefs_[y][x].current?.material.transparent = true
+        mainPlotRefs_[y][x].current?.material.setValues({
+          opacity: currentMappedPlotInfos?.[x][y].opacity || 0.5,
+          transparent: true,
+        })
 
         const { seedType, plantState } = currentMappedPlotInfos?.[x][y] || { seedType: undefined, state: undefined }
 
@@ -127,25 +131,30 @@ const MainPlots = memo<Props>(({ mainPlotRefs, plotCenterRef }) => {
 
   // see if this doesn't polute
   // may need to move to the top and call functions from there
-  subscribeKey(mappedPlotInfosStore, 'map', (newMappedPlotInfos: MappedPlotInfos) => {
-    console.log('mainPlots change detected')
+  useEffect(() => {
+    const unsubscribe = subscribeKey(mappedPlotInfosStore, 'map', (newMappedPlotInfos: MappedPlotInfos) => {
+      console.log('mainPlots change detected')
 
-    if (JSON.stringify(newMappedPlotInfos) === JSON.stringify(mappedPlotInfos.current)) {
-      return
-    }
+      if (JSON.stringify(newMappedPlotInfos) === JSON.stringify(mappedPlotInfos.current)) {
+        console.log('mainPlots change detected - no change/ignoring')
+        return
+      }
 
-    mappedPlotInfos.current = { ...newMappedPlotInfos }
+      mappedPlotInfos.current = { ...newMappedPlotInfos }
 
-    applyMappedPlotInfos(
-      mainPlotRefs,
-      plantRefs.current,
-      weedRefs.current,
-      cornRefs.current,
-      potatoRefs.current,
-      carrotRefs.current,
-      mappedPlotInfos.current,
-    )
-  })
+      applyMappedPlotInfos(
+        mainPlotRefs,
+        plantRefs.current,
+        weedRefs.current,
+        cornRefs.current,
+        potatoRefs.current,
+        carrotRefs.current,
+        mappedPlotInfos.current,
+      )
+    })
+
+    return unsubscribe
+  }, [])
 
   // useEffect(
   //   () =>

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { mintStableToken, getStableTokenBalance } from '../../services/bank'
 import { useWallet } from '../../context/wallet'
-import Button from '../button'
-import Spinner from '../spinner'
+import Button from '../utils/button'
+import Spinner from '../utils/spinner'
 
 const Bank = () => {
   const { wallet } = useWallet()

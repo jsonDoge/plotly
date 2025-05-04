@@ -173,12 +173,20 @@ impl<'info> MintSeeds<'info> {
         program_id: &Pubkey,
     ) -> Result<()> {
 
-        if balance_absorb_rate == 0 || balance_absorb_rate % 2 != 0 {
+        if balance_absorb_rate % 2 != 0 {
             return Err(ErrorCode::InvalidBalanceAbsorbRate.into());
         }
 
         if growth_block_duration <= 100 {
             return Err(ErrorCode::InvalidGrowthDuration.into());
+        }
+
+        if balance_absorb_rate == 0 && times_to_tend > 0 {
+            return Err(ErrorCode::TendingNotAllowedIfAbsorbRateIsZero.into());
+        }
+
+        if times_to_tend > 5 {
+            return Err(ErrorCode::InvalidMaxTends.into());
         }
 
         if treasury != &self.user_associated_plot_currency_account.key() {

@@ -21,6 +21,7 @@ import {
   getPlotMintId,
 } from '@/services/web3Utils'
 import { reloadPlotsAtActions } from '@/stores/reloadPlotsAt'
+import { appRouteStore, Route } from '@/stores/appRoute'
 import { centerPlotCoordsStore, centerPlotCoordsActions } from '../../stores/centerPlotCoords'
 import { walletStore } from '../../stores/wallet'
 
@@ -28,11 +29,11 @@ import { walletStore } from '../../stores/wallet'
 import CanvasWrapper from './canvasWrapper'
 
 // interfaces
-import { Coordinates, MappedPlotInfos, RawPlot } from './utils/interfaces'
+import { Coordinates, MappedPlotInfos, RawPlant, RawPlot } from './utils/interfaces'
 import { Wallet } from '../../utils/interfaces'
 
 // utils
-import { generateEmptyMappedPlotInfos, reduceContractPlots } from './utils/mapPlots'
+import { generateEmptyMappedPlotInfos, reduceProgramPlots } from './utils/mapPlots'
 import { getAllPlotCoordinatesAround } from './utils/plots'
 
 // services
@@ -58,6 +59,7 @@ const Game = () => {
 
   const walletAddress: MutableRefObject<string | undefined> = useRef()
   const currentBlock: MutableRefObject<number> = useRef(0)
+  const movedAgo: MutableRefObject<number> = useRef(new Date().getTime())
 
   // const { currentBlock } = useBlockchain()
   // const currentBlock = 0
@@ -66,6 +68,7 @@ const Game = () => {
 
   // Follows cooradinates 0-999
   const plotCenterRef = useRef<Coordinates>(INITIAL_PLOT_CENTER_COORDS)
+  const pauseNavigationRef = useRef<boolean>(false)
 
   // Absolute camera position in Three.js x/y space
   const centerRef = useRef<Coordinates>({
@@ -94,6 +97,8 @@ const Game = () => {
   // should NOT load without wallet
   const loadPlotInfos = async (
     rawPlots: RawPlot[],
+    rawPlants: RawPlant[],
+    outerRawPlots: RawPlot[],
     walletAddress_: PublicKey,
     currentBlock_: number,
     centerX: number,
@@ -104,42 +109,20 @@ const Game = () => {
     }
 
     const { x: cornerX, y: cornerY } = convertCenterToLowerLeftCorner(centerX, centerY)
-    const cornerPlotId = getPlotIdFromCoordinates(cornerX, cornerY)
-
-    let farm: any
-    if (publicRuntimeConfig.MOCK_CHAIN_MODE) {
-      farm = {
-        getPlotView: async (plotId: number) => {
-          return generateMockProgramPlots(plotCenterRef.current)
-        },
-        getSurroundingWaterLogs: async (plotId: number) => {
-          const surroundingWaterLogs = []
-          for (let i = 0; i < 7; i += 1) {
-            surroundingWaterLogs.push({ id: i, waterLog: 0 })
-          }
-          return surroundingWaterLogs
-        },
-      }
-    } else {
-      // redo in solana
-      // farm = getContract(publicRuntimeConfig.C_FARM, CONTRACT_TYPE.FARM, { isSignerRequired: false })
-    }
-
-    // getPlotView returns array sorted as x + y * 7
-    // const contractPlots = await farm.getPlotView(cornerPlotId)
-    const surroundingPlotWaterLogs = await farm.getSurroundingWaterLogs(cornerPlotId)
-
-    // console.log('contractPlots', contractPlots)
 
     // TODO: refactor to not fetch same data if coords didn't change
 
     mappedPlotInfosActions.setPlotInfos(
-      reduceContractPlots(rawPlots, surroundingPlotWaterLogs, currentBlock_, walletAddress_, cornerX, cornerY),
+      reduceProgramPlots(rawPlots, rawPlants, outerRawPlots, currentBlock_, walletAddress_, cornerX, cornerY),
     )
   }
 
   const debouncedLoadPlotInfos = debounce(
-    (...args: Parameters<typeof reloadPlotsAtActions.reloadAtCenter>) => reloadPlotsAtActions.reloadAtCenter(...args),
+    // triggers blockchain.ts -> to reload plots
+    (...args: Parameters<typeof reloadPlotsAtActions.reloadAtCenter>) => {
+      reloadPlotsAtActions.reloadAtCenter(...args)
+      movedAgo.current = new Date().getTime()
+    },
     2000,
   )
 
@@ -148,6 +131,7 @@ const Game = () => {
     if (currentBlock_ === 0) {
       return
     }
+    movedAgo.current = new Date().getTime()
     resetMappedPlotInfos()
     debouncedLoadPlotInfos(plotCenterRef.current.x, plotCenterRef.current.y)
     // centerPlotCoordsActions.setCenterPlotCoords(plotCenterRef.current.x, plotCenterRef.current.y)
@@ -155,6 +139,14 @@ const Game = () => {
 
   useEffect(() => {
     console.log('== game useEffect block==', currentBlock)
+
+    // reloads every 5 seconds or 5 seconds after last move (may vary due to checking only every 5 seconds)
+    const intervalId = setInterval(() => {
+      if (currentBlock.current === 0 || new Date().getTime() - movedAgo.current < 5000) {
+        return
+      }
+      reloadPlotsAtActions.reloadAtCenter(plotCenterRef.current.x, plotCenterRef.current.y)
+    }, 5000)
 
     const usubscribeBlockchain = subscribeKey(blockchainStore, 'currentBlock', (currentBlock_: number) => {
       if (currentBlock_ === currentBlock.current) {
@@ -210,6 +202,7 @@ const Game = () => {
         y: newCoords.y * PLOT_SIZE,
       }
 
+      // this tirggers center plot changed in centerPlotCoordsStore -> which in turn triggers reloadPlotInfos
       centerPlotCoordsActions.setCenterPlotCoords(newCoords.x, newCoords.y)
     })
 
@@ -221,12 +214,15 @@ const Game = () => {
       mappedPlotInfosStore,
       'rawPlotsAtCenter',
       async (rawPlotsAtCenter: RawPlotsAtCenter) => {
+        console.log('new mapped plot infos received in game/index')
         if (walletAddress.current === undefined) {
           return
         }
 
         loadPlotInfos(
           rawPlotsAtCenter.rawPlots,
+          rawPlotsAtCenter.rawPlants,
+          rawPlotsAtCenter.outerRawPlots,
           new PublicKey(walletAddress.current),
           currentBlock.current,
           rawPlotsAtCenter.centerX,
@@ -235,6 +231,10 @@ const Game = () => {
       },
     )
 
+    const unsubscribeAppRoute = subscribeKey(appRouteStore, 'route', (route: Route) => {
+      pauseNavigationRef.current = route !== Route.plots
+    })
+
     return () => {
       unsubscribeWallet()
       unsubscribeCenterChanged()
@@ -242,11 +242,14 @@ const Game = () => {
       usubscribeBlockchain()
       unsubscribeTeleport()
       unsubscribeMappedPlotInfos()
+      unsubscribeAppRoute()
+      clearInterval(intervalId)
     }
   }, [])
 
   return (
     <CanvasWrapper
+      pauseNavigationRef={pauseNavigationRef}
       plotCenterRef={plotCenterRef}
       centerRef={centerRef}
       plotCenterChanged={(newX: number, newY: number) => {

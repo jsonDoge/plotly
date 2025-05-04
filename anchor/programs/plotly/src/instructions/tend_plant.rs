@@ -15,6 +15,7 @@ use anchor_spl::{
 };
 use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 
+use crate::constants::BASE_BALANCE_FREE_RENT;
 use crate::helpers::{get_balance_collected, get_plot_water_collected};
 use crate::state::{AccWithBump, Plant, Plot};
 use crate::{errors::ErrorCode, state::Farm};
@@ -182,6 +183,8 @@ impl<'info> TendPlant<'info> {
             return Err(ErrorCode::NoBlocksPassed.into());
         }
 
+        msg!("balance_per_tend {} plot balance {} plant balance {}", balance_per_tend, self.plot.balance, self.plant.balance);
+
         let updated_balance = get_balance_collected(
             self.plant.balance,
             self.plot.balance,
@@ -189,11 +192,21 @@ impl<'info> TendPlant<'info> {
             balance_per_tend,
             self.plant.times_tended,
             self.plant.times_to_tend,
+            self.plant.balance_required - self.plant.balance,
             blocks_passed,
         );
 
         self.plant.balance += updated_balance.0;
         self.plot.balance = updated_balance.1;
+
+        let balance_blocks_absorbed = updated_balance.2;
+
+        msg!("blocks absorbed {} blocks passed: {} balance_required {}", balance_blocks_absorbed, blocks_passed, self.plant.balance_required);
+        if balance_blocks_absorbed < blocks_passed && self.plot.balance < BASE_BALANCE_FREE_RENT {
+            let farm_rent_drain = blocks_passed - balance_blocks_absorbed; // currently draining at 1 lamport per block
+            let drained_balance = if farm_rent_drain > self.plot.balance { self.plot.balance } else { farm_rent_drain };
+            self.plot.balance -= drained_balance;
+        }
 
         // 25% of the balance required for the next tend
         let tending_allowed_balance_buffer = balance_per_tend / 4;
