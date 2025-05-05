@@ -134,6 +134,7 @@ pub struct RevokePlot<'info> {
 
     // PLANT
     #[account(
+        mut,
         seeds = [b"plant", plot_mint.key().as_ref()],
         bump,
     )]

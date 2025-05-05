@@ -7953,6 +7953,7 @@ export type Farm = {
         },
         {
           "name": "plant",
+          "writable": true,
           "pda": {
             "seeds": [
               {

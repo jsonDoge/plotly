@@ -3,7 +3,12 @@
 // configured from the workspace's Anchor.toml.
 
 import { AnchorProvider, Idl, Program, web3 } from '@coral-xyz/anchor'
-import { getAssociatedTokenAddress, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import {
+  getAssociatedTokenAddress,
+  getOrCreateAssociatedTokenAccount,
+  mintTo,
+  TOKEN_PROGRAM_ID,
+} from '@solana/spl-token'
 import { PublicKey } from '@solana/web3.js'
 import path from 'path'
 import fs from 'fs'
@@ -33,6 +38,8 @@ function getFarmProgramId(network: string): PublicKey {
   }
 }
 
+const DEVNET_USDC_MINT = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU')
+
 module.exports = async function (provider_: AnchorProvider) {
   // Configure client to use the provider.
 
@@ -41,6 +48,7 @@ module.exports = async function (provider_: AnchorProvider) {
   if (!['devnet', 'localnet'].includes(network)) {
     throw new Error(`Invalid network: ${network}. Must be one of "devnet" or "localnet".`)
   }
+  console.log('Deploying to network: ', network)
 
   const connection = new web3.Connection(provider_.connection.rpcEndpoint, {
     commitment: 'confirmed',
@@ -54,8 +62,8 @@ module.exports = async function (provider_: AnchorProvider) {
   const { wallet } = provider
 
   if (!wallet.payer) {
-    console.log('Couldnt find payer');
-    return;
+    console.log('Couldnt find payer')
+    return
   }
 
   const program = getFarmProgram(provider)
@@ -66,24 +74,32 @@ module.exports = async function (provider_: AnchorProvider) {
   const keypair = web3.Keypair.fromSecretKey(new Uint8Array(keypairData))
   console.log('setting up plot currency mint:', keypair.publicKey.toString())
 
-  const plotCurrency = await setupMint(provider, TOKEN_PROGRAM_ID, 6, keypair)
+  let plotCurrency
 
-  const otherUserKeypairData = JSON.parse(fs.readFileSync(path.join(process.cwd(), userKeypairPath), 'utf8'))
-  const otherUserKeypair = web3.Keypair.fromSecretKey(new Uint8Array(otherUserKeypairData))
+  if (network === 'localnet') {
+    plotCurrency = await setupMint(provider, TOKEN_PROGRAM_ID, 6, keypair)
+  } else if (network === 'devnet') {
+    plotCurrency = DEVNET_USDC_MINT
+  } else {
+    throw new Error(`Unsupported network: ${network}`)
+  }
 
+  if (network === 'localnet') {
+    const otherUserKeypairData = JSON.parse(fs.readFileSync(path.join(process.cwd(), userKeypairPath), 'utf8'))
+    const otherUserKeypair = web3.Keypair.fromSecretKey(new Uint8Array(otherUserKeypairData))
 
-  const ata = await getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    wallet.payer,
-    plotCurrency,
-    otherUserKeypair.publicKey,
-    false,
-    undefined,
-    undefined,
-  )
-  // send to other user
-  await mintTo(provider.connection, wallet.payer, plotCurrency, ata.address, wallet.payer, 100_000_000)
-
+    const ata = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      wallet.payer,
+      plotCurrency,
+      otherUserKeypair.publicKey,
+      false,
+      undefined,
+      undefined,
+    )
+    // send to other user
+    await mintTo(provider.connection, wallet.payer, plotCurrency, ata.address, wallet.payer, 100_000_000)
+  }
 
   console.log('Currency setup successfully:', plotCurrency.toString())
 

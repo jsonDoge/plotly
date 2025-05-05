@@ -7947,6 +7947,7 @@
         },
         {
           "name": "plant",
+          "writable": true,
           "pda": {
             "seeds": [
               {

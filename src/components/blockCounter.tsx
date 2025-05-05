@@ -36,7 +36,7 @@ const { publicRuntimeConfig } = getConfig()
 //     .filter((e) => !!e)
 //     .join('')
 
-const seasonDurationBlocks = parseInt(publicRuntimeConfig.SEASON_DURATION_BLOCKS, 10)
+// const seasonDurationBlocks = parseInt(publicRuntimeConfig.SEASON_DURATION_BLOCKS, 10)
 
 // This is more of an information panel TODO: rename or create separate components
 const BlockCounter: FC = () => {
