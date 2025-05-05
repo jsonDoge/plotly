@@ -1330,7 +1330,11 @@ export type Farm = {
                 "kind": "account",
                 "path": "resultMint"
               }
-            ]
+            ],
+            "program": {
+              "kind": "account",
+              "path": "tokenMetadataProgram"
+            }
           }
         },
         {

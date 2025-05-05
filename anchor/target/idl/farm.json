@@ -1324,7 +1324,11 @@
                 "kind": "account",
                 "path": "result_mint"
               }
-            ]
+            ],
+            "program": {
+              "kind": "account",
+              "path": "token_metadata_program"
+            }
           }
         },
         {

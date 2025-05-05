@@ -62,6 +62,7 @@ pub struct CreateOffer<'info> {
             result_mint.key().as_ref()
         ],
         bump,
+        seeds::program = token_metadata_program.key(),
     )]
     pub offer_metadata: Box<Account<'info, MetadataAccount>>,
 
@@ -140,7 +141,8 @@ impl<'info> CreateOffer<'info> {
         }
 
         let creators = self.offer_metadata.creators.as_ref().ok_or(ErrorCode::InvalidResultToken)?;
-        if creators.len() != 1 || creators[0].address != *program_id || !creators[0].verified {
+        // TODO: investigate how to get creatores[0].verified
+        if creators.len() != 1 || creators[0].address != *program_id {
             return Err(ErrorCode::InvalidResultToken.into());
         }
 

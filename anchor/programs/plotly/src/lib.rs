@@ -2,11 +2,11 @@
 
 use anchor_lang::prelude::*;
 
+pub mod constants;
 pub mod errors;
+pub mod helpers;
 pub mod instructions;
 pub mod state;
-pub mod constants;
-pub mod helpers;
 
 use instructions::*;
 
@@ -34,45 +34,21 @@ pub mod farm {
     // PLOTS
 
     // returns plot mint address
-    pub fn mint_plot(
-        ctx: Context<MintPlot>,
-        plot_x: u32,
-        plot_y: u32,
-    ) -> Result<Pubkey> {
-        ctx.accounts.mint_plot(
-            plot_x,
-            plot_y,
-            ctx.program_id,
-            ctx.bumps.plot,
-        )
+    pub fn mint_plot(ctx: Context<MintPlot>, plot_x: u32, plot_y: u32) -> Result<Pubkey> {
+        ctx.accounts
+            .mint_plot(plot_x, plot_y, ctx.program_id, ctx.bumps.plot)
     }
 
-    pub fn acquire_plot(
-        ctx: Context<AcquirePlot>,
-        plot_x: u32,
-        plot_y: u32,
-    ) -> Result<()> {
-        ctx.accounts
-            .acquire_plot(plot_x, plot_y, ctx.program_id)
+    pub fn acquire_plot(ctx: Context<AcquirePlot>, plot_x: u32, plot_y: u32) -> Result<()> {
+        ctx.accounts.acquire_plot(plot_x, plot_y, ctx.program_id)
     }
 
-
-    pub fn return_plot(
-        ctx: Context<ReturnPlot>,
-        plot_x: u32,
-        plot_y: u32,
-    ) -> Result<()> {
-        ctx.accounts
-            .return_plot(plot_x, plot_y, ctx.program_id)
+    pub fn return_plot(ctx: Context<ReturnPlot>, plot_x: u32, plot_y: u32) -> Result<()> {
+        ctx.accounts.return_plot(plot_x, plot_y, ctx.program_id)
     }
 
-    pub fn revoke_plot(
-        ctx: Context<RevokePlot>,
-        plot_x: u32,
-        plot_y: u32,
-    ) -> Result<()> {
-        ctx.accounts
-            .revoke_plot(plot_x, plot_y, ctx.program_id)
+    pub fn revoke_plot(ctx: Context<RevokePlot>, plot_x: u32, plot_y: u32) -> Result<()> {
+        ctx.accounts.revoke_plot(plot_x, plot_y, ctx.program_id)
     }
 
     pub fn deposit_to_plot(
@@ -124,33 +100,21 @@ pub mod farm {
         plot_y: u32,
         plot_currency: Pubkey,
     ) -> Result<()> {
-        ctx.accounts.plant_seed(plot_x, plot_y, plot_currency, ctx.program_id)
+        ctx.accounts
+            .plant_seed(plot_x, plot_y, plot_currency, ctx.program_id)
     }
 
-    pub fn tend_plant(
-        ctx: Context<TendPlant>,
-        plot_x: u32,
-        plot_y: u32,
-    ) -> Result<()> {
+    pub fn tend_plant(ctx: Context<TendPlant>, plot_x: u32, plot_y: u32) -> Result<()> {
         ctx.accounts.tend_plant(plot_x, plot_y, ctx.program_id)
     }
 
-    pub fn harvest_plant(
-        ctx: Context<HarvestPlant>,
-        plot_x: u32,
-        plot_y: u32,
-    ) -> Result<()> {
+    pub fn harvest_plant(ctx: Context<HarvestPlant>, plot_x: u32, plot_y: u32) -> Result<()> {
         ctx.accounts.harvest_plant(plot_x, plot_y, ctx.program_id)
     }
 
-    pub fn revert_plant(
-        ctx: Context<RevertPlant>,
-        plot_x: u32,
-        plot_y: u32,
-    ) -> Result<()> {
+    pub fn revert_plant(ctx: Context<RevertPlant>, plot_x: u32, plot_y: u32) -> Result<()> {
         ctx.accounts.revertPlant(plot_x, plot_y, ctx.program_id)
     }
-
 
     // RECIPES
     pub fn create_recipe(
@@ -180,7 +144,7 @@ pub mod farm {
         ctx.accounts.follow_recipe(
             plot_currency,
             ingredient_0_amount,
-ingredient_1_amount,
+            ingredient_1_amount,
             result_token_receive,
             ctx.bumps.recipe,
             ctx.program_id,
@@ -208,7 +172,6 @@ ingredient_1_amount,
         )
     }
 
-
     // OFFER
     pub fn create_offer(
         ctx: Context<CreateOffer>,
@@ -228,11 +191,8 @@ ingredient_1_amount,
         price_amount_per_token: u64, // used in seeds
         result_token_deposit: u64,
     ) -> Result<()> {
-        ctx.accounts.refill_offer(
-            price_amount_per_token,
-            result_token_deposit,
-            ctx.program_id,
-        )
+        ctx.accounts
+            .refill_offer(price_amount_per_token, result_token_deposit, ctx.program_id)
     }
 
     pub fn accept_offer(
@@ -253,6 +213,4 @@ ingredient_1_amount,
     ) -> Result<()> {
         ctx.accounts.cancel_offer()
     }
-
-
 }

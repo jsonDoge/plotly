@@ -877,3 +877,35 @@ export const createRecipe = async (
     throw error
   }
 }
+
+/// OFFER
+
+export const createOffer = async (
+  provider: anchor.AnchorProvider,
+  program: anchor.Program<Farm>,
+  plotCurrency: PublicKey,
+  resultToken: PublicKey,
+  pricePerToken: anchor.BN,
+  resultTokenToDeposit: anchor.BN,
+  userWallet: anchor.Wallet,
+  offerId: PublicKey,
+) => {
+  const wrapTx = increasedCUTxWrap(provider.connection, userWallet.payer)
+
+  try {
+    await wrapTx(
+      program.methods
+        .createOffer(pricePerToken, resultTokenToDeposit)
+        .accountsPartial({
+          user: userWallet.publicKey,
+          resultMint: resultToken,
+          plotCurrencyMint: plotCurrency,
+          offer: offerId,
+        })
+        .signers([userWallet.payer]),
+    )
+  } catch (error) {
+    console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
+    throw error
+  }
+}

@@ -145,11 +145,6 @@ impl<'info> CreateRecipe<'info> {
             return Err(ErrorCode::InvalidRecipeResultData.into());
         }
 
-        // already exists
-        if self.recipe.ingredient_0 != Pubkey::default() || self.recipe.ingredient_1 != Pubkey::default() {
-            return Err(ErrorCode::RecipeAlreadyExists.into());
-        }
-
         msg!(
             "Transferring result token to farm... {}",
             result_token_deposit
@@ -170,6 +165,15 @@ impl<'info> CreateRecipe<'info> {
             self.result_mint.decimals,
         )?;
 
+        // TODO: maybe not worth having a different method and allow calling "create_recipe" multiple times (idempotent)
+        // problem because then user has to explicitly provide treasury, since he may not be the owner of the recipe
+        // already exists
+        if self.recipe.ingredient_0 != Pubkey::default() || self.recipe.ingredient_1 != Pubkey::default() {
+            // TODO: needs fixing due to treasury
+            self.recipe.result_token_balance += result_token_deposit;
+            return Ok(());
+        }
+
         self.recipe.ingredient_0 = self.ingredient_0_mint.key();
         self.recipe.ingredient_1 = self.ingredient_1_mint.key();
         
@@ -178,7 +182,6 @@ impl<'info> CreateRecipe<'info> {
         
         self.recipe.result_token = self.result_mint.key();
 
-        self.recipe.result_token_balance = result_token_deposit;
 
         self.recipe.ingredient_0_treasury = self.user_associated_ingredient_0_token_account.key();
         self.recipe.ingredient_1_treasury = self.user_associated_ingredient_1_token_account.key();
