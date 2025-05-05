@@ -181,7 +181,7 @@ impl<'info> CreateRecipe<'info> {
         self.recipe.ingredient_1_amount_per_1_result_token = ingredient_1_amount;
         
         self.recipe.result_token = self.result_mint.key();
-
+        self.recipe.result_token_balance = result_token_deposit;
 
         self.recipe.ingredient_0_treasury = self.user_associated_ingredient_0_token_account.key();
         self.recipe.ingredient_1_treasury = self.user_associated_ingredient_1_token_account.key();

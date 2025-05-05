@@ -131,6 +131,8 @@ impl<'info> CancelOffer<'info> {
             self.result_mint.decimals,
         )?;
 
+        self.offer.result_token_balance = 0;
+
         msg!("Offer closed: {:?}", self.offer.key());
 
         Ok(())

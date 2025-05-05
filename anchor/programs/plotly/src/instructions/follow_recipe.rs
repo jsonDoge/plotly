@@ -1,5 +1,5 @@
 use anchor_lang::{accounts::program, prelude::*};
-use anchor_spl::token_interface::Mint as MintInterface;
+use anchor_spl::token_interface::{Mint as MintInterface, TokenAccount as TokenAccountInterface};
 use anchor_spl::{
     associated_token::{spl_associated_token_account, AssociatedToken},
     metadata::{
@@ -46,7 +46,7 @@ pub struct FollowRecipe<'info> {
 
     // RECIPE
     #[account(
-        init,
+        mut,
         seeds = [
             b"recipe",
             ingredient_0_mint.key().as_ref(),
@@ -54,12 +54,10 @@ pub struct FollowRecipe<'info> {
             ingredient_1_mint.key().as_ref(),
             &ingredient_1_amount.to_le_bytes()[..],
             result_mint.key().as_ref(),
-            user_associated_ingredient_0_token_account.key().as_ref(),
-            user_associated_ingredient_1_token_account.key().as_ref(),
+            recipe_ingredient_0_treasury.key().as_ref(),
+            recipe_ingredient_1_treasury.key().as_ref(),
             farm.key().as_ref()
         ],
-        space = 8 + std::mem::size_of::<Recipe>(),
-        payer = user,
         bump,
     )]
     pub recipe: Box<Account<'info, Recipe>>,
@@ -195,7 +193,7 @@ impl<'info> FollowRecipe<'info> {
         );
 
         let cpi_accounts = TransferChecked {
-            mint: self.result_mint.to_account_info(),
+            mint: self.ingredient_0_mint.to_account_info(),
             from: self
                 .user_associated_ingredient_0_token_account
                 .to_account_info(),
@@ -212,12 +210,12 @@ impl<'info> FollowRecipe<'info> {
         )?;
 
         msg!(
-            "Transferring ingredient token 0 to recipe treasury... {}",
+            "Transferring ingredient token 1 to recipe treasury... {}",
             ingredient_1_amount_required
         );
 
         let cpi_accounts = TransferChecked {
-            mint: self.result_mint.to_account_info(),
+            mint: self.ingredient_1_mint.to_account_info(),
             from: self
                 .user_associated_ingredient_1_token_account
                 .to_account_info(),

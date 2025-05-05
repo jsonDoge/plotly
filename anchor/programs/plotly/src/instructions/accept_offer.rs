@@ -100,7 +100,6 @@ impl<'info> AcceptOffer<'info> {
         &mut self,
         price_amount_per_token: u64,
         result_token_to_receive: u64,
-        program_id: &Pubkey,
     ) -> Result<()> {
 
         // offer doesnt exists

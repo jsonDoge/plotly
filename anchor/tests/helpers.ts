@@ -878,6 +878,44 @@ export const createRecipe = async (
   }
 }
 
+export const followRecipe = async (
+  provider: anchor.AnchorProvider,
+  program: anchor.Program<Farm>,
+  plotCurrency: PublicKey,
+  resultToken: PublicKey,
+  ingredient0: PublicKey,
+  ingredient1: PublicKey,
+  ingredient0AmountPer: anchor.BN,
+  ingredient1AmountPer: anchor.BN,
+  resultTokenToReceive: anchor.BN,
+  userWallet: anchor.Wallet,
+  recipeId: PublicKey,
+  recipe0Treasury: PublicKey,
+  recipe1Treasury: PublicKey,
+) => {
+  const wrapTx = increasedCUTxWrap(provider.connection, userWallet.payer)
+
+  try {
+    await wrapTx(
+      program.methods
+        .followRecipe(plotCurrency, ingredient0AmountPer, ingredient1AmountPer, resultTokenToReceive)
+        .accountsPartial({
+          user: userWallet.publicKey,
+          ingredient0Mint: ingredient0,
+          ingredient1Mint: ingredient1,
+          resultMint: resultToken,
+          recipe: recipeId,
+          recipeIngredient0Treasury: recipe0Treasury,
+          recipeIngredient1Treasury: recipe1Treasury,
+        })
+        .signers([userWallet.payer]),
+    )
+  } catch (error) {
+    console.error('Error following recipe:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
+    throw error
+  }
+}
+
 /// OFFER
 
 export const createOffer = async (
@@ -930,6 +968,38 @@ export const cancelOffer = async (
           resultMint: resultToken,
           plotCurrencyMint: plotCurrency,
           offer: offerId,
+        })
+        .signers([userWallet.payer]),
+    )
+  } catch (error) {
+    console.error('Error acquiring plot:', JSON.stringify(error, Object.getOwnPropertyNames(error), 4))
+    throw error
+  }
+}
+
+export const acceptOffer = async (
+  provider: anchor.AnchorProvider,
+  program: anchor.Program<Farm>,
+  plotCurrency: PublicKey,
+  resultToken: PublicKey,
+  pricePerToken: anchor.BN,
+  tokensToReceive: anchor.BN,
+  userWallet: anchor.Wallet,
+  offerTreasury: PublicKey,
+  offerId: PublicKey,
+) => {
+  const wrapTx = increasedCUTxWrap(provider.connection, userWallet.payer)
+
+  try {
+    await wrapTx(
+      program.methods
+        .acceptOffer(pricePerToken, tokensToReceive)
+        .accountsPartial({
+          user: userWallet.publicKey,
+          resultMint: resultToken,
+          plotCurrencyMint: plotCurrency,
+          offer: offerId,
+          offerTreasury,
         })
         .signers([userWallet.payer]),
     )

@@ -12,10 +12,9 @@ import { appRouteStoreActions, Route } from '@/stores/appRoute'
 import BlockCounter from './blockCounter'
 import PlotActionModals from './plotActionModals'
 import Lab from './lab'
-// import Shop from './shop'
-// import Bank from './bank'
 import Help from './help'
 import Kitchen from './kitchen'
+import Market from './market'
 
 import CenterPlotNavigator from './plots/centerPlotNavigator'
 import CenterPlotCoordsDisplay from './plots/centerPlotCoordsDisplay'
@@ -226,6 +225,20 @@ const Layout: React.FC = () => {
                   Kitchen
                 </span>
               </div>
+              <div className={`px-2 rounded-sm ${tab === 'market' && 'bg-green-200 text-black'}`}>
+                <span
+                  role="button"
+                  onClick={() => {
+                    setTab('market')
+                    appRouteStoreActions.setCurrentRoute(Route.market)
+                    setIsNavOpen(false)
+                  }}
+                  tabIndex={0}
+                  className="text-bold"
+                >
+                  Market
+                </span>
+              </div>
               <div className={`px-2 rounded-sm ${tab === 'help' && 'bg-green-200 text-black'}`}>
                 <span
                   role="button"
@@ -269,11 +282,11 @@ const Layout: React.FC = () => {
             <Kitchen />
           </div>
         )}
-        {/* {tab === 'shop' && (
+        {tab === 'market' && (
           <div className="px-3 flex grow flex-col justify-center w-full lg:w-96 lg:justify-start">
-            <Shop />
+            <Market />
           </div>
-        )} */}
+        )}
         {/* {tab === 'bank' && (
           <div className="px-3 flex grow flex-col justify-center w-full lg:w-96 lg:justify-start">
             <Bank />

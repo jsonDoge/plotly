@@ -338,27 +338,57 @@ export const followRecipeTx = async (
   ingredient1Mint: PublicKey,
   ingredient1AmountPer: BN,
   resultTokenMint: PublicKey,
-  resultTokenToDeposit: BN,
+  resultTokenToReceive: BN,
   plotCurrency: PublicKey,
+  recipeId: PublicKey,
 ): Promise<{ tx: Transaction; recipeId: PublicKey }> => {
   // NEED to check all neighboring plots that they should be minted
 
+  const farm = getFarmProgram(provider)
+
+  const transaction = new Transaction()
+
+  const recipe = await farm.account.recipe.fetch(recipeId)
+
+  transaction.add(
+    await farm.methods
+      .followRecipe(plotCurrency, ingredient0AmountPer, ingredient1AmountPer, resultTokenToReceive)
+      .accountsPartial({
+        user,
+        ingredient0Mint,
+        ingredient1Mint,
+        resultMint: resultTokenMint,
+        recipe: recipeId,
+        recipeIngredient0Treasury: recipe.ingredient0Treasury,
+        recipeIngredient1Treasury: recipe.ingredient1Treasury,
+      })
+      .instruction(),
+  )
+
+  return { tx: transaction, recipeId }
+}
+
+// OFFERS
+
+export const createOfferTx = async (
+  user: PublicKey,
+  provider: AnchorProvider,
+  resultTokenMint: PublicKey, // has to be a seed
+  pricePerToken: BN, // always plot currency
+  resultTokenToDeposit: BN,
+  plotCurrency: PublicKey,
+): Promise<{ tx: Transaction; offerId: PublicKey }> => {
   const farmId = new PublicKey(publicRuntimeConfig.FARM_ID)
   const farm = getFarmProgram(provider)
 
-  const ingredient0TokenAta = await getAssociatedTokenAddress(ingredient0Mint, user)
-  const ingredient1TokenAta = await getAssociatedTokenAddress(ingredient1Mint, user)
+  const userPlotCurrencyAta = await getAssociatedTokenAddress(plotCurrency, user)
 
-  const [recipeId] = await PublicKey.findProgramAddressSync(
+  const [offerId] = await PublicKey.findProgramAddressSync(
     [
-      Buffer.from('recipe'),
-      ingredient0Mint.toBuffer(),
-      toLeBytes(BigInt(new BN(2).toString()), 8),
-      ingredient1Mint.toBuffer(),
-      toLeBytes(BigInt(new BN(4).toString()), 8),
+      Buffer.from('offer'),
+      toLeBytes(BigInt(new BN(pricePerToken).toString()), 8),
       resultTokenMint.toBuffer(),
-      ingredient0TokenAta.toBuffer(),
-      ingredient1TokenAta.toBuffer(),
+      userPlotCurrencyAta.toBuffer(),
       farmId.toBuffer(),
     ],
     farm.programId,
@@ -368,18 +398,75 @@ export const followRecipeTx = async (
 
   transaction.add(
     await farm.methods
-      .createRecipe(plotCurrency, ingredient0AmountPer, ingredient1AmountPer, resultTokenToDeposit)
+      .createOffer(pricePerToken, resultTokenToDeposit)
       .accountsPartial({
         user,
-        ingredient0Mint,
-        ingredient1Mint,
         resultMint: resultTokenMint,
-        recipe: recipeId,
+        plotCurrencyMint: plotCurrency,
+        offer: offerId,
       })
       .instruction(),
   )
 
-  return { tx: transaction, recipeId }
+  return { tx: transaction, offerId }
+}
+
+export const cancelOfferTx = async (
+  user: PublicKey,
+  provider: AnchorProvider,
+  resultTokenMint: PublicKey, // has to be a seed
+  pricePerToken: BN, // always plot currency
+  plotCurrency: PublicKey,
+  offerId: PublicKey,
+): Promise<{ tx: Transaction; offerId: PublicKey }> => {
+  const farm = getFarmProgram(provider)
+
+  const transaction = new Transaction()
+
+  transaction.add(
+    await farm.methods
+      .cancelOffer(pricePerToken)
+      .accountsPartial({
+        user,
+        resultMint: resultTokenMint,
+        plotCurrencyMint: plotCurrency,
+        offer: offerId,
+      })
+      .instruction(),
+  )
+
+  return { tx: transaction, offerId }
+}
+
+export const acceptOfferTx = async (
+  user: PublicKey,
+  provider: AnchorProvider,
+  resultTokenMint: PublicKey, // has to be a seed
+  pricePerToken: BN, // always plot currency
+  tokensToReceive: BN,
+  plotCurrency: PublicKey,
+  offerId: PublicKey,
+): Promise<{ tx: Transaction; offerId: PublicKey }> => {
+  const farm = getFarmProgram(provider)
+
+  const offer = await farm.account.offer.fetch(offerId)
+
+  const transaction = new Transaction()
+
+  transaction.add(
+    await farm.methods
+      .acceptOffer(pricePerToken, tokensToReceive)
+      .accountsPartial({
+        user,
+        resultMint: resultTokenMint,
+        plotCurrencyMint: plotCurrency,
+        offer: offerId,
+        offerTreasury: offer.treasury,
+      })
+      .instruction(),
+  )
+
+  return { tx: transaction, offerId }
 }
 
 // PLANTING

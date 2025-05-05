@@ -7,7 +7,7 @@ import { PublicKey } from '@solana/web3.js'
 import { isValidPublicKey } from '@/services/utils'
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { BN } from 'bn.js'
-import { craftRecipeTx } from '@/services/farm'
+import { craftRecipeTx, followRecipeTx } from '@/services/farm'
 import getConfig from 'next/config'
 import { getFarmProgram } from '@project/anchor'
 import Button from '../utils/button'
@@ -35,7 +35,7 @@ const Kitchen = () => {
   const [ingredient1AmountPer, setIngredient1AmountPer] = useState(1)
 
   // FOLLOWING
-  const [recipeId, setRecipeId] = useState('')
+  const [fRecipeId, setFRecipeId] = useState('')
   const [fResultTokenId, setFResultTokenId] = useState('')
   const [fResultTokensToReceive, setFResultTokensToReceive] = useState(1)
   const [fResultTokensLeft, setFResultTokensLeft] = useState(0)
@@ -51,7 +51,7 @@ const Kitchen = () => {
 
     let recipe
     try {
-      recipe = await farm.account.recipe.fetch(new PublicKey(recipeId))
+      recipe = await farm.account.recipe.fetch(new PublicKey(fRecipeId))
     } catch (e) {
       setError('Failed to fetch recipe, please check the recipe ID')
     }
@@ -267,16 +267,17 @@ const Kitchen = () => {
 
     // check that first ingredient is an SPL token
 
-    const { tx, recipeId: recipeId_ } = await craftRecipeTx(
+    const { tx, recipeId: recipeId_ } = await followRecipeTx(
       wallet.publicKey,
       provider,
-      new PublicKey(ingredient0Id),
-      new BN(ingredient0AmountPer),
-      new PublicKey(ingredient1Id),
-      new BN(ingredient1AmountPer),
-      new PublicKey(resultTokenId),
-      new BN(resultTokensToDeposit),
+      new PublicKey(fIngredient0Id),
+      new BN(fIngredient0AmountPer),
+      new PublicKey(fIngredient1Id),
+      new BN(fIngredient1AmountPer),
+      new PublicKey(fResultTokenId),
+      new BN(fResultTokensToReceive),
       new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID),
+      new PublicKey(fRecipeId),
     )
 
     tx.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash
@@ -451,8 +452,8 @@ const Kitchen = () => {
                     className="w-full rounded-sm"
                     id="seeds to craft / min: 1"
                     name="seeds to craft  / min: 1"
-                    value={recipeId}
-                    onInput={(e: React.ChangeEvent<HTMLInputElement>) => setRecipeId(e.target.value)}
+                    value={fRecipeId}
+                    onInput={(e: React.ChangeEvent<HTMLInputElement>) => setFRecipeId(e.target.value)}
                   />
                   <div className="text-gray-500 text-left">Result tokens to receive</div>
                   <input
@@ -515,6 +516,7 @@ const Kitchen = () => {
             </div>
           </div>
         )}
+        <div className="text-center">*Recipe refilling currently not possible</div>
       </div>
     </div>
   )

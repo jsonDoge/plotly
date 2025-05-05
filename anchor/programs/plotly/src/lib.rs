@@ -203,7 +203,6 @@ pub mod farm {
         ctx.accounts.accept_offer(
             price_amount_per_token,
             result_token_to_receive,
-            ctx.program_id,
         )
     }
 

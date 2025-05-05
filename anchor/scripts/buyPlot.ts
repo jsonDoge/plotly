@@ -5,7 +5,15 @@ import { Farm } from '@project/anchor'
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { PublicKey } from '@solana/web3.js'
 import { setupMint } from '../tests/setup'
-import { createRecipe, increasedCUTxWrap, mintAndBuyPlot, mintSeeds, plantSeed, toLeBytes } from '../tests/helpers'
+import {
+  createOffer,
+  createRecipe,
+  increasedCUTxWrap,
+  mintAndBuyPlot,
+  mintSeeds,
+  plantSeed,
+  toLeBytes,
+} from '../tests/helpers'
 import FarmIDL from '../target/idl/farm.json'
 
 // so that the plotCurrency address would be the same
@@ -69,7 +77,7 @@ async function main() {
     program.programId,
   )
 
-  const seedsToMint = 25
+  const seedsToMint = 250
   const plantTokensPerSeed = 5
   const growthBlockDuration = 1008
   const waterDrainRate = 10
@@ -130,13 +138,39 @@ async function main() {
     recipeId,
   )
 
+  const userPlotCurrencyAta = await getAssociatedTokenAddress(plotCurrency, userWallet.publicKey)
+
+  const [offerId] = await PublicKey.findProgramAddressSync(
+    [
+      Buffer.from('offer'),
+      toLeBytes(BigInt(new anchor.BN(20).toString()), 8),
+      seedMint.toBuffer(),
+      userPlotCurrencyAta.toBuffer(),
+      farm.toBuffer(),
+    ],
+    program.programId,
+  )
+
+  await createOffer(
+    provider,
+    program,
+    plotCurrency,
+    seedMint,
+    new anchor.BN(20),
+    new anchor.BN(100),
+    userWallet,
+    offerId,
+  )
+
   console.log('succsessfully acquired plot:', plotMint.toString())
   console.log('seed mint:', seedMint.toString())
   console.log('ingredient 0 ID:', ingredient0.toString())
   console.log('ingredient 1 ID:', ingredient1.toString())
-  console.log('result PLOT currency ID:', plotCurrency.toString())
+  console.log('result is PLOT currency ID:', plotCurrency.toString())
 
+  console.log('Offer ID::', offerId.toString())
   console.log('recipe ID:', recipeId.toString())
+
   // Add your deploy script here.
 }
 

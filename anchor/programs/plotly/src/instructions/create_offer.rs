@@ -126,7 +126,7 @@ impl<'info> CreateOffer<'info> {
         }
 
         if self.result_mint.key() == Pubkey::default() {
-            return Err(ErrorCode::InvalidRecipeResultData.into());
+            return Err(ErrorCode::InvalidResultToken.into());
         }
 
         // already exists
