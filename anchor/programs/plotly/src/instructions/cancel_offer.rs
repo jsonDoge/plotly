@@ -39,10 +39,8 @@ pub struct CancelOffer<'info> {
     pub result_mint: Box<Account<'info, Mint>>,
 
     // RECIPE
-
     #[account(
         mut,
-        close = user,
         seeds = [
             b"offer",
             &price_amount_per_token.to_le_bytes()[..],
@@ -96,9 +94,42 @@ pub struct CancelOffer<'info> {
 }
 
 impl<'info> CancelOffer<'info> {
-    pub fn cancel_offer(
-        &mut self,
-    ) -> Result<()> {
+    pub fn cancel_offer(&mut self) -> Result<()> {
+        if self.offer.result_token == Pubkey::default() {
+            return Err(ErrorCode::OfferDoesntExist.into());
+        }
+
+        if self.offer.result_token_balance == 0 {
+            return Err(ErrorCode::OfferDoesntHaveEnoughTokens.into());
+        }
+
+        msg!(
+            "Transferring remaining result token back to owner... {}",
+            self.offer.result_token_balance
+        );
+
+        let cpi_accounts = TransferChecked {
+            mint: self.result_mint.to_account_info(),
+            from: self.farm_associated_result_token_account.to_account_info(),
+            to: self.user_associated_result_token_account.to_account_info(),
+            authority: self.farm_auth.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+
+        token::transfer_checked(
+            CpiContext::new_with_signer(
+                cpi_program,
+                cpi_accounts,
+                &[&[
+                    b"farm_auth",
+                    self.farm.key().as_ref(),
+                    &[self.farm_auth.bump],
+                ]],
+            ),
+            self.offer.result_token_balance,
+            self.result_mint.decimals,
+        )?;
 
         msg!("Offer closed: {:?}", self.offer.key());
 

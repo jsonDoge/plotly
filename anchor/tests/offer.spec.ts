@@ -5,7 +5,7 @@ import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { PublicKey } from '@solana/web3.js'
 import { Farm } from '../target/types/farm'
 import { setupFarm, setupMint } from './setup'
-import { createOffer, mintSeeds, toLeBytes } from './helpers'
+import { cancelOffer, createOffer, mintSeeds, toLeBytes } from './helpers'
 
 describe('Offer', () => {
   const provider = anchor.AnchorProvider.env()
@@ -59,7 +59,7 @@ describe('Offer', () => {
     expect(txFailed).toBe(true)
   }, 1000000)
 
-  it('Should create an offer with seed', async () => {
+  it('Should create and cancel offer with seed', async () => {
     const resultToken = await setupMint(provider, TOKEN_PROGRAM_ID)
 
     const userPlotCurrencyAta = await getAssociatedTokenAddress(plotCurrency, userWallet.publicKey)
@@ -127,5 +127,13 @@ describe('Offer', () => {
 
     expect(offer.resultToken).toEqual(seedMint)
     expect(offer.resultTokenBalance.toString()).toEqual(new anchor.BN(100).toString())
+
+    await cancelOffer(provider, program, plotCurrency, seedMint, new anchor.BN(20), userWallet, offerId)
+
+    const seedTokenAtaBalanceAfterClose = await program.provider.connection.getTokenAccountBalance(seedTokenAta)
+
+    expect(seedTokenAtaBalanceAfterClose.value.amount).toEqual(
+      new anchor.BN(seedTokenAtaBalanceAfter.value.amount).addn(100).toString(),
+    )
   }, 1000000)
 })
