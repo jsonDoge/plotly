@@ -19,6 +19,7 @@ use crate::constants::{
     BASE_BALANCE_FREE_RENT, MAX_PLOT_WATER, PLANT_WATER_ABSORB_RATE, WATER_10_THRESHOLD, WATER_30_THRESHOLD
 };
 use crate::errors::ErrorCode;
+use crate::events::SeedPlanted;
 use crate::helpers::get_plot_water_collected;
 use crate::state::{AccWithBump, Farm, Plant, Plot, SeedMintInfo};
 
@@ -27,6 +28,8 @@ use crate::state::{AccWithBump, Farm, Plant, Plot, SeedMintInfo};
 // update plant to seed info
 // update plot water and set new drain rates
 // update plot claimer to current user
+
+
 
 #[derive(Accounts)]
 #[instruction(plot_x: u32, plot_y: u32, plot_currency: Pubkey)]
@@ -569,6 +572,11 @@ impl<'info> PlantSeed<'info> {
         if self.plot.last_claimer != self.user.key() {
             self.plot.last_claimer = self.user.key();
         }
+
+        emit!(SeedPlanted {
+            seed_id: self.seed_mint.key(),
+        });
+
 
         Ok(())
     }

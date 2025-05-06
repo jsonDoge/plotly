@@ -20,6 +20,7 @@ use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 // use mpl_token_metadata::types::DataV2;
 // use mpl_token_metadata::ID as TOKEN_METADATA_PROGRAM_ID;
 
+use crate::events::SeedMinted;
 use crate::state::{AccWithBump, SeedMintInfo};
 use crate::{errors::ErrorCode, state::Farm};
 
@@ -300,6 +301,15 @@ impl<'info> MintSeeds<'info> {
             ),
             seeds_to_mint,
         )?;
+
+        // TODO: This is ugly, refactor later
+        let metadata_data = &mut &**self.seed_metadata_account.try_borrow_data()?;
+        let metadata = MplMetadata::deserialize(metadata_data)?;
+
+        emit!(SeedMinted {
+            seed_id: self.seed_mint.key(),
+            seed_name: metadata.name,
+        });
 
         msg!("Seeds minted!");
 

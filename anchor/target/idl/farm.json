@@ -8839,6 +8839,73 @@
       ]
     }
   ],
+  "events": [
+    {
+      "name": "OfferCreated",
+      "discriminator": [
+        31,
+        236,
+        215,
+        144,
+        75,
+        45,
+        157,
+        87
+      ]
+    },
+    {
+      "name": "RecipeCreated",
+      "discriminator": [
+        30,
+        242,
+        247,
+        57,
+        47,
+        45,
+        245,
+        103
+      ]
+    },
+    {
+      "name": "SeedHarvested",
+      "discriminator": [
+        249,
+        27,
+        248,
+        58,
+        140,
+        186,
+        57,
+        113
+      ]
+    },
+    {
+      "name": "SeedMinted",
+      "discriminator": [
+        244,
+        80,
+        222,
+        16,
+        49,
+        200,
+        242,
+        123
+      ]
+    },
+    {
+      "name": "SeedPlanted",
+      "discriminator": [
+        190,
+        59,
+        239,
+        70,
+        20,
+        139,
+        9,
+        54
+      ]
+    }
+  ],
   "errors": [
     {
       "code": 6000,
@@ -9131,6 +9198,26 @@
       }
     },
     {
+      "name": "OfferCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "offer_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "price_per_token",
+            "type": "u64"
+          },
+          {
+            "name": "result_token_id",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
       "name": "Plant",
       "type": {
         "kind": "struct",
@@ -9311,6 +9398,50 @@
       }
     },
     {
+      "name": "RecipeCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "recipe_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "ingredient_0_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "ingredient_0_amount",
+            "type": "u64"
+          },
+          {
+            "name": "ingredient_1_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "ingredient_1_amount",
+            "type": "u64"
+          },
+          {
+            "name": "result_token_id",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SeedHarvested",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "seed_id",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
       "name": "SeedMintInfo",
       "type": {
         "kind": "struct",
@@ -9350,6 +9481,34 @@
           {
             "name": "bump",
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SeedMinted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "seed_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "seed_name",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SeedPlanted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "seed_id",
+            "type": "pubkey"
           }
         ]
       }

@@ -17,6 +17,16 @@ use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 use crate::state::{AccWithBump, Recipe, SeedMintInfo};
 use crate::{errors::ErrorCode, state::Farm};
 
+#[event]
+pub struct RecipeCreated {
+    pub recipe_id: Pubkey,
+    pub ingredient_0_id: Pubkey,
+    pub ingredient_0_amount: u64,
+    pub ingredient_1_id: Pubkey,
+    pub ingredient_1_amount: u64,
+    pub result_token_id: Pubkey,
+}
+
 #[derive(Accounts)]
 #[instruction(
     plot_currency: Pubkey,
@@ -189,6 +199,15 @@ impl<'info> CreateRecipe<'info> {
         self.recipe.bump = recipe_bump;
 
         msg!("Recipe created: {:?}", self.recipe.key());
+
+        emit!(RecipeCreated {
+            recipe_id: self.recipe.key(),
+            ingredient_0_id: self.ingredient_0_mint.key(),
+            ingredient_0_amount: ingredient_0_amount,
+            ingredient_1_id: self.ingredient_1_mint.key(),
+            ingredient_1_amount: ingredient_1_amount,
+            result_token_id: self.result_mint.key(),
+        });
 
         Ok(())
     }

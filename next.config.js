@@ -10,9 +10,11 @@ module.exports = {
   },
   reactStrictMode: true,
   publicRuntimeConfig: {
+    // urls/external resources
     SOLANA_CLUSTER_URL: process.env.SOLANA_CLUSTER_URL,
     SOLANA_CLUSTER_NAME: process.env.SOLANA_CLUSTER_NAME,
     MOCK_CHAIN_MODE: process.env.MOCK_CHAIN_MODE === 'true',
+    INDEXER_URL: process.env.INDEXER_URL,
 
     // SEASON_DURATION_BLOCKS: process.env.SEASON_DURATION_BLOCKS,
     PLOT_CURRENCY_MINT_ID: process.env.PLOT_CURRENCY_MINT_ID,

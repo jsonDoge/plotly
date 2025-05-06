@@ -17,6 +17,13 @@ use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 use crate::state::{AccWithBump, Offer, SeedMintInfo};
 use crate::{errors::ErrorCode, state::Farm};
 
+#[event]
+pub struct OfferCreated {
+    pub offer_id: Pubkey,
+    pub price_per_token: u64,
+    pub result_token_id: Pubkey,
+}
+
 #[derive(Accounts)]
 #[instruction(
     price_amount_per_token: u64,
@@ -177,6 +184,12 @@ impl<'info> CreateOffer<'info> {
         self.offer.bump = offer_bump;
 
         msg!("Offer created: {:?}", self.offer.key());
+
+        emit!(OfferCreated {
+            offer_id: self.offer.key(),
+            price_per_token: price_amount_per_token,
+            result_token_id: self.result_mint.key(),
+        });
 
         Ok(())
     }

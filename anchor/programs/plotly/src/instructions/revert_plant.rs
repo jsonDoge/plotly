@@ -19,6 +19,7 @@ use crate::constants::{
     BASE_BALANCE_FREE_RENT, MAX_PLOT_WATER, PLANT_WATER_ABSORB_RATE, WATER_10_THRESHOLD, WATER_30_THRESHOLD
 };
 use crate::errors::ErrorCode;
+use crate::events::SeedHarvested;
 use crate::helpers::{get_balance_collected, get_plot_water_collected};
 use crate::state::{AccWithBump, Farm, Plant, Plot, SeedMintInfo};
 
@@ -677,6 +678,10 @@ impl<'info> RevertPlant<'info> {
                 0,
             )?;
         }
+
+        emit!(SeedHarvested {
+            seed_id: self.seed_mint.key(),
+        });
 
         Ok(())
     }

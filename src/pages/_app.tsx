@@ -1,11 +1,11 @@
-import React, { Suspense } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 // eslint-disable-next-line import/no-extraneous-dependencies
 import 'tailwindcss/tailwind.css'
-import dynamic from 'next/dynamic'
+// import dynamic from 'next/dynamic'
 // import WalletContextProvider from '../context/wallet'
 import Game from '@/components/game'
-import { useConnection } from '@solana/wallet-adapter-react'
+// import { useConnection } from '@solana/wallet-adapter-react'
 import GameProvider from '../context/game'
 import BlockchainProvider from '../context/blockchain'
 import { ClusterProvider } from '../context/cluster'
@@ -18,6 +18,10 @@ import Spinner from '../components/utils/spinner'
 // const Game = dynamic(() => import('../components/game'), { suspense: true, ssr: false })
 
 function MyApp() {
+  const [, setMounted] = useState(false)
+  // should help disable server side rendering
+  useEffect(() => setMounted(true), [])
+
   return (
     <>
       <ReactQueryProvider>

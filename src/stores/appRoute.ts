@@ -5,6 +5,7 @@ export enum Route {
   lab = 'lab',
   kitchen = 'kitchen',
   market = 'market',
+  newsBoard = 'newsBoard',
   help = 'help',
   modalShown = 'modalShown',
 }

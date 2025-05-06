@@ -16,6 +16,7 @@ use anchor_spl::{
 use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
 
 use crate::constants::BASE_BALANCE_FREE_RENT;
+use crate::events::SeedHarvested;
 use crate::farm;
 use crate::helpers::{get_balance_collected, get_plot_water_collected};
 use crate::state::{AccWithBump, Plant, Plot, SeedMintInfo};
@@ -590,6 +591,10 @@ impl<'info> RevokePlot<'info> {
             self.plant.treasury = Pubkey::default();
             self.plant.treasury_received_balance = 0;
             // bump doesn't change because plants <> plot one to one
+
+            emit!(SeedHarvested {
+                seed_id: self.seed_mint.key(),
+            });
         } else {
             // if no plant check if rent was free
             if self.plot.balance < BASE_BALANCE_FREE_RENT {

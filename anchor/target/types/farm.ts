@@ -8845,6 +8845,73 @@ export type Farm = {
       ]
     }
   ],
+  "events": [
+    {
+      "name": "offerCreated",
+      "discriminator": [
+        31,
+        236,
+        215,
+        144,
+        75,
+        45,
+        157,
+        87
+      ]
+    },
+    {
+      "name": "recipeCreated",
+      "discriminator": [
+        30,
+        242,
+        247,
+        57,
+        47,
+        45,
+        245,
+        103
+      ]
+    },
+    {
+      "name": "seedHarvested",
+      "discriminator": [
+        249,
+        27,
+        248,
+        58,
+        140,
+        186,
+        57,
+        113
+      ]
+    },
+    {
+      "name": "seedMinted",
+      "discriminator": [
+        244,
+        80,
+        222,
+        16,
+        49,
+        200,
+        242,
+        123
+      ]
+    },
+    {
+      "name": "seedPlanted",
+      "discriminator": [
+        190,
+        59,
+        239,
+        70,
+        20,
+        139,
+        9,
+        54
+      ]
+    }
+  ],
   "errors": [
     {
       "code": 6000,
@@ -9137,6 +9204,26 @@ export type Farm = {
       }
     },
     {
+      "name": "offerCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "offerId",
+            "type": "pubkey"
+          },
+          {
+            "name": "pricePerToken",
+            "type": "u64"
+          },
+          {
+            "name": "resultTokenId",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
       "name": "plant",
       "type": {
         "kind": "struct",
@@ -9317,6 +9404,50 @@ export type Farm = {
       }
     },
     {
+      "name": "recipeCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "recipeId",
+            "type": "pubkey"
+          },
+          {
+            "name": "ingredient0Id",
+            "type": "pubkey"
+          },
+          {
+            "name": "ingredient0Amount",
+            "type": "u64"
+          },
+          {
+            "name": "ingredient1Id",
+            "type": "pubkey"
+          },
+          {
+            "name": "ingredient1Amount",
+            "type": "u64"
+          },
+          {
+            "name": "resultTokenId",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "seedHarvested",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "seedId",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
       "name": "seedMintInfo",
       "type": {
         "kind": "struct",
@@ -9356,6 +9487,34 @@ export type Farm = {
           {
             "name": "bump",
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "seedMinted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "seedId",
+            "type": "pubkey"
+          },
+          {
+            "name": "seedName",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "seedPlanted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "seedId",
+            "type": "pubkey"
           }
         ]
       }
