@@ -13,16 +13,16 @@ interface Props {
 }
 
 const OwnedPlotModal: React.FC<Props> = ({ isLoading, onPlant, onDeposit, onReturn, onCancel, plotInfo }) => {
+  const tabs = ['Plant', 'Deposit', 'Return']
+
   const [seedMintId, setSeedMintId] = useState<string>('')
   const [depositAmount, setDepositAmount] = useState<number>(1)
+  const [activeTab, setActiveTab] = useState(tabs[0])
 
   // dumb way to fix typescript TODO: do it properly later
   if (!plotInfo) {
     return null
   }
-
-  const tabs = ['Plant', 'Deposit', 'Return']
-  const [activeTab, setActiveTab] = useState(tabs[0])
 
   const waterRegen =
     plotInfo.waterRegen -

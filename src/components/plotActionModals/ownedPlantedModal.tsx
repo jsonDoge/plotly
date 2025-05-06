@@ -9,6 +9,7 @@ interface Props {
   onTend: () => void
   onHarvest: () => void
   onRevert: () => void
+  onDeposit: (amount: number) => void
   onCancel?: () => void
   plotInfo: PlotInfo
   currentBlock: number
@@ -19,12 +20,14 @@ const OwnedPlantedModal: React.FC<Props> = ({
   onTend,
   onHarvest,
   onRevert,
+  onDeposit,
   onCancel,
   plotInfo,
   currentBlock,
 }) => {
-  const tabs = ['Tend', 'Harvest', 'Revert']
+  const tabs = ['Tend', 'Harvest', 'Revert', 'Deposit']
   const [activeTab, setActiveTab] = useState(tabs[0])
+  const [depositAmount, setDepositAmount] = useState<number>(1)
 
   // dumb way to fix typescript TODO: do it properly later
   if (!plotInfo.plant) {
@@ -188,6 +191,44 @@ const OwnedPlantedModal: React.FC<Props> = ({
               </div>
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <Button onClick={() => onRevert()}>Revert</Button>
+                {onCancel && <Button onClick={() => onCancel()}>Close</Button>}
+              </div>
+            </div>
+          )}
+
+          {activeTab === tabs[3] && (
+            <div>
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="mt-3 text-center sm:mt-0 sm:ml-4">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                    Deposit to plot 💰
+                  </h3>
+                  <div className="mt-2">
+                    <p className="mt-5">
+                      <label htmlFor="seedType" className="block text-sm font-medium text-gray-700">
+                        Amount to deposit
+                      </label>
+                      <input
+                        className="w-full rounded-sm"
+                        id="DepositAmount"
+                        name="DepositAmount"
+                        type="number"
+                        min={1}
+                        value={depositAmount}
+                        onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          setDepositAmount(parseInt(e.target.value, 10))
+                        }}
+                      />
+                    </p>
+                    <p className="text-sm text-gray-500" />
+                    <p>
+                      <span className="text-gray-400 text-sm">*make sure you have enough tokens</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <Button onClick={() => onDeposit(depositAmount)}>Deposit!</Button>
                 {onCancel && <Button onClick={() => onCancel()}>Close</Button>}
               </div>
             </div>

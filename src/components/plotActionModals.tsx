@@ -201,12 +201,12 @@ const PlotActionModals: React.FC = () => {
     } catch (e) {
       console.error(e)
       setIsLoading(false)
-      onFinish()
       setError(errorMessage)
       return
     }
     setIsLoading(false)
     onFinish()
+    appRouteStoreActions.setCurrentRoute(Route.plots)
 
     // TODO: add all plot refresh
     // uiActionCompleted()
@@ -363,6 +363,7 @@ const PlotActionModals: React.FC = () => {
         ),
       () => {
         setIsOwnedPlotModalShown(false)
+        setIsOwnedPlantedModalShown(false)
       },
       'Depositing failed, check if you have necessary seed',
 
@@ -580,6 +581,9 @@ const PlotActionModals: React.FC = () => {
           onRevert={() => {
             onRevertConfirm(selectedCoords)
           }}
+          onDeposit={(amount: number) => {
+            onDepositToPlotConfirm(selectedCoords, amount)
+          }}
           onCancel={() => hideModal()}
           plotInfo={selectedPlotInfo}
           currentBlock={currentBlock}
@@ -593,7 +597,11 @@ const PlotActionModals: React.FC = () => {
           plotInfo={selectedPlotInfo}
         />
       )}
-      {isOwnedPlantedModalShown || isOwnedPlotModalShown || isBuyPlotModalShown || isSurroundingPlotModalShown ? (
+      {isNonOwnedModalShown ||
+      isOwnedPlantedModalShown ||
+      isOwnedPlotModalShown ||
+      isBuyPlotModalShown ||
+      isSurroundingPlotModalShown ? (
         <div>
           <div className="text-center mt-5 bg-black bg-opacity-50">
             {error && <div className="text-red-500">{error}</div>}
