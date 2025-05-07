@@ -3,10 +3,11 @@ import React, { useState } from 'react'
 // import { convertToSeed, getProductBalance } from '../../services/barn'
 import getConfig from 'next/config'
 import { useSnapshot } from 'valtio'
-import { walletStore } from '@/stores/wallet'
+import { walletActions, walletStore } from '@/stores/wallet'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { useAnchorProvider } from '@/context/solana'
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { getFarmProgram } from '@project/anchor'
 
 const getTokenAccountBalance = async (
   connection: Connection,
@@ -31,6 +32,7 @@ const getTokenAccountBalance = async (
 
 const Barn = () => {
   const provider = useAnchorProvider()
+  const farm = getFarmProgram(provider)
   const [isLoading, setIsLoading] = useState(false)
   const { ownedSeeds, address } = useSnapshot(walletStore)
 
@@ -64,8 +66,49 @@ const Barn = () => {
               <div className="px-2 py-3 rounded-sm">
                 <div className="text-center">
                   <div className="text-gray-500 text-left max-h-96 overflow-y-auto">
-                    {ownedSeeds.map((seed) => (
-                      <div key={seed.id} className="mt-2 text-gray-500 text-left">
+                    <div className="mt-4">
+                      <input
+                        type="text"
+                        placeholder="Enter Seed ID"
+                        className="border rounded px-2 py-1 w-full"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                            setError('')
+
+                            let pubKey
+                            try {
+                              pubKey = new PublicKey(e.currentTarget.value.trim())
+                            } catch {
+                              setError('Invalid Seed ID: Not a valid public key')
+                              return
+                            }
+
+                            const seedMintInfoAddress = PublicKey.findProgramAddressSync(
+                              [Buffer.from('seed_mint_info'), pubKey.toBuffer()],
+                              farm.programId,
+                            )
+
+                            farm.account.seedMintInfo
+                              .fetch(seedMintInfoAddress[0])
+                              .then((seedMintInfo) => {
+                                if (!seedMintInfo) {
+                                  setError('Failed to find seed')
+                                  return
+                                }
+                                walletActions.addOwnedSeed({ name: '-Unknown- :(', id: pubKey.toString() })
+                              })
+                              .catch((err) => {
+                                console.log(err)
+                                setError('Failed to find seed')
+                              })
+                          }
+                        }}
+                      />
+                      <small className="text-gray-400">Press Enter to add the Seed ID</small>
+                    </div>
+
+                    {ownedSeeds.map((seed, i) => (
+                      <div key={`${seed.id} - ${i}`} className="mt-2 text-gray-500 text-left">
                         <div
                           role="none"
                           className="cursor-pointer"

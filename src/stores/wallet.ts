@@ -38,6 +38,23 @@ export const walletActions = {
   },
   loadOwnedSeed: () => {
     const storedSeeds = localStorage.getItem(`${walletStore.address}.seeds`)
-    walletStore.ownedSeeds = JSON.parse(storedSeeds || '[]') as Seed[]
+    const parsedSeeds = JSON.parse(storedSeeds || '[]')
+
+    const addedSeeds: string[] = []
+    const uniqueSeeds = parsedSeeds
+      .map((seed: Seed) => {
+        if (!addedSeeds.includes(seed.id)) {
+          addedSeeds.push(seed.id)
+          return seed
+        }
+        return null
+      })
+      .filter((seed: Seed | null) => seed !== null)
+
+    if (uniqueSeeds.length !== parsedSeeds.length) {
+      localStorage.setItem(`${walletStore.address}.seeds`, JSON.stringify(uniqueSeeds))
+    }
+
+    walletStore.ownedSeeds = uniqueSeeds as Seed[]
   },
 }
