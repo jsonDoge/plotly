@@ -47,7 +47,9 @@ const BlockchainContextProvider = ({ children }: { children: React.ReactNode }) 
 
   useMemo(() => {
     if (wallet.publicKey && walletAddress !== wallet.publicKey.toString()) {
+      // wallet changed
       walletActions.setAddress(wallet.publicKey.toString())
+      walletActions.loadOwnedSeed()
     }
   }, [wallet.publicKey])
 
@@ -125,9 +127,9 @@ const BlockchainContextProvider = ({ children }: { children: React.ReactNode }) 
           getPlotMintId(coords.x, coords.y, new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID)),
         )
 
-        const allOuterPlotMintIds = allOuterCoords.filter((i) => i).map((coords) =>
-          getPlotMintId(coords.x, coords.y, new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID)),
-        )
+        const allOuterPlotMintIds = allOuterCoords
+          .filter((i) => i)
+          .map((coords) => getPlotMintId(coords.x, coords.y, new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID)))
 
         const allOuterPlotIds = allOuterPlotMintIds.map(getPlotId)
         const allPlotIds = allPlotMintIds.map(getPlotId)
@@ -141,7 +143,6 @@ const BlockchainContextProvider = ({ children }: { children: React.ReactNode }) 
           data: rawPlot?.data ? plotAccountType.coder.accounts.decode('plot', rawPlot?.data) : null,
         }))
 
-
         // we analyze plot infos to see which plots could have plants and only get info for those
 
         // slice, because we only look for plants on the main plots (not outer)
@@ -152,15 +153,21 @@ const BlockchainContextProvider = ({ children }: { children: React.ReactNode }) 
 
           const { data } = plotInfo
 
-          if (!data?.lastClaimer || data?.lastClaimer === new PublicKey(publicRuntimeConfig.FARM_AUTH_ID) || data?.lastClaimer === PublicKey.default) {
+          if (
+            !data?.lastClaimer ||
+            data?.lastClaimer === new PublicKey(publicRuntimeConfig.FARM_AUTH_ID) ||
+            data?.lastClaimer === PublicKey.default
+          ) {
             return null
           }
 
-          return allPlotMintIds[i];
+          return allPlotMintIds[i]
         })
 
-        const allPlantIds = plotMintIdsThatCouldHavePlants.filter((i) => !!i).map((plotMintId) => getPlantId(plotMintId))
-      
+        const allPlantIds = plotMintIdsThatCouldHavePlants
+          .filter((i) => !!i)
+          .map((plotMintId) => getPlantId(plotMintId))
+
         const rawPlantInfos = await getAccountInfos(connection, [...allPlantIds])
 
         // we fill nulls in between to match the order of plotInfos
@@ -171,7 +178,7 @@ const BlockchainContextProvider = ({ children }: { children: React.ReactNode }) 
             return rawPlantInfos.value[plantIndex++]
           }
           return null
-        });
+        })
 
         const parsedPlantInfos = rawPlantInfosWithNulls.map((rawPlant: any) => ({
           data: rawPlant?.data ? plantAccountType.coder.accounts.decode('plant', rawPlant?.data) : null,
@@ -179,33 +186,41 @@ const BlockchainContextProvider = ({ children }: { children: React.ReactNode }) 
 
         // outer border are in order (-Y, +Y, -X, +X)
 
-        let parsedPlotInfosIndex = 49;
+        let parsedPlotInfosIndex = 49
         let outerPlotInfosWithNulls: any[] = []
         if (centerCoords.y === 0) {
-          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(new Array(7).fill(null));
+          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(new Array(7).fill(null))
         } else {
-          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(parsedPlotInfos.slice(parsedPlotInfosIndex, parsedPlotInfosIndex + 7));
-          parsedPlotInfosIndex += 7;
+          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(
+            parsedPlotInfos.slice(parsedPlotInfosIndex, parsedPlotInfosIndex + 7),
+          )
+          parsedPlotInfosIndex += 7
         }
 
         if (centerCoords.y === 999) {
-          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(new Array(7).fill(null));
+          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(new Array(7).fill(null))
         } else {
-          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(parsedPlotInfos.slice(parsedPlotInfosIndex, parsedPlotInfosIndex + 7));
-          parsedPlotInfosIndex += 7;
+          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(
+            parsedPlotInfos.slice(parsedPlotInfosIndex, parsedPlotInfosIndex + 7),
+          )
+          parsedPlotInfosIndex += 7
         }
 
         if (centerCoords.x === 0) {
-          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(new Array(7).fill(null));
+          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(new Array(7).fill(null))
         } else {
-          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(parsedPlotInfos.slice(parsedPlotInfosIndex, parsedPlotInfosIndex + 7));
-          parsedPlotInfosIndex += 7;
+          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(
+            parsedPlotInfos.slice(parsedPlotInfosIndex, parsedPlotInfosIndex + 7),
+          )
+          parsedPlotInfosIndex += 7
         }
         if (centerCoords.x === 999) {
-          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(new Array(7).fill(null));
+          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(new Array(7).fill(null))
         } else {
-          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(parsedPlotInfos.slice(parsedPlotInfosIndex, parsedPlotInfosIndex + 7));
-          parsedPlotInfosIndex += 7;
+          outerPlotInfosWithNulls = outerPlotInfosWithNulls.concat(
+            parsedPlotInfos.slice(parsedPlotInfosIndex, parsedPlotInfosIndex + 7),
+          )
+          parsedPlotInfosIndex += 7
         }
 
         mappedPlotInfosActions.setRawPlotsAndPlants(
@@ -213,7 +228,7 @@ const BlockchainContextProvider = ({ children }: { children: React.ReactNode }) 
           centerCoords.y,
           parsedPlotInfos.slice(0, 49), // main
           parsedPlantInfos,
-          outerPlotInfosWithNulls // outer
+          outerPlotInfosWithNulls, // outer
         )
       },
     )

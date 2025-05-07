@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 import React, { useState } from 'react'
 // import { convertToSeed, getProductBalance } from '../../services/barn'
 import { useAnchorProvider } from '@/context/solana'
@@ -8,11 +9,33 @@ import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token
 import { BN } from 'bn.js'
 import { craftSeedTx } from '@/services/farm'
 import getConfig from 'next/config'
+import { walletActions } from '@/stores/wallet'
+import { getFarmProgram } from '@project/anchor'
 import Button from '../utils/button'
 import Spinner from '../utils/spinner'
 import HelperTooltip from '../utils/helperTooltip'
 
 const { publicRuntimeConfig } = getConfig()
+
+const fetchSeedName = async (seedId: string, retries = 3): Promise<string | null> => {
+  const url = `${publicRuntimeConfig.INDEXER_URL}/seeds/${seedId}`
+  for (let attempt = 0; attempt < retries; attempt += 1) {
+    try {
+      const response = await fetch(url)
+      if (response.ok) {
+        const data = await response.json()
+        return data.seed_name || null
+      }
+
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1500)
+      })
+    } catch (e) {
+      console.error(`Attempt ${attempt + 1} to fetch seed name failed`, e)
+    }
+  }
+  return null
+}
 
 const Lab = () => {
   const wallet = useWallet()
@@ -30,26 +53,6 @@ const Lab = () => {
   const [neighborToCenterWaterAbsorption, setNeighborToCenterWaterAbsorption] = useState(0)
   const [balanceAbsorbRate, setBalanceAbsorbRate] = useState(0)
   const [timesToTend, setTimesToTend] = useState(0)
-
-  // const [potatoBalance, setPotatoBalance] = useState(0)
-  // const [carrotBalance, setCarrotBalance] = useState(0)
-  // const [cornBalance, setCornBalance] = useState(0)
-  // const [weedBalance, setWeedBalance] = useState(0)
-
-  // const refreshBalances = async (walletAddress: string) => {
-  // getProductBalance(walletAddress, PRODUCT_TYPE.POTATO).then(setPotatoBalance)
-  // getProductBalance(walletAddress, PRODUCT_TYPE.CARROT).then(setCarrotBalance)
-  // getProductBalance(walletAddress, PRODUCT_TYPE.CORN).then(setCornBalance)
-  // getProductBalance(walletAddress, PRODUCT_TYPE.WEED).then(setWeedBalance)
-  // }
-
-  // useEffect(() => {
-  //   if (!wallet?.address) {
-  //     return
-  //   }
-
-  //   refreshBalances(wallet.address)
-  // }, [wallet?.address])
 
   const craftSeeds = async () => {
     setMessage('')
@@ -137,7 +140,23 @@ const Lab = () => {
     }
     setError('')
 
+    // const farm = getFarmProgram(provider)
+
+    const nameString = await fetchSeedName(seedMint.toString())
+
+    if (!nameString) {
+      walletActions.addOwnedSeed({
+        id: seedMint.toString(),
+        name: '-Unknown- :(',
+      })
+      return
+    }
+
     setMessage(`Seed minted!: ${seedMint.toString()}`)
+    walletActions.addOwnedSeed({
+      id: seedMint.toString(),
+      name: nameString,
+    })
   }
 
   return (

@@ -7,6 +7,7 @@ export enum Route {
   market = 'market',
   newsBoard = 'newsBoard',
   help = 'help',
+  barn = 'barn',
   modalShown = 'modalShown',
 }
 

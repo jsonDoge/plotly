@@ -21,6 +21,7 @@ import CenterPlotCoordsDisplay from './plots/centerPlotCoordsDisplay'
 import ChainName from './chainName'
 import WalletIntroModal from './walletIntroModal'
 import NewsBoard from './newsBoard'
+import Barn from './barn'
 
 const Layout: React.FC = () => {
   // const { wallet, walletIntroShown, markWalletIntroAsShown } = useWallet()
@@ -120,7 +121,7 @@ const Layout: React.FC = () => {
               Kitchen
             </span>
           </div>
-          <div className={`px-2 rounded-sm ${tab === 'bank' && 'bg-green-200 text-black'}`}>
+          <div className={`px-2 rounded-sm ${tab === 'market' && 'bg-green-200 text-black'}`}>
             <span
               role="button"
               onClick={() => {
@@ -133,7 +134,7 @@ const Layout: React.FC = () => {
               Market
             </span>
           </div>
-          <div className={`px-2 rounded-sm ${tab === 'bank' && 'bg-green-200 text-black'}`}>
+          <div className={`px-2 rounded-sm ${tab === 'newsBoard' && 'bg-green-200 text-black'}`}>
             <span
               role="button"
               onClick={() => {
@@ -144,6 +145,19 @@ const Layout: React.FC = () => {
               className="text-bold"
             >
               News Board
+            </span>
+          </div>
+          <div className={`px-2 rounded-sm ${tab === 'barn' && 'bg-green-200 text-black'}`}>
+            <span
+              role="button"
+              onClick={() => {
+                setTab('barn')
+                appRouteStoreActions.setCurrentRoute(Route.barn)
+              }}
+              tabIndex={0}
+              className="text-bold"
+            >
+              Barn
             </span>
           </div>
           <div className={`px-2 rounded-sm ${tab === 'help' && 'bg-green-200 text-black'}`}>
@@ -255,6 +269,20 @@ const Layout: React.FC = () => {
                   News Board
                 </span>
               </div>
+              <div className={`px-2 rounded-sm ${tab === 'market' && 'bg-green-200 text-black'}`}>
+                <span
+                  role="button"
+                  onClick={() => {
+                    setTab('barn')
+                    appRouteStoreActions.setCurrentRoute(Route.barn)
+                    setIsNavOpen(false)
+                  }}
+                  tabIndex={0}
+                  className="text-bold"
+                >
+                  Barn
+                </span>
+              </div>
               <div className={`px-2 rounded-sm ${tab === 'help' && 'bg-green-200 text-black'}`}>
                 <span
                   role="button"
@@ -306,6 +334,11 @@ const Layout: React.FC = () => {
         {tab === 'newsBoard' && (
           <div className="px-3 flex grow flex-col justify-center w-full lg:w-96 lg:justify-start">
             <NewsBoard />
+          </div>
+        )}
+        {tab === 'barn' && (
+          <div className="px-3 flex grow flex-col justify-center w-full lg:w-96 lg:justify-start">
+            <Barn />
           </div>
         )}
         {tab === 'help' && (

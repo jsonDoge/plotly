@@ -314,9 +314,9 @@ export const reduceProgramPlots = (
       },
     }
 
-    if (rawPlot.data && rawPlot.data?.centerPlantDrainRate !== 0) {
-      console.log('center non zero rawPlot', rawPlot)
-    }
+    // if (rawPlot.data && rawPlot.data?.centerPlantDrainRate !== 0) {
+    //   console.log('center non zero rawPlot', rawPlot)
+    // }
     // TODO: water not yet implemented
 
     // const lastKnownPlotWaterLevel = plot.waterLog?.level?.toNumber() || parseInt(publicRuntimeConfig.PLOT_MAX_WATER, 10)
@@ -411,10 +411,6 @@ export const reduceProgramPlots = (
 
     if (rawPlants[i]?.data && rawPlants[i]?.data?.seedMint.toString() !== PublicKey.default.toString()) {
       const plant = rawPlants[i].data
-
-      console.log('Seed mint', rawPlants[i]?.data?.seedMint.toString())
-      console.log('default', PublicKey.default.toString())
-      console.log('Seed mint is NOT default?', rawPlants[i]?.data?.seedMint !== PublicKey.default)
 
       // Next tend is from the slot you are allowed to tend (Not when balance absorb rate drops)
       let nextTendAvailableFrom = 0
@@ -559,8 +555,6 @@ export const reduceProgramPlots = (
       const plantBalance = plant.balance.add(balanceUpdate[0])
       let plotBalance = balanceUpdate[1]
 
-      console.log('plotBalance after estimate ', plotBalance.toString())
-
       const blocksAbsorbed = balanceUpdate[2]
       // apply rent if applies
       if (blocksAbsorbed.lt(blocksPassed) && plotBalance.lt(new BN(publicRuntimeConfig.PLOT_FREE_RENT_LIMIT))) {
@@ -568,8 +562,6 @@ export const reduceProgramPlots = (
         const balanceDrained = plotBalance.gt(rentDrain) ? rentDrain : plotBalance
         plotBalance = plotBalance.sub(balanceDrained)
       }
-
-      console.log('plotBalance after rent ', plotBalance.toString())
 
       let totalMissingNeighbors = 0
       if (coords.x === 0) {
