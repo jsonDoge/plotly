@@ -1,5 +1,6 @@
 'use client'
 
+import getConfig from 'next/config'
 import dynamic from 'next/dynamic'
 import { AnchorProvider } from '@coral-xyz/anchor'
 import { WalletError } from '@solana/wallet-adapter-base'
@@ -11,9 +12,11 @@ import {
   WalletProvider,
 } from '@solana/wallet-adapter-react'
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
-import { ReactNode, useCallback, useMemo } from 'react'
+import { ReactNode, useCallback } from 'react'
 
-import { useCluster } from './cluster'
+// import { useCluster } from './cluster'
+
+const { publicRuntimeConfig } = getConfig()
 // import { walletActions } from '../stores/wallet'
 
 require('@solana/wallet-adapter-react-ui/styles.css')
@@ -23,8 +26,10 @@ export const WalletButton = dynamic(async () => (await import('@solana/wallet-ad
 })
 
 export function SolanaProvider({ children }: { children: ReactNode }) {
-  const { cluster } = useCluster()
-  const endpoint = useMemo(() => cluster.endpoint, [cluster])
+  // we only suppport devnet for now
+  // const { cluster } = useCluster()
+  // const endpoint = useMemo(() => cluster.endpoint, [cluster])
+  const endpoint = publicRuntimeConfig.SOLANA_CLUSTER_URL
   const onError = useCallback((error: WalletError) => {
     console.error(error)
   }, [])

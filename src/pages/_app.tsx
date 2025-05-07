@@ -8,7 +8,7 @@ import Game from '@/components/game'
 // import { useConnection } from '@solana/wallet-adapter-react'
 import GameProvider from '../context/game'
 import BlockchainProvider from '../context/blockchain'
-import { ClusterProvider } from '../context/cluster'
+// import { ClusterProvider } from '../context/cluster'
 import { SolanaProvider } from '../context/solana'
 import { ReactQueryProvider } from '../context/react-query'
 import ErrorProvider from '../context/error'
@@ -25,31 +25,31 @@ function MyApp() {
   return (
     <>
       <ReactQueryProvider>
-        <ClusterProvider>
-          <SolanaProvider>
-            <BlockchainProvider>
-              {/*    <WalletContextProvider> */}
-              <GameProvider>
-                <>
-                  {/* <Suspense
+        {/* <ClusterProvider> */}
+        <SolanaProvider>
+          <BlockchainProvider>
+            {/*    <WalletContextProvider> */}
+            <GameProvider>
+              <>
+                {/* <Suspense
                     fallback={
                       <div className="flex items-center justify-center h-screen">
                         <Spinner className="h-10 w-10" />
                       </div>
                     }
                   > */}
-                  {/* </Suspense> */}
-                  {/* <div className="z-10 h-screen w-screen"> */}
-                  <ErrorProvider>
-                    <Layout />
-                  </ErrorProvider>
-                  {/* </div> */}
-                </>
-              </GameProvider>
-              {/* </WalletContextProvider> */}
-            </BlockchainProvider>
-          </SolanaProvider>
-        </ClusterProvider>
+                {/* </Suspense> */}
+                {/* <div className="z-10 h-screen w-screen"> */}
+                <ErrorProvider>
+                  <Layout />
+                </ErrorProvider>
+                {/* </div> */}
+              </>
+            </GameProvider>
+            {/* </WalletContextProvider> */}
+          </BlockchainProvider>
+        </SolanaProvider>
+        {/* </ClusterProvider> */}
       </ReactQueryProvider>
       <div className="absolute top-0 z-10 h-screen w-screen">
         <Game />
