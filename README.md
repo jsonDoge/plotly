@@ -36,8 +36,12 @@ Gotchas:
 
 ## Upcoming chanllenges
 
-By using solana account storage extensively it makes the game quite expensive, especially initially. The goal is to investigate smarter storage solution without sacrificing decentralization. The game should work accurately even without UI.
+By using solana account storage extensively it makes the game quite expensive, especially initially. The goal is to investigate smarter storage solution without sacrificing decentralization. The game should be functional even without UI or external services.
 
+Things than can be tested:
+  - Custom storage/compression mechanism (store multiple plot information in one account using compression).
+  - Implement a "chain-within-a-chain". The total state of the game has a fixed sized, due to the fixed MAX plot number (Ignoring Seeds/Recipes/Offers). Means we could try crafting a generates + seed, to generate the whole state. And find a way to submit verifiable transitions.
+  
 ## Current entity state
 
 Everything is an account/token:
