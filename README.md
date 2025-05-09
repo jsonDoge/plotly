@@ -1,6 +1,51 @@
 # Plotly
 
-Farm game
+Plotly is an all-on-blockchain game. The UI is a helper to make the game more entertaining and avoid writing transactions yourself. There also an extra Plotly-indexer which follows events to help provide further information. The idea is that the user is always control and game is transparent/decentralized.
+
+Plotly as a game provides a gamified tokens emission implementation. Where a limit amount of plots (1M), can be used to "unwrap" seed tokens created by token issuers. The plants (after seeding) impact surrounding plots by draining resources. 
+
+## Plotly entities
+- Plot -> NFT token (1M plots in total fixed)
+- Seed -> SPL token (Can be minted by anyone, by wrapping an amount of SPL program tokens)
+- Recipe -> Custom account (Can be created by anyone, by defining INPUT 2x SPL tokens -> OUPUT 1x SPL tokens and depositing the OUTPUT tokens).
+- Offer -> Custom account (Allows selling seeds for a fixed price, defined by user and fixed currency defined by Plotly - USDC).
+- Plant -> Custom account (Plotly generates a plant each time a farmer deposits a plot and a seed)
+
+
+Default Plotly grow flow:
+  - Token issuer/owner => creates **Seeds** by submitting owned tokens to Plotly with **Seed** parameters.
+  - Token issuer/owner => Uses any DEX or Plotly simplified **Offer** flow to distribute **Seeds**.
+  - Farmer buys at least 1 **Plot** 
+  - Farmer buys at least 1 **Seed**.  <- Cycle repeats here
+  - Farmers submit 1x **Plot** NFT and 1x **Seed** SPL token to Plotly => Plotly creates a **Plant** which starts immediately growing 
+  - Farmer waits for the **Plant** to absorb enough resources from the deposited **Plot**
+  - Farmer can now harvest the **Plant**, which emits tokens wrapped by token issuer when **Seed** was minted and token issuer gets the absorbed resources.
+  - Cycle repeats ->
+
+
+Gotchas:
+ - **Plots** have 2 types of resources - Water and Balance. **Plants** need both to grow. Water can be "stolen" by surrounding plants, while Balance cannot. Water regenerates at a fixed rate, but Balance is only deposited by the owner.
+ - If **Plots** balance falls below Free Rent value (1 USDC token  -> 1,000,000), Plotly start to drain the balance.
+ - If **Plots** balance falls below 10% of Free Rent value (0.1 USDC token -> 100,000), anyone can "revoke" **Plot** ownership, transfering it to Plotly. And for that the revoker gets the remaining **Plot** balance.
+ - **Plot** can always be manually returned to Plotly by the owner. Plotly will transfer all **Plot** balance back to the owner.
+
+
+## Plotly game view
+![image](https://github.com/user-attachments/assets/1ed9cec0-4ce1-46ec-9c8b-667ece986d15)
+
+
+
+## Upcoming chanllenges
+
+By using solana account storage extensively it makes the game quite expensive, especially initially. The goal is to investigate smarter storage solution without sacrificing decentralization. The game should work accurately even without UI.
+
+## Current state
+
+- Everything is an account/token:
+  - Seed = SPL token
+  - Plot = NFT (SPL token)
+  - Offers/Recipes = Custom Accounts
+
 
 ## Getting Started
 
