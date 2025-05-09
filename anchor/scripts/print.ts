@@ -65,7 +65,7 @@ async function main() {
     program.programId,
   )
 
-  console.log('Farm:', farm.toString())
+  console.log('Farm ID (non-program):', farm.toString())
   console.log('Farm auth:', farmAuth.toString())
   // Add your deploy script here.
 }

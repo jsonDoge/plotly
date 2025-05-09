@@ -56,7 +56,7 @@ pub struct CreateOffer<'info> {
             user_treasury.key().as_ref(),
             farm.key().as_ref()
         ],
-        space = 8 + std::mem::size_of::<Offer>(),
+        space = 8 + Offer::INIT_SPACE,
         payer = user,
         bump,
     )]

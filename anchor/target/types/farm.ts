@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/farm.json`.
  */
 export type Farm = {
-  "address": "FQH8xLxebgWgTkxhyWDSfb4b68ZoW1newgSKMNXgQj4c",
+  "address": "4FHi8grZppJRnWxWf1pGaT8JTtSvjz9TPiWke3y97dDM",
   "metadata": {
     "name": "farm",
     "version": "0.1.0",

@@ -143,7 +143,7 @@ impl<'info> AcquirePlot<'info> {
             return Err(ErrorCode::NeighborPlotNotMinted.into());
         }
 
-        if self.farm_associated_plot_account.amount == 0 {
+        if self.farm_associated_plot_account.amount == 0 || (self.farm_associated_plot_account.amount == 1 && self.plot.last_claimer != self.farm_auth.key()) {
             // Plot already minted
             // if self.farm_associated_plot_account.amount == 1 {
             //     msg!("Plot already minted and Farm owns it");

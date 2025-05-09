@@ -7,25 +7,23 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-plotly = "FQH8xLxebgWgTkxhyWDSfb4b68ZoW1newgSKMNXgQj4c"
+plotly = "4FHi8grZppJRnWxWf1pGaT8JTtSvjz9TPiWke3y97dDM"
 
 [programs.localnet]
-plotly = "FQH8xLxebgWgTkxhyWDSfb4b68ZoW1newgSKMNXgQj4c"
+plotly = "4FHi8grZppJRnWxWf1pGaT8JTtSvjz9TPiWke3y97dDM"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
 cluster = "localnet"
-# cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "../node_modules/.bin/jest --preset ts-jest  --runInBand"
-print = "../node_modules/.bin/ts-node ./scripts/print.ts"
 buyPlot = "../node_modules/.bin/ts-node ./scripts/buyPlot.ts"
 otherUser = "ANCHOR_WALLET=./localnet/testUser.json ../node_modules/.bin/ts-node ./scripts/otherUser.ts"
-
+print = "../node_modules/.bin/ts-node ./scripts/print.ts"
+test = "../node_modules/.bin/jest --preset ts-jest --runInBand recipe.spec"
 
 [test]
 startup_wait = 10000

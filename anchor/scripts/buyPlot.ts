@@ -8,7 +8,7 @@ import { setupMint } from '../tests/setup'
 import {
   createOffer,
   createRecipe,
-  increasedCUTxWrap,
+  // increasedCUTxWrap,
   mintAndBuyPlot,
   mintSeeds,
   plantSeed,
@@ -18,6 +18,7 @@ import FarmIDL from '../target/idl/farm.json'
 
 // so that the plotCurrency address would be the same
 const localnetPlotCurrencyKeypairPath = './localnet/plotCurrency.json'
+const DEVNET_USDC_MINT = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU')
 
 // eslint-disable-next-line global-require
 const farmIdl = require('../target/idl/farm.json') as Idl
@@ -47,14 +48,21 @@ async function main() {
   console.log('Provider:', provider.connection.rpcEndpoint)
 
   const userWallet = provider.wallet as Wallet
-  const wrapTx = increasedCUTxWrap(provider.connection, userWallet.payer)
+  // const wrapTx = increasedCUTxWrap(provider.connection, userWallet.payer)
 
   const program = getFarmProgram(provider)
 
   const keypairData = JSON.parse(fs.readFileSync(path.join(process.cwd(), localnetPlotCurrencyKeypairPath), 'utf8'))
   const plotCurrencyKeypair = web3.Keypair.fromSecretKey(new Uint8Array(keypairData))
 
-  const plotCurrency = plotCurrencyKeypair.publicKey
+  let plotCurrency: PublicKey
+  if (network === 'localnet') {
+    plotCurrency = plotCurrencyKeypair.publicKey
+  } else if (network === 'devnet') {
+    plotCurrency = DEVNET_USDC_MINT
+  } else {
+    throw new Error(`Unsupported network: ${network}`)
+  }
 
   const [farm] = anchor.web3.PublicKey.findProgramAddressSync(
     [Buffer.from('farm'), plotCurrency.toBuffer()],
@@ -77,6 +85,8 @@ async function main() {
     program.programId,
   )
 
+  const seedOutput = await setupMint(provider, TOKEN_PROGRAM_ID)
+
   const seedsToMint = 250
   const plantTokensPerSeed = 5
   const growthBlockDuration = 1008
@@ -88,7 +98,7 @@ async function main() {
     provider,
     program,
     plotCurrency,
-    plotCurrency,
+    seedOutput,
     userWallet,
     seedsToMint,
     plantTokensPerSeed,

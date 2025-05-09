@@ -85,7 +85,7 @@ pub struct MintPlot<'info> {
         payer = user,
         seeds = [b"plot", plot_mint.key().as_ref()],
         bump,
-        space = 8 + std::mem::size_of::<Plot>(),
+        space = 8 + Plot::INIT_SPACE,
     )]
     pub plot: Box<Account<'info, Plot>>,
 

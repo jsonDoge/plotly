@@ -823,7 +823,6 @@ describe('Planting', () => {
     }
   }, 1000000)
 
-
   it('Should allow plant a seed ->  revert plant -> plant again (if NFT didnt send back)', async () => {
     console.log('Running plant seed test')
     const plotX = 1
@@ -912,17 +911,17 @@ describe('Planting', () => {
 
     await revertPlant(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
 
-   const [plotMint55] = anchor.web3.PublicKey.findProgramAddressSync(
+    const [plotMint55] = anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from('plot_mint'), toLeBytes(plotX), toLeBytes(plotY), farm.toBuffer()],
       program.programId,
     )
 
-      const userPlotAta = await getAssociatedTokenAddress(plotMint55, userWallet.publicKey)
-    
+    const userPlotAta = await getAssociatedTokenAddress(plotMint55, userWallet.publicKey)
+
     const userPlotAtaInfo = await provider.connection.getTokenAccountBalance(userPlotAta)
 
     // user should not longer own NFT, but still be able to plant
-    expect(parseInt(userPlotAtaInfo.value.amount, 10)).toEqual(0);
+    expect(parseInt(userPlotAtaInfo.value.amount, 10)).toEqual(0)
 
     await plantSeed(provider, program, plotX, plotY, plotCurrency, seedMint, userWallet)
 

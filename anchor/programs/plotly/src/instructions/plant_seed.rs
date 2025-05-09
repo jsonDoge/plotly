@@ -135,7 +135,7 @@ pub struct PlantSeed<'info> {
         payer = user,
         seeds = [b"plant", plot_mint.key().as_ref()],
         bump,
-        space = 8 + std::mem::size_of::<Plant>(),
+        space = 8 + Plant::INIT_SPACE,
     )]
     pub plant: Box<Account<'info, Plant>>,
 

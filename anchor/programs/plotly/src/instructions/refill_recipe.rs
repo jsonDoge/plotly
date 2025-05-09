@@ -62,7 +62,7 @@ pub struct RefillRecipe<'info> {
             ingredient_1_treasury.as_ref(),
             farm.key().as_ref()
         ],
-        space = 8 + std::mem::size_of::<Recipe>(),
+        space = 8 + Recipe::INIT_SPACE,
         payer = user,
         bump,
     )]

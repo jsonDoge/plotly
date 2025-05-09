@@ -69,7 +69,7 @@ pub struct CreateRecipe<'info> {
             user_associated_ingredient_1_token_account.key().as_ref(),
             farm.key().as_ref()
         ],
-        space = 8 + std::mem::size_of::<Recipe>(),
+        space = 8 + Recipe::INIT_SPACE,
         payer = user,
         bump,
     )]

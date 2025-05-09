@@ -88,7 +88,7 @@ describe('Recipe', () => {
     expect(recipe.resultTokenBalance.toString()).toEqual(new anchor.BN(100).toString())
   }, 1000000)
 
-  it.only('Should create a recipe and follow recipe', async () => {
+  it('Should create a recipe and follow recipe', async () => {
     const ingredient0 = await setupMint(provider, TOKEN_PROGRAM_ID)
     const ingredient1 = await setupMint(provider, TOKEN_PROGRAM_ID)
     const resultToken = await setupMint(provider, TOKEN_PROGRAM_ID)

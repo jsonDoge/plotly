@@ -10,12 +10,6 @@ use anchor_spl::{
     token::{self, mint_to, spl_token, Mint, MintTo, SetAuthority, Token, TokenAccount},
 };
 use mpl_token_metadata::types::{Collection, CollectionDetails, Creator};
-// use anchor_lang::system_program::{create_account, CreateAccount};
-// use anchor_spl::token::{initialize_mint, InitializeMint, Mint as SplMint, Token as SplToken};
-// use anchor_spl::token_interface::Mint;
-// use mpl_token_metadata::instructions::CreateMetadataAccountV3CpiBuilder;
-// use mpl_token_metadata::types::DataV2;
-// use mpl_token_metadata::ID as TOKEN_METADATA_PROGRAM_ID;
 
 use crate::{errors::ErrorCode, state::AccWithBump, state::Farm};
 
@@ -41,8 +35,8 @@ pub struct InitializeFarm<'info> {
     #[account(
         init,
         payer = user,
-        space = 8 + std::mem::size_of::<Farm>(), // discriminant + plot_currency + plot_collection + plot_price + bump
         seeds = [b"farm", plot_currency.as_ref()],
+        space = 8 + Farm::INIT_SPACE, // discriminant + plot_currency + plot_collection + plot_price + bump
         bump,
     )]
     pub farm: Box<Account<'info, Farm>>,
@@ -91,7 +85,7 @@ pub struct InitializeFarm<'info> {
         init,
         payer = user,
         seeds = [b"farm_auth", farm.key().as_ref()],
-        space = 8 + 8,
+        space = 8 + AccWithBump::INIT_SPACE,
         bump,
     )]
     pub farm_auth: Box<Account<'info, AccWithBump>>,

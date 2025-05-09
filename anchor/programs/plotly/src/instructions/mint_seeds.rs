@@ -54,7 +54,7 @@ pub struct MintSeeds<'info> {
         payer = user,
         seeds = [b"seed_mint_info", seed_mint.key().as_ref()],
         bump,
-        space = 8 + std::mem::size_of::<SeedMintInfo>(),
+        space = 8 + SeedMintInfo::INIT_SPACE,
     )]
     pub seed_mint_info: Box<Account<'info, SeedMintInfo>>,
 
