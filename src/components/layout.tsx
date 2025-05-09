@@ -59,7 +59,7 @@ const Layout: React.FC = () => {
         <title>Plotly</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <header className="grid grid-cols-2 lg:grid-cols-3 z-20 px-6 py-3 border-bottom bg-transparent">
+      <header className="grid grid-cols-2 lg:grid-cols-3 z-40 px-6 py-3 border-bottom bg-transparent">
         <div className="text-left">
           <h1 className="text-3xl font-bold text-white">Plotly</h1>
           <div className="text-left text-white hidden lg:block">
@@ -174,7 +174,7 @@ const Layout: React.FC = () => {
             </span>
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-right z-40">
           <div className="text-right text-white hidden lg:block">
             <ChainName />
             <div className="mt-3 text-black">

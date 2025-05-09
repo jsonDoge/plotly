@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import React, { useState } from 'react'
-// import { convertToSeed, getProductBalance } from '../../services/barn'
 import { useAnchorProvider } from '@/context/solana'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { PublicKey } from '@solana/web3.js'
@@ -330,7 +329,7 @@ const Kitchen = () => {
                     <HelperTooltip message="Token which the farmers are going to receive if they grow the seed to the end. The tokens you are now going to have to deposit (only SPL tokens allows/non-2022)." />
                   </div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm text-white pl-1"
                     id="ResultTokenId"
                     name="ResultTokenId"
                     type="string"
@@ -341,7 +340,7 @@ const Kitchen = () => {
                   />
                   <div className="text-gray-500 text-left">Result tokens to deposit</div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm  text-white pl-1"
                     id="seeds to craft / min: 1"
                     name="seeds to craft  / min: 1"
                     max={1000000000}
@@ -357,7 +356,7 @@ const Kitchen = () => {
                     <HelperTooltip message="First ingredient SPL token ID to craft the recipe" />
                   </div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm  text-white pl-1"
                     id="Ingredient0Id"
                     name="Ingredient0Id"
                     type="string"
@@ -372,7 +371,7 @@ const Kitchen = () => {
                     <HelperTooltip message="`Ingredient 0` tokens needed to get 1 result token" />
                   </div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm  text-white pl-1"
                     id="Ingredient0IdAmount"
                     name="Ingredient0IdAmount"
                     max={1000000000}
@@ -388,7 +387,7 @@ const Kitchen = () => {
                     Ingredient 1 <HelperTooltip message="Second ingredient SPL token ID to craft the recipe" />
                   </div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm  text-white pl-1"
                     id="Ingredient1Id"
                     name="Ingredient1Id"
                     type="string"
@@ -402,7 +401,7 @@ const Kitchen = () => {
                     <HelperTooltip message="`Ingredient 1` tokens needed to get 1 result token" />
                   </div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm  text-white pl-1"
                     id="Ingredient1IdAmount"
                     name="Ingredient1IdAmount"
                     max={1000000000}
@@ -419,13 +418,11 @@ const Kitchen = () => {
             </div>
             <div className="flex flex-col mt-5">
               <div className="text-center">
-                {wallet?.publicKey ? (
+                {wallet?.publicKey && (
                   <Button onClick={() => craftRecipe()}>
                     {!isLoading && <div>Craft Recipe</div>}
                     {isLoading && <Spinner />}
                   </Button>
-                ) : (
-                  <Spinner />
                 )}
               </div>
               <div className="text-center mt-5 bg-black bg-opacity-50">
@@ -449,7 +446,7 @@ const Kitchen = () => {
                     <HelperTooltip message="Id of a recipe that has ALREADY been crafted" />
                   </div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm  text-white pl-1"
                     id="seeds to craft / min: 1"
                     name="seeds to craft  / min: 1"
                     value={fRecipeId}
@@ -457,7 +454,7 @@ const Kitchen = () => {
                   />
                   <div className="text-gray-500 text-left">Result tokens to receive</div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm  text-white pl-1"
                     id="resultTokensToReceive"
                     name="resultTokensToReceive"
                     max={1000000000}
@@ -498,13 +495,11 @@ const Kitchen = () => {
             </div>
             <div className="flex flex-col mt-5">
               <div className="text-center">
-                {wallet?.publicKey ? (
+                {wallet?.publicKey && (
                   <Button onClick={() => followRecipe()}>
                     {!isLoading && <div>Follow Recipe</div>}
                     {isLoading && <Spinner />}
                   </Button>
-                ) : (
-                  <Spinner />
                 )}
               </div>
               <div className="text-center mt-5 bg-black bg-opacity-50">

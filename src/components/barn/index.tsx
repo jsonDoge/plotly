@@ -69,8 +69,8 @@ const Barn = () => {
                     <div className="mt-4">
                       <input
                         type="text"
-                        placeholder="Enter Seed ID"
-                        className="border rounded px-2 py-1 w-full"
+                        placeholder="Enter Seed ID (Press Enter)"
+                        className="border rounded px-2 py-1 w-full text-white pl-1"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                             setError('')
@@ -113,7 +113,7 @@ const Barn = () => {
                           role="none"
                           className="cursor-pointer"
                           onClick={() => navigator.clipboard.writeText(seed.id)}
-                          title="Click to copy full Offer ID"
+                          title="Click to copy full ID"
                         >
                           {`Seed ID: ${seed.id.slice(0, 4)}...${seed.id.slice(-4)}`}
                         </div>

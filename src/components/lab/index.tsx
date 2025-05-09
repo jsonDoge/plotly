@@ -1,6 +1,5 @@
 /* eslint-disable no-await-in-loop */
 import React, { useState } from 'react'
-// import { convertToSeed, getProductBalance } from '../../services/barn'
 import { useAnchorProvider } from '@/context/solana'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { PublicKey } from '@solana/web3.js'
@@ -10,7 +9,6 @@ import { BN } from 'bn.js'
 import { craftSeedTx } from '@/services/farm'
 import getConfig from 'next/config'
 import { walletActions } from '@/stores/wallet'
-import { getFarmProgram } from '@project/anchor'
 import Button from '../utils/button'
 import Spinner from '../utils/spinner'
 import HelperTooltip from '../utils/helperTooltip'
@@ -161,146 +159,144 @@ const Lab = () => {
 
   return (
     <div className="flex flex-col">
-      <div className="text-left text-white">
-        <div className="text-2xl">Lab</div>
-      </div>
-      <div className="mt-2">
-        <div className="text-xl text-white">SPL tokens to Seeds</div>
-        <div className="bg-green-800 px-2 py-3 rounded-sm">
+      <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+        <div className="mt-2 text-center text-gray-500">
+          <div className="text-2xl">Lab</div>
+        </div>
+        <div className="mt-2 text-gray-500">
+          <div className="text-xl text-center">SPL tokens to Seeds</div>
+          <div className="px-2 py-3 rounded-sm">
+            <div className="text-center">
+              <div className="text-left">Seeds to craft</div>
+              <input
+                className="w-full rounded-sm text-white pl-1"
+                id="seeds to craft / min: 1"
+                name="seeds to craft  / min: 1"
+                max={1000000000}
+                min={1}
+                type="number"
+                value={seedsToMint}
+                onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setSeedsToMint(parseInt(e.target.value || '0', 10))
+                }
+              />
+              <div className="text-left">
+                Result token ID{' '}
+                <HelperTooltip message="Token which the farmers are going to receive if they grow the seed to the end. The tokens you are now going to have to deposit (only SPL tokens allows/non-2022)." />
+              </div>
+              <input
+                className="w-full rounded-sm text-white pl-1"
+                id="ResultTokenId"
+                name="ResultTokenId"
+                type="string"
+                value={resultTokenId}
+                onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setResultTokenId(e.target.value)
+                }}
+              />
+              <div className="text-left  mt-2">Result tokens per seed / min: 1</div>
+              <input
+                className="w-full rounded-sm text-white pl-1"
+                id="result tokens per seed / min: 1"
+                name="result tokens per seed / min: 1"
+                max={1000000000}
+                min={1}
+                type="number"
+                value={resultTokenPerSeed}
+                onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setResultTokenPerSeed(parseInt(e.target.value || '0', 10))
+                }
+              />
+              <div className="text-left  mt-2">
+                Plant growth duration <HelperTooltip message="(slot = 0.4s) / min: 101" />
+              </div>
+              <input
+                className="w-full rounded-sm text-white pl-1"
+                id=""
+                name="plant growth duration (slots - 0.4s) / min: 101"
+                max={1000000000}
+                min={101}
+                type="number"
+                value={growSlotDuration}
+                onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setGrowSlotDuration(parseInt(e.target.value || '0', 10))
+                }
+              />
+
+              <div className="text-left  mt-2">
+                Neighbor/Center water absorb rate{' '}
+                <HelperTooltip message="Currently plants always try to absorb 100 waters per slot. Here you can only change the ratio between center:neighbors. 0 = all 100 water is absorbed from plants own plot. 25 = all water is absorbed from neighboring 4 plots (4 * 25 = 100) " />
+              </div>
+
+              <input
+                className="w-full rounded-sm mt-2 text-white pl-1"
+                id="Neighbor to center water absorption / min: 0"
+                name="Neighbor to center water absorption / min: 0"
+                max={25}
+                min={0}
+                type="number"
+                value={neighborToCenterWaterAbsorption}
+                onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setNeighborToCenterWaterAbsorption(parseInt(e.target.value || '0', 10))
+                }
+              />
+
+              <div className="text-left  mt-2">
+                Balance absorb rate (divisible by 2) <HelperTooltip message="Plot currency absorbed per slot speed" />
+              </div>
+
+              <input
+                className="w-full rounded-sm mt-2 text-white pl-1"
+                id="BalanceAbsorbRate"
+                name="BalanceAbsorbRate"
+                max={100000000}
+                min={0}
+                step={2}
+                type="number"
+                value={balanceAbsorbRate}
+                onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setBalanceAbsorbRate(parseInt(e.target.value || '0', 10))
+                }
+              />
+
+              <div className="text-left  mt-2">
+                Times to tend{' '}
+                <HelperTooltip message="During plants growth user will be required to 'tend' the plant N-times. Which sends the up to date absorbed balance to the seed creators token account." />
+              </div>
+
+              <input
+                className="w-full rounded-sm mt-2 text-white pl-1"
+                id="TimesToTend"
+                name="TimesToTend"
+                max={5}
+                min={0}
+                type="number"
+                value={timesToTend}
+                onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setTimesToTend(parseInt(e.target.value || '0', 10))
+                }
+              />
+              <div className="mt-5">*All token amounts are expected to include the decimal part.</div>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col mt-5">
           <div className="text-center">
-            <div className="text-white text-left">Seeds to craft</div>
-            <input
-              className="w-full rounded-sm"
-              id="seeds to craft / min: 1"
-              name="seeds to craft  / min: 1"
-              max={1000000000}
-              min={1}
-              type="number"
-              value={seedsToMint}
-              onInput={(e: React.ChangeEvent<HTMLInputElement>) => setSeedsToMint(parseInt(e.target.value || '0', 10))}
-            />
-            <div className="text-white text-left">
-              Result token ID{' '}
-              <HelperTooltip message="Token which the farmers are going to receive if they grow the seed to the end. The tokens you are now going to have to deposit (only SPL tokens allows/non-2022)." />
-            </div>
-            <input
-              className="w-full rounded-sm"
-              id="ResultTokenId"
-              name="ResultTokenId"
-              type="string"
-              value={resultTokenId}
-              onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setResultTokenId(e.target.value)
-              }}
-            />
-            <div className="text-white text-left  mt-2">Result tokens per seed / min: 1</div>
-            <input
-              className="w-full rounded-sm"
-              id="result tokens per seed / min: 1"
-              name="result tokens per seed / min: 1"
-              max={1000000000}
-              min={1}
-              type="number"
-              value={resultTokenPerSeed}
-              onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setResultTokenPerSeed(parseInt(e.target.value || '0', 10))
-              }
-            />
-            <div className="text-white text-left  mt-2">
-              Plant growth duration <HelperTooltip message="(slot = 0.4s) / min: 101" />
-            </div>
-            <input
-              className="w-full rounded-sm"
-              id=""
-              name="plant growth duration (slots - 0.4s) / min: 101"
-              max={1000000000}
-              min={101}
-              type="number"
-              value={growSlotDuration}
-              onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setGrowSlotDuration(parseInt(e.target.value || '0', 10))
-              }
-            />
-
-            <div className="text-white text-left  mt-2">
-              Neighbor/Center water absorb rate{' '}
-              <HelperTooltip message="Currently plants always try to absorb 100 waters per slot. Here you can only change the ratio between center:neighbors. 0 = all 100 water is absorbed from plants own plot. 25 = all water is absorbed from neighboring 4 plots (4 * 25 = 100) " />
-            </div>
-
-            <input
-              className="w-full rounded-sm mt-2"
-              id="Neighbor to center water absorption / min: 0"
-              name="Neighbor to center water absorption / min: 0"
-              max={25}
-              min={0}
-              type="number"
-              value={neighborToCenterWaterAbsorption}
-              onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setNeighborToCenterWaterAbsorption(parseInt(e.target.value || '0', 10))
-              }
-            />
-
-            <div className="text-white text-left  mt-2">
-              Balance absorb rate (divisible by 2) <HelperTooltip message="Plot currency absorbed per slot speed" />
-            </div>
-
-            <input
-              className="w-full rounded-sm mt-2"
-              id="BalanceAbsorbRate"
-              name="BalanceAbsorbRate"
-              max={100000000}
-              min={0}
-              step={2}
-              type="number"
-              value={balanceAbsorbRate}
-              onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setBalanceAbsorbRate(parseInt(e.target.value || '0', 10))
-              }
-            />
-
-            <div className="text-white text-left  mt-2">
-              Times to tend{' '}
-              <HelperTooltip message="During plants growth user will be required to 'tend' the plant N-times. Which sends the up to date absorbed balance to the seed creators token account." />
-            </div>
-
-            <input
-              className="w-full rounded-sm mt-2"
-              id="TimesToTend"
-              name="TimesToTend"
-              max={5}
-              min={0}
-              type="number"
-              value={timesToTend}
-              onInput={(e: React.ChangeEvent<HTMLInputElement>) => setTimesToTend(parseInt(e.target.value || '0', 10))}
-            />
-
-            <div className="mt-5">*All token amounts are expected to include the decimal part.</div>
+            {wallet?.publicKey && (
+              <Button onClick={() => craftSeeds()}>
+                {!isLoading && <div>Craft Seed</div>}
+                {isLoading && <Spinner />}
+              </Button>
+            )}
+          </div>
+          <div className="text-center mt-5 bg-black bg-opacity-50">
+            {error && <div className="text-red-500">{error}</div>}
+          </div>
+          <div className="text-center mt-5 bg-black bg-opacity-50">
+            {message && <div className="text-green-500">{message}</div>}
           </div>
         </div>
       </div>
-      <div className="flex flex-col mt-5">
-        <div className="text-right">
-          {wallet?.publicKey ? (
-            <Button onClick={() => craftSeeds()}>
-              {!isLoading && <div>Craft Seed</div>}
-              {isLoading && <Spinner />}
-            </Button>
-          ) : (
-            <Spinner />
-          )}
-        </div>
-        <div className="text-center mt-5 bg-black bg-opacity-50">
-          {error && <div className="text-red-500">{error}</div>}
-        </div>
-        <div className="text-center mt-5 bg-black bg-opacity-50">
-          {message && <div className="text-green-500">{message}</div>}
-        </div>
-      </div>
-
-      {/* <div className="flex flex-col justify-start items-start text-white mt-5">
-        <div className="text-lg">Products</div>
-        <div>(owned)</div>
-      </div> */}
     </div>
   )
 }

@@ -297,7 +297,7 @@ const Market = () => {
                     Result seed token ID <HelperTooltip message="Only this farm created seeds are allowed" />
                   </div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm  text-white pl-1"
                     id="ResultTokenId"
                     name="ResultTokenId"
                     type="string"
@@ -308,7 +308,7 @@ const Market = () => {
                   />
                   <div className="text-gray-500 text-left">Result tokens to deposit</div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm  text-white pl-1"
                     id="seeds to craft / min: 1"
                     name="seeds to craft  / min: 1"
                     max={1000000000}
@@ -325,7 +325,7 @@ const Market = () => {
                     <HelperTooltip message="`Price per one result seed" />
                   </div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm  text-white pl-1"
                     id="Ingredient1IdAmount"
                     name="Ingredient1IdAmount"
                     max={1000000000}
@@ -342,13 +342,11 @@ const Market = () => {
             </div>
             <div className="flex flex-col mt-5">
               <div className="text-center">
-                {wallet?.publicKey ? (
+                {wallet?.publicKey && (
                   <Button onClick={() => createOffer()}>
                     {!isLoading && <div>Create Offer</div>}
                     {isLoading && <Spinner />}
                   </Button>
-                ) : (
-                  <Spinner />
                 )}
               </div>
               <div className="text-center mt-5 bg-black bg-opacity-50">
@@ -372,7 +370,7 @@ const Market = () => {
                     <HelperTooltip message="Id of a offer that has ALREADY been created" />
                   </div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm  text-white pl-1"
                     id="offerIdToFind"
                     name="offerIdToFind"
                     value={offerId}
@@ -380,7 +378,7 @@ const Market = () => {
                   />
                   <div className="text-gray-500 text-left">Result seed tokens to receive</div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm  text-white pl-1"
                     id="resultSeedTokensToReceive"
                     name="resultSeedTokensToReceive"
                     max={1000000000}
@@ -412,13 +410,11 @@ const Market = () => {
             </div>
             <div className="flex flex-col mt-5">
               <div className="text-center">
-                {wallet?.publicKey ? (
+                {wallet?.publicKey && (
                   <Button onClick={() => acceptOffer()}>
                     {!isLoading && <div>Accept Offer</div>}
                     {isLoading && <Spinner />}
                   </Button>
-                ) : (
-                  <Spinner />
                 )}
               </div>
               <div className="text-center mt-5 bg-black bg-opacity-50">
@@ -442,7 +438,7 @@ const Market = () => {
                     <HelperTooltip message="Offer ID to cancel" />
                   </div>
                   <input
-                    className="w-full rounded-sm"
+                    className="w-full rounded-sm  text-white pl-1"
                     id="offerIdToCancel"
                     name="offerIdToCancel"
                     value={cOfferId}
@@ -453,13 +449,11 @@ const Market = () => {
             </div>
             <div className="flex flex-col mt-5">
               <div className="text-center">
-                {wallet?.publicKey ? (
+                {wallet?.publicKey && (
                   <Button onClick={() => cancelOffer()}>
                     {!isLoading && <div>Cancel Offer</div>}
                     {isLoading && <Spinner />}
                   </Button>
-                ) : (
-                  <Spinner />
                 )}
               </div>
               <div className="text-center mt-5 bg-black bg-opacity-50">

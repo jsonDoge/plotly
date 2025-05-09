@@ -25,31 +25,15 @@ function MyApp() {
   return (
     <>
       <ReactQueryProvider>
-        {/* <ClusterProvider> */}
         <SolanaProvider>
           <BlockchainProvider>
-            {/*    <WalletContextProvider> */}
             <GameProvider>
-              <>
-                {/* <Suspense
-                    fallback={
-                      <div className="flex items-center justify-center h-screen">
-                        <Spinner className="h-10 w-10" />
-                      </div>
-                    }
-                  > */}
-                {/* </Suspense> */}
-                {/* <div className="z-10 h-screen w-screen"> */}
-                <ErrorProvider>
-                  <Layout />
-                </ErrorProvider>
-                {/* </div> */}
-              </>
+              <ErrorProvider>
+                <Layout />
+              </ErrorProvider>
             </GameProvider>
-            {/* </WalletContextProvider> */}
           </BlockchainProvider>
         </SolanaProvider>
-        {/* </ClusterProvider> */}
       </ReactQueryProvider>
       <div className="absolute top-0 z-10 h-screen w-screen">
         <Game />
