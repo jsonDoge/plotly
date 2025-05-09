@@ -28,31 +28,29 @@ Gotchas:
  - If **Plots** balance falls below Free Rent value (1 USDC token  -> 1,000,000), Plotly start to drain the balance.
  - If **Plots** balance falls below 10% of Free Rent value (0.1 USDC token -> 100,000), anyone can "revoke" **Plot** ownership, transfering it to Plotly. And for that the revoker gets the remaining **Plot** balance.
  - **Plot** can always be manually returned to Plotly by the owner. Plotly will transfer all **Plot** balance back to the owner.
-
+ - If during harvesting **Plot** has less than Free Rent balance, it's not transfered to the owner. But he will still be the owner and before mentioned rules apply. The owner can regain the NFT if he deposits enough balance to cross Free Rent.
 
 ## Plotly game view
 ![image](https://github.com/user-attachments/assets/1ed9cec0-4ce1-46ec-9c8b-667ece986d15)
-
 
 
 ## Upcoming chanllenges
 
 By using solana account storage extensively it makes the game quite expensive, especially initially. The goal is to investigate smarter storage solution without sacrificing decentralization. The game should work accurately even without UI.
 
-## Current state
+## Current entity state
 
-- Everything is an account/token:
-  - Seed = SPL token
-  - Plot = NFT (SPL token)
-  - Offers/Recipes = Custom Accounts
+Everything is an account/token:
 
+- Seed = SPL token
+- Plot = NFT (SPL token)
+- Offers/Recipes/Plant = Custom Accounts (non-transferable)
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node v22.12.0 or higher
-
 - Rust v1.79.0 or higher
 - Anchor CLI 0.31.0 or higher + proc-micro2 fix (defined.rs)
 - Solana CLI 2.1.0 or higher 
