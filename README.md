@@ -1,6 +1,6 @@
 # Plotly
 
-Plotly is an all-on-blockchain game. The UI is a helper to make the game more entertaining and avoid writing transactions yourself. There also an extra Plotly-indexer which follows events to help provide further information. The idea is that the user is always control and game is transparent/decentralized.
+Plotly is an all-on-blockchain game. The UI is a helper to make the game more entertaining and avoid writing transactions yourself. There also an extra [Plotly-indexer](https://github.com/jsonDoge/plotly-indexer) which follows events to help provide further information. The idea is that the user is always control and game is transparent/decentralized.
 
 Plotly as a game provides a gamified tokens emission implementation. Where a limit amount of plots (1M), can be used to "unwrap" seed tokens created by token issuers. The plants (after seeding) impact surrounding plots by draining resources. 
 
