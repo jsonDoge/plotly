@@ -56,7 +56,7 @@ const BlockchainContextProvider = ({ children }: { children: React.ReactNode }) 
   // Store current block to valtio
 
   const loadBlockchainInfo = () => {
-    connection.getBlockHeight().then((blockNumber) => {
+    connection.getSlot().then((blockNumber) => {
       console.log(blockNumber)
 
       // verify if we still need to use context at all
