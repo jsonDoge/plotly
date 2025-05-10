@@ -7,7 +7,7 @@ import { faBars } from '@fortawesome/free-solid-svg-icons'
 // import { useWallet } from '../context/wallet'
 import { WalletButton } from '@/context/solana'
 import { useSnapshot } from 'valtio'
-import { walletStore } from '@/stores/wallet'
+import { walletActions, walletStore } from '@/stores/wallet'
 import { appRouteStoreActions, Route } from '@/stores/appRoute'
 import BlockCounter from './blockCounter'
 import PlotActionModals from './plotActionModals'
@@ -24,7 +24,6 @@ import NewsBoard from './newsBoard'
 import Barn from './barn'
 
 const Layout: React.FC = () => {
-  // const { wallet, walletIntroShown, markWalletIntroAsShown } = useWallet()
   const [tab, setTab] = useState('plots')
   const [isNavOpen, setIsNavOpen] = useState(false)
   const [isBtnUpPressed, setIsBtnUpPressed] = useState(false)
@@ -50,6 +49,7 @@ const Layout: React.FC = () => {
 
   useEffect(() => {
     appRouteStoreActions.setCurrentRoute(Route.plots)
+    walletActions.loadHasSeenIntro()
     // setIsWalletIntroModalShown(!walletIntroShown)
   }, [])
 
@@ -423,11 +423,11 @@ const Layout: React.FC = () => {
           </div>
         </div>
       )}
-      {/* <Analytics /> */}
-      {!wallet.address && isWalletIntroModalShown && (
+      {!wallet.address && !wallet.seenIntro && isWalletIntroModalShown && (
         <WalletIntroModal
           onConfirm={() => {
             setIsWalletIntroModalShown(false)
+            walletActions.setHasSeenIntro(true)
           }}
         />
       )}

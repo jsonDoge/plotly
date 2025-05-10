@@ -10,7 +10,12 @@ const WalletIntroModal: React.FC<Props> = ({ onConfirm }) => {
   const confirm = () => onConfirm && onConfirm()
 
   return (
-    <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div
+      className="fixed z-50 inset-0 -top-20 overflow-y-auto"
+      aria-labelledby="modal-title"
+      role="dialog"
+      aria-modal="true"
+    >
       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div className="fixed inset-0 bg-opacity-75 transition-opacity" aria-hidden="true" />
         <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
@@ -22,8 +27,35 @@ const WalletIntroModal: React.FC<Props> = ({ onConfirm }) => {
             <div className="sm:flex sm:items-start">
               <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                 <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                  Please &quot;select wallet&quot; to start playing
+                  WELCOME to Plotly!
                 </h3>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-700">
+                    This farm uses solana devnet USDC. Visit{' '}
+                    <a
+                      href="https://faucet.circle.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 underline"
+                    >
+                      faucet.circle.com
+                    </a>{' '}
+                    to request tokens. For more details and mechanics go to &quot;Help&quot; section or more technical
+                    review in{' '}
+                    <a
+                      href="https://github.com/jsonDoge/plotly"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 underline"
+                    >
+                      github
+                    </a>
+                    .
+                  </p>
+                  <p className="text-sm text-gray-700 mt-2">
+                    Please &quot;select wallet&quot; in the top right (or mobile burger button) to start playing
+                  </p>
+                </div>
               </div>
             </div>
           </div>

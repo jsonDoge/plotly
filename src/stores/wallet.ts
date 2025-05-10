@@ -10,12 +10,14 @@ interface WalletStore {
   address: string
   plotCurrencyBalance: BN
   ownedSeeds: Seed[]
+  seenIntro: boolean
 }
 
 export const walletStore = proxy<WalletStore>({
   address: '',
   plotCurrencyBalance: new BN(0),
   ownedSeeds: [],
+  seenIntro: false,
 })
 
 export const walletActions = {
@@ -56,5 +58,13 @@ export const walletActions = {
     }
 
     walletStore.ownedSeeds = uniqueSeeds as Seed[]
+  },
+
+  loadHasSeenIntro: () => {
+    const hasSeenIntro = localStorage.getItem(`hasSeenIntro`)
+    walletStore.seenIntro = hasSeenIntro === 'true'
+  },
+  setHasSeenIntro: (hasSeen: boolean) => {
+    localStorage.setItem(`hasSeenIntro`, hasSeen ? 'true' : 'false')
   },
 }
