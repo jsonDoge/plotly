@@ -158,6 +158,16 @@ pub struct MintSeeds<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
+pub enum MetadataOrFallback {
+    Full(MplMetadata),
+    Fallback(NameAndSymbol),
+}
+
+struct NameAndSymbol {
+    name: String,
+    symbol: String,
+}
+
 impl<'info> MintSeeds<'info> {
     pub fn mint_seeds(
         &mut self,
@@ -223,6 +233,10 @@ impl<'info> MintSeeds<'info> {
             self.plant_mint.decimals,
         )?;
 
+        // default seed mint name and symbol
+        let seed_name = format!("{}", "Plotly");
+        let seed_symbol = format!("{}", "PLT");
+
         if self.seed_mint_info.plant_mint == Pubkey::default() {
             // set mint info
             self.seed_mint_info.plant_mint = self.plant_mint.key();
@@ -236,14 +250,30 @@ impl<'info> MintSeeds<'info> {
 
             self.seed_mint_info.bump = seed_mint_info_bump;
 
+
+
             let metadata_account_info = &self.plant_metadata_account;
             let metadata_data = &mut &**metadata_account_info.try_borrow_data()?;
-            let metadata = MplMetadata::deserialize(metadata_data)?;
+            let metadata = match MplMetadata::deserialize(metadata_data) {
+                Ok(meta) => MetadataOrFallback::Full(meta),
+                Err(_) => MetadataOrFallback::Fallback(NameAndSymbol {
+                    name: seed_name.clone(),
+                    symbol: seed_symbol.clone(),
+                }),
+            };
 
-            let seed_name = format!("Seed ({})", metadata.name.trim_matches('\u{0}'));
-            let seed_symbol = format!("SEED-{}", metadata.symbol.trim_matches('\u{0}'));
+            let name = match &metadata {
+                MetadataOrFallback::Full(meta) => &meta.name,
+                MetadataOrFallback::Fallback(name_and_symbol) => &name_and_symbol.name,
+            };
 
+            let symbol = match &metadata {
+                MetadataOrFallback::Full(meta) => &meta.symbol,
+                MetadataOrFallback::Fallback(name_and_symbol) => &name_and_symbol.symbol,
+            };
 
+            let seed_name = format!("Seed ({})", name.trim_matches('\u{0}'));
+            let seed_symbol = format!("SEED-{}", symbol.trim_matches('\u{0}'));
             msg!("Generating seed {} {}", seed_name, seed_symbol);
 
             // Cross Program Invocation (CPI)
@@ -304,11 +334,22 @@ impl<'info> MintSeeds<'info> {
 
         // TODO: This is ugly, refactor later
         let metadata_data = &mut &**self.seed_metadata_account.try_borrow_data()?;
-        let metadata = MplMetadata::deserialize(metadata_data)?;
+        let metadata = match MplMetadata::deserialize(metadata_data) {
+            Ok(meta) => MetadataOrFallback::Full(meta),
+            Err(_) => MetadataOrFallback::Fallback(NameAndSymbol {
+                name: seed_name.clone(),
+                symbol: seed_symbol.clone(),
+            }),
+        };;
+
+        let name = match &metadata {
+            MetadataOrFallback::Full(meta) => &meta.name,
+            MetadataOrFallback::Fallback(name_and_symbol) => &name_and_symbol.name,
+        };
 
         emit!(SeedMinted {
             seed_id: self.seed_mint.key(),
-            seed_name: metadata.name,
+            seed_name: name.clone(),
         });
 
         msg!("Seeds minted!");

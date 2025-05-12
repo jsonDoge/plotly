@@ -36,6 +36,7 @@ export const setupMint = async (
   tokenProgramId: PublicKey,
   tokenMintDecimals: number = 6,
   mintKeypair?: anchor.web3.Keypair,
+  skipMetadata: boolean = false,
 ): Promise<PublicKey> => {
   const payer = provider.wallet as anchor.Wallet
   const signer = convertToSigner(payer)
@@ -86,7 +87,7 @@ export const setupMint = async (
 
   const metdataExists = await provider.connection.getAccountInfo(metadataPDA)
 
-  if (!metdataExists) {
+  if (!metdataExists && !skipMetadata) {
     const umi = createUmi(provider.connection)
 
     const keypair = fromWeb3JsKeypair(payer.payer)
