@@ -33,6 +33,10 @@ Gotchas:
 ## Plotly game view
 ![image](https://github.com/user-attachments/assets/1ed9cec0-4ce1-46ec-9c8b-667ece986d15)
 
+### Mobile
+
+![image](https://github.com/user-attachments/assets/86fcbea1-70d7-4407-9a29-b7edde76beec)
+
 
 ## Upcoming chanllenges
 
