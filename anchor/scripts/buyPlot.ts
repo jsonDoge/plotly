@@ -1,3 +1,6 @@
+/* eslint-disable no-underscore-dangle */
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable no-await-in-loop */
 import { AnchorProvider, Idl, Program, Wallet, web3 } from '@coral-xyz/anchor'
 import path from 'path'
 import fs from 'fs'
@@ -27,6 +30,12 @@ const anchor = require('@coral-xyz/anchor')
 function getFarmProgram(provider: AnchorProvider): Program<Farm> {
   return new Program(FarmIDL as Farm, provider)
 }
+
+interface SeedTokenNaming {
+  name: string
+  symbol: string
+}
+
 async function main() {
   // Configure client to use the provider.
   // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
@@ -147,7 +156,6 @@ async function main() {
     userWallet,
     recipeId,
   )
-
   const userPlotCurrencyAta = await getAssociatedTokenAddress(plotCurrency, userWallet.publicKey)
 
   const [offerId] = await PublicKey.findProgramAddressSync(
@@ -171,6 +179,76 @@ async function main() {
     userWallet,
     offerId,
   )
+
+  const seedNamings: SeedTokenNaming[] = [
+    { name: 'Dank Weed', symbol: 'DANK' },
+    { name: 'Moon Cactus', symbol: 'MOON' },
+    { name: 'Crypto Corn', symbol: 'CORN' },
+    { name: 'Shiba Sprout', symbol: 'SHIBA' },
+    { name: 'Felon Fern', symbol: 'ELON' },
+    { name: 'Meme Melon', symbol: 'MEME' },
+    { name: 'Pepe Pepper', symbol: 'PEPE' },
+    { name: 'Wojak Wheat', symbol: 'WOJAK' },
+    { name: 'Lambo Lettuce', symbol: 'LAMBO' },
+    { name: 'To The Moonflower', symbol: 'MOONF' },
+  ]
+
+  // SEED WITH OFFERS
+  for (let i = 0; i < 10; i += 1) {
+    const seedTokenReward = await setupMint(
+      provider,
+      TOKEN_PROGRAM_ID,
+      i,
+      undefined,
+      false,
+      seedNamings[i].name,
+      seedNamings[i].symbol,
+    )
+
+    const seedsToMint_ = i + 1 * 20
+    const plantTokensPerSeed_ = 5
+    const growthBlockDuration_ = 1008
+    const waterDrainRate_ = 10
+    const timesToTend_ = 1
+    const balanceAbsorbRate_ = 2 // highly consuming
+
+    const seedMint_ = await mintSeeds(
+      provider,
+      program,
+      plotCurrency,
+      seedTokenReward,
+      userWallet,
+      seedsToMint_,
+      plantTokensPerSeed_,
+      growthBlockDuration_,
+      waterDrainRate_,
+      timesToTend_,
+      balanceAbsorbRate_,
+    )
+
+    const pricePerToken = new anchor.BN(i)
+    const [offerId_] = await PublicKey.findProgramAddressSync(
+      [
+        Buffer.from('offer'),
+        toLeBytes(BigInt(pricePerToken.toString()), 8),
+        seedMint_.toBuffer(),
+        userPlotCurrencyAta.toBuffer(), //
+        farm.toBuffer(),
+      ],
+      program.programId,
+    )
+
+    await createOffer(
+      provider,
+      program,
+      plotCurrency,
+      seedMint_,
+      pricePerToken,
+      new anchor.BN(seedsToMint_ / 2),
+      userWallet,
+      offerId_,
+    )
+  }
 
   console.log('succsessfully acquired plot:', plotMint.toString())
   console.log('seed mint:', seedMint.toString())

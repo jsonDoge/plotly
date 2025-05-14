@@ -104,15 +104,25 @@ const NewsBoard = () => {
                   <div className="text-gray-500 text-left">
                     {latestOffers.map((offer) => (
                       <div key={offer.offer_id} className="mt-2 text-gray-500 text-left">
-                        <span
+                        <p
                           role="none"
                           className="cursor-pointer"
                           onClick={() => navigator.clipboard.writeText(offer.offer_id)}
                           title="Click to copy full Offer ID"
                         >
-                          {`Offer ID: ${offer.offer_id.slice(0, 4)}...${offer.offer_id.slice(-4)}`}
-                        </span>
-                        {`, Result token ID: ${offer.result_token_id.slice(0, 4)}...${offer.result_token_id.slice(-4)}, Price per token: ${offer.price_per_token}`}
+                          {`Offer ID: `}
+                          <span className="font-bold">
+                            {`${offer.offer_id.slice(0, 4)}...${offer.offer_id.slice(-4)}`}
+                          </span>
+                        </p>
+                        <p
+                          role="none"
+                          className="cursor-pointer"
+                          onClick={() => navigator.clipboard.writeText(offer.result_token_id)}
+                        >
+                          {`Seed token ID: ${offer.result_token_id.slice(0, 4)}...${offer.result_token_id.slice(-4)}`}
+                        </p>
+                        <p>{`Price per token: ${offer.price_per_token}`}</p>
                       </div>
                     ))}
                   </div>
@@ -134,10 +144,42 @@ const NewsBoard = () => {
                         role="none"
                         key={recipe.recipe_id}
                         className="mt-2 text-gray-500 text-left cursor-pointer"
-                        onClick={() => navigator.clipboard.writeText(recipe.recipe_id)}
                         title="Click to copy full Recipe ID"
                       >
-                        {`Recipe ID: ${recipe.recipe_id.slice(0, 4)}...${recipe.recipe_id.slice(-4)}, Ingredient 0 ID: ${recipe.ingredient_0_id.slice(0, 4)}...${recipe.ingredient_0_id.slice(-4)}, Ingredient 1 ID: ${recipe.ingredient_1_id.slice(0, 4)}...${recipe.ingredient_1_id.slice(-4)}, Result token ID: ${recipe.result_token_id.slice(0, 4)}...${recipe.result_token_id.slice(-4)}`}
+                        <p
+                          role="none"
+                          className="cursor-pointer"
+                          onClick={() => navigator.clipboard.writeText(recipe.recipe_id)}
+                        >
+                          {`Recipe ID: `}
+                          <span className="font-bold">
+                            {`${recipe.recipe_id.slice(0, 4)}...${recipe.recipe_id.slice(-4)}`}
+                          </span>
+                        </p>
+                        <p
+                          role="none"
+                          className="cursor-pointer"
+                          onClick={() => navigator.clipboard.writeText(recipe.ingredient_0_id)}
+                        >
+                          {`Ingredient 0 ID: `}
+                          <span>{`${recipe.ingredient_0_id.slice(0, 4)}...${recipe.ingredient_0_id.slice(-4)}`}</span>
+                        </p>
+                        <p
+                          role="none"
+                          className="cursor-pointer"
+                          onClick={() => navigator.clipboard.writeText(recipe.ingredient_1_id)}
+                        >
+                          {`Ingredient 1 ID: `}
+                          <span>{`${recipe.ingredient_1_id.slice(0, 4)}...${recipe.ingredient_1_id.slice(-4)}`}</span>
+                        </p>
+                        <p
+                          role="none"
+                          className="cursor-pointer"
+                          onClick={() => navigator.clipboard.writeText(recipe.result_token_id)}
+                        >
+                          {`Result token ID: `}
+                          <span>{`${recipe.result_token_id.slice(0, 4)}...${recipe.result_token_id.slice(-4)}`}</span>
+                        </p>
                       </div>
                     ))}
                   </div>

@@ -37,6 +37,8 @@ export const setupMint = async (
   tokenMintDecimals: number = 6,
   mintKeypair?: anchor.web3.Keypair,
   skipMetadata: boolean = false,
+  name: string = 'Token',
+  symbol: string = 'TKN',
 ): Promise<PublicKey> => {
   const payer = provider.wallet as anchor.Wallet
   const signer = convertToSigner(payer)
@@ -102,8 +104,8 @@ export const setupMint = async (
       payer: umi.identity,
       updateAuthority: umi.identity,
       data: {
-        name: 'Token',
-        symbol: 'TKN',
+        name,
+        symbol,
         uri: '',
         sellerFeeBasisPoints: 0,
         creators: null,

@@ -191,10 +191,12 @@ const Market = () => {
 
     // check that first ingredient is an SPL token
 
+    console.log('resultTokenId', resultTokenId)
+
     const { tx, offerId: offerId_ } = await acceptOfferTx(
       wallet.publicKey,
       provider,
-      new PublicKey(resultTokenId),
+      new PublicKey(aResultTokenId),
       new BN(aPricePerToken),
       new BN(aResultTokensToReceive),
       new PublicKey(publicRuntimeConfig.PLOT_CURRENCY_MINT_ID),
@@ -294,7 +296,7 @@ const Market = () => {
               <div className="px-2 py-3 rounded-sm">
                 <div className="text-center">
                   <div className="text-gray-500 text-left">
-                    Result seed token ID <HelperTooltip message="Only this farm created seeds are allowed" />
+                    Seed token ID <HelperTooltip message="Only this farm created seeds are allowed" />
                   </div>
                   <input
                     className="w-full rounded-sm  text-white pl-1"
@@ -306,7 +308,7 @@ const Market = () => {
                       setResultTokenId(e.target.value)
                     }}
                   />
-                  <div className="text-gray-500 text-left">Result tokens to deposit</div>
+                  <div className="text-gray-500 text-left">Seed tokens to deposit</div>
                   <input
                     className="w-full rounded-sm  text-white pl-1"
                     id="seeds to craft / min: 1"
@@ -376,7 +378,7 @@ const Market = () => {
                     value={offerId}
                     onInput={(e: React.ChangeEvent<HTMLInputElement>) => setOfferId(e.target.value)}
                   />
-                  <div className="text-gray-500 text-left">Result seed tokens to receive</div>
+                  <div className="text-gray-500 text-left">Seed quantity to buy</div>
                   <input
                     className="w-full rounded-sm  text-white pl-1"
                     id="resultSeedTokensToReceive"
@@ -397,13 +399,13 @@ const Market = () => {
                     </Button>
                   </div>
 
-                  <div className="text-gray-500 text-left mt-4 font-bold">Result seed tokens left in offer</div>
+                  <div className="text-gray-500 text-left mt-4 font-bold">Seeds left in offer</div>
                   <div className="text-gray-500 text-center">{aResultTokensLeft || '-'}</div>
 
-                  <div className="text-gray-500 text-left mt-4 font-bold mt-2">Result token ID</div>
+                  <div className="text-gray-500 text-left mt-4 font-bold mt-2">Seed token ID</div>
                   <div className="text-gray-500 text-center">{aResultTokenId || '-'}</div>
 
-                  <div className="text-gray-500 text-left font-bold mt-2">Farm currency price per token</div>
+                  <div className="text-gray-500 text-left font-bold mt-2">Farm currency price per seed</div>
                   <div className="text-gray-500 text-center">{aPricePerToken || '0'}</div>
                 </div>
               </div>
