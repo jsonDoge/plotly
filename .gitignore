@@ -12,7 +12,7 @@ node_modules
 .env.development.local
 .env.test.local
 .env.production.local
-.env.testnet
+.env.devnet
 
 # Anchor
 anchor/localnet/testUser.json

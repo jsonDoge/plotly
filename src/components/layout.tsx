@@ -211,7 +211,7 @@ const Layout: React.FC = () => {
                   Plots
                 </span>
               </div>
-              <div className={`px-2 rounded-sm ${tab === 'barn' && 'bg-green-200 text-black'}`}>
+              <div className={`px-2 rounded-sm ${tab === 'lab' && 'bg-green-200 text-black'}`}>
                 <span
                   role="button"
                   onClick={() => {
@@ -240,7 +240,7 @@ const Layout: React.FC = () => {
                   Kitchen
                 </span>
               </div>
-              <div className={`px-2 rounded-sm ${tab === 'shop' && 'bg-green-200 text-black'}`}>
+              <div className={`px-2 rounded-sm ${tab === 'market' && 'bg-green-200 text-black'}`}>
                 <span
                   role="button"
                   onClick={() => {
@@ -255,7 +255,7 @@ const Layout: React.FC = () => {
                 </span>
               </div>
 
-              <div className={`px-2 rounded-sm ${tab === 'market' && 'bg-green-200 text-black'}`}>
+              <div className={`px-2 rounded-sm ${tab === 'newsBoard' && 'bg-green-200 text-black'}`}>
                 <span
                   role="button"
                   onClick={() => {
@@ -269,7 +269,7 @@ const Layout: React.FC = () => {
                   News Board
                 </span>
               </div>
-              <div className={`px-2 rounded-sm ${tab === 'market' && 'bg-green-200 text-black'}`}>
+              <div className={`px-2 rounded-sm ${tab === 'barn' && 'bg-green-200 text-black'}`}>
                 <span
                   role="button"
                   onClick={() => {
