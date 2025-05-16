@@ -50,7 +50,7 @@ const BlockCounter: FC = () => {
         <div className="inline ml-1">{`${toSentenceCase(nextSeason || '')} ${getSeasonPlantEmojis(nextSeason, Object.values(SEED_TYPE))}`}</div>
       </div> */}
       <div>
-        <div className="inline">Farm balance:</div>
+        <div className="inline">Your balance:</div>
         <div className="inline ml-1">{balance.toString()}</div>
       </div>
       <div>
