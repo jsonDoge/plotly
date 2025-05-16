@@ -238,6 +238,9 @@ impl<'info> MintSeeds<'info> {
         let seed_symbol = format!("{}", "PLT");
 
         if self.seed_mint_info.plant_mint == Pubkey::default() {
+
+            // TODO try seed + generator on seeds alone
+
             // set mint info
             self.seed_mint_info.plant_mint = self.plant_mint.key();
             self.seed_mint_info.plant_mint_decimals = self.plant_mint.decimals;
