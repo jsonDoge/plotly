@@ -38,7 +38,7 @@ Gotchas:
 ![image](https://github.com/user-attachments/assets/86fcbea1-70d7-4407-9a29-b7edde76beec)
 
 
-## Upcoming chanllenges
+## Upcoming challenges
 
 By using solana account storage extensively it makes the game quite expensive, especially initially. The goal is to investigate smarter storage solution without sacrificing decentralization. The game should be functional even without UI or external services.
 
@@ -63,7 +63,7 @@ Everything is an account/token:
 - Anchor CLI 0.31.0 or higher + proc-micro2 fix (defined.rs)
 - Solana CLI 2.1.0 or higher 
 
-### Installation
+### Local setup
 
 #### Install Dependencies
 
@@ -71,70 +71,37 @@ Everything is an account/token:
 pnpm install
 ```
 
-#### Start the web app
-
-```
-pnpm dev
-```
-
-## Apps
-
-### anchor
-
-This is a Solana program written in Rust using the Anchor framework.
-
-#### Commands
-
-You can use any normal anchor commands. Either move to the `anchor` directory and run the `anchor` command or prefix the command with `pnpm`, eg: `pnpm anchor`.
-
-#### Sync the program id:
-
-Running this command will create a new keypair in the `anchor/target/deploy` directory and save the address to the Anchor config file and update the `declare_id!` macro in the `./src/lib.rs` file of the program.
-
-You will manually need to update the constant in `anchor/lib/basic-exports.ts` to match the new program id.
-
-```shell
-pnpm anchor keys sync
-```
+### Setup on localnet
 
 #### Build the program:
+
+Build anchor dapp
 
 ```shell
 pnpm anchor-build
 ```
 
-#### Start the test validator with the program deployed:
-
+Start validator
 ```shell
-pnpm anchor-localnet
+solana-test-validator
 ```
 
-#### Run the tests
+#### Deploy to Localnet
 
 ```shell
-pnpm anchor-test
+cd anchor && anchor deploy
 ```
 
-#### Deploy to Devnet
+#### Run migrations
 
 ```shell
-pnpm anchor deploy --provider.cluster devnet
+cd anchor && anchor migrate
 ```
 
-### web
+### Start the web app
 
-This is a React app that uses the Anchor generated client to interact with the Solana program.
+Needs a running localnet node with deployed and initialized farm.
 
-#### Commands
-
-Start the web app
-
-```shell
+```
 pnpm dev
-```
-
-Build the web app
-
-```shell
-pnpm build
 ```
