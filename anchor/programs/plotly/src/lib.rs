@@ -11,7 +11,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("4FHi8grZppJRnWxWf1pGaT8JTtSvjz9TPiWke3y97dDM");
+declare_id!("5LLai39bAieHfsUeTctWQi61suCmNpfVLiHxyuguv4jP");
 
 #[program]
 pub mod farm {

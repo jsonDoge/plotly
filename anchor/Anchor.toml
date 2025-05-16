@@ -7,10 +7,10 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-plotly = "4FHi8grZppJRnWxWf1pGaT8JTtSvjz9TPiWke3y97dDM"
+plotly = "5LLai39bAieHfsUeTctWQi61suCmNpfVLiHxyuguv4jP"
 
 [programs.localnet]
-plotly = "4FHi8grZppJRnWxWf1pGaT8JTtSvjz9TPiWke3y97dDM"
+plotly = "5LLai39bAieHfsUeTctWQi61suCmNpfVLiHxyuguv4jP"
 
 [registry]
 url = "https://api.apr.dev"
