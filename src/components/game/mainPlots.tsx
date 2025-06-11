@@ -106,24 +106,6 @@ const MainPlots = memo<Props>(({ mainPlotRefs, plotCenterRef }) => {
 
         setPlotItem(!!plant, currentPlantRefs[x][y].current, mainPlotRefs_[y][x].current)
 
-        // setPlotItem(
-        //   seedType === SEED_TYPE.CORN && plantState === PlantState.READY,
-        //   currentCornRefs[x][y].current,
-        //   mainPlotRefs_[y][x].current,
-        // )
-
-        // setPlotItem(
-        //   seedType === SEED_TYPE.POTATO && plantState === PlantState.READY,
-        //   currentPotatoRefs[x][y].current,
-        //   mainPlotRefs_[y][x].current,
-        // )
-
-        // setPlotItem(
-        //   seedType === SEED_TYPE.CARROT && plantState === PlantState.READY,
-        //   currentCarrotRefs[x][y].current,
-        //   mainPlotRefs_[y][x].current,
-        // )
-
         setPlotItem(
           !!plant && plant.state === PlantState.NEEDS_TENDING,
           currentWeedRefs[x][y].current,
@@ -146,41 +128,11 @@ const MainPlots = memo<Props>(({ mainPlotRefs, plotCenterRef }) => {
 
       mappedPlotInfos.current = { ...newMappedPlotInfos }
 
-      applyMappedPlotInfos(
-        mainPlotRefs,
-        plantRefs.current,
-        weedRefs.current,
-        // cornRefs.current,
-        // potatoRefs.current,
-        // carrotRefs.current,
-        mappedPlotInfos.current,
-      )
+      applyMappedPlotInfos(mainPlotRefs, plantRefs.current, weedRefs.current, mappedPlotInfos.current)
     })
 
     return unsubscribe
   }, [])
-
-  // useEffect(
-  //   () =>
-  //     mappedPlotInfosStore.onChange((newMappedPlotInfos: MappedPlotInfos) => {
-  //       if (JSON.stringify(newMappedPlotInfos) === JSON.stringify(mappedPlotInfos.current)) {
-  //         return
-  //       }
-
-  //       mappedPlotInfos.current = { ...newMappedPlotInfos }
-
-  //       applyMappedPlotInfos(
-  //         mainPlotRefs,
-  //         plantRefs.current,
-  //         weedRefs.current,
-  //         cornRefs.current,
-  //         potatoRefs.current,
-  //         carrotRefs.current,
-  //         mappedPlotInfos.current,
-  //       )
-  //     }),
-  //   [],
-  // )
 
   return (
     <>

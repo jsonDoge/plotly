@@ -5,7 +5,6 @@ import { useWallet } from '@solana/wallet-adapter-react'
 
 // components
 
-// import { buyPlot, harvest, plant } from '../services/farm'
 import { subscribeKey } from 'valtio/utils'
 import {
   buyPlotTx,
@@ -21,14 +20,11 @@ import {
 import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js'
 import { AnchorProvider } from '@coral-xyz/anchor'
 import { useAnchorProvider } from '@/context/solana'
-import { reloadPlotsAtActions } from '@/stores/reloadPlotsAt'
-import { appRouteStore, appRouteStoreActions, Route } from '@/stores/appRoute'
+import { appRouteStoreActions, Route } from '@/stores/appRoute'
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { isValidPublicKey } from '@/services/utils'
 import { BN } from 'bn.js'
 import { getFarmProgram } from '@project/anchor'
-import { depositToPlot } from 'anchor/tests/helpers'
-import PlantModal from './plotActionModals/ownedPlotModal'
 import Spinner from './utils/spinner'
 import PlotModal from './plotActionModals/plotModal'
 
@@ -53,11 +49,6 @@ const PlotActionModals: React.FC = () => {
   const provider = useAnchorProvider()
 
   const { currentBlock } = useBlockchain()
-  // const { wallet } = useWallet()
-  // const { currentBlock } = useBlockchain()
-  // const { uiActionCompleted } = useGame()
-  // const { setError } = useError()
-  // const
 
   // TODO: show errors
   const [isLoading, setIsLoading] = useState(false)
@@ -65,19 +56,15 @@ const PlotActionModals: React.FC = () => {
   const [message, setMessage] = useState('')
 
   // modals
-  // const [isAlreadyOwnedModalShown, setIsAlreadyOwnedModalShown] = useState(false)
   const [isBuyPlotModalShown, setIsBuyPlotModalShown] = useState(false)
   const [isSurroundingPlotModalShown, setSurroundingPlotModalShown] = useState(false)
   const [surroundingPlotMintIxs, setSurroundingPlotMintIxs] = useState<TransactionInstruction[]>([])
   const [isOwnedPlotModalShown, setIsOwnedPlotModalShown] = useState(false)
   const [isOwnedPlantedModalShown, setIsOwnedPlantedModalShown] = useState(false)
   const [isNonOwnedModalShown, setIsNonOwnedModalShown] = useState(false)
-  // const [isHarvestModalShown, setIsHarvestModalShown] = useState(false)
-  // const [seasonSeedTypes, setSeasonSeedTypes] = useState<SeedType[]>([])
 
   // Selected plot properites
   const [waterLevel, setWaterLevel] = useState(0)
-  // const [balance, setBalance] = useState(0)
 
   //
   const [selectedPlotInfo, setSelectedPlotInfo] = useState<PlotInfo>(getEmptyPlotInfo())
@@ -94,21 +81,8 @@ const PlotActionModals: React.FC = () => {
     setSelectedCoords({ x, y })
 
     setWaterLevel(plotInfo.waterLevel)
-    // setBalance(plotInfo.balance.toNumber())
-
-    //   setSeasonSeedTypes(
-    //     getSeasonSeedTypes(calculateSeason(currentBlock_, parseInt(publicRuntimeConfig.SEASON_DURATION_BLOCKS, 10))),
-    //   )
 
     const { isUnminted, isFarmOwner, isPlantOwner, isOwner } = plotInfo
-
-    // TODO: add please connect wallet
-
-    // if () {
-    //   setIsBuyPlotModalShown(true)
-    //   appRouteStoreActions.setCurrentRoute(Route.modalShown)
-    //   return
-    // }
 
     if (isUnminted || isFarmOwner) {
       setIsLoading(true)
@@ -207,9 +181,6 @@ const PlotActionModals: React.FC = () => {
     setIsLoading(false)
     onFinish()
     appRouteStoreActions.setCurrentRoute(Route.plots)
-
-    // TODO: add all plot refresh
-    // uiActionCompleted()
   }
 
   const defaultBuyErrorMessage = `Buy failed, check if you have enough farm tokens: ${publicRuntimeConfig.PLOT_CURRENCY_MINT_ID}`
@@ -366,10 +337,6 @@ const PlotActionModals: React.FC = () => {
         setIsOwnedPlantedModalShown(false)
       },
       'Depositing failed, check if you have necessary seed',
-
-      // (walletPrivateKey: string) => plant(coords.x, coords.y, seedType_, walletPrivateKey),
-      // () => setIsPlantModalShown(false),
-      // defaultPlantErrorMessage,
     )
   }
 
@@ -393,10 +360,6 @@ const PlotActionModals: React.FC = () => {
         setIsOwnedPlotModalShown(false)
       },
       'Depositing failed, check if you have necessary seed',
-
-      // (walletPrivateKey: string) => plant(coords.x, coords.y, seedType_, walletPrivateKey),
-      // () => setIsPlantModalShown(false),
-      // defaultPlantErrorMessage,
     )
   }
 
@@ -496,16 +459,6 @@ const PlotActionModals: React.FC = () => {
     )
   }
 
-  // const defaultPlantErrorMessage = 'Planting failed, check if you have necessary seed'
-
-  // const defaultHarvestErrorMessage = 'Harvest failed :('
-  // const onHarvestConfirm = async (coords: Coordinates) =>
-  //   onModalConfirm(
-  //     (walletPrivateKey: string) => harvest(coords.x, coords.y, walletPrivateKey),
-  //     () => setIsHarvestModalShown(false),
-  //     defaultHarvestErrorMessage,
-  //   )
-
   useEffect(() => {
     const unsubscribeSelectedPlot = subscribeKey(selectedPlotStore, 'plot', async (plot: SelectedPlot) => {
       console.log('TRIGGERED')
@@ -525,16 +478,6 @@ const PlotActionModals: React.FC = () => {
 
   return (
     <>
-      {/* TODO: probably a good idea to create separate modals for each action - split into self-contained components */}
-      {/* {isAlreadyOwnedModalShown && (
-        <PlotModal
-          title="This plot is owned by another farmer 🛑"
-          description="Better luck next time"
-          confirmText="Okay"
-          onConfirm={() => hideModal()}
-          waterLevel={waterLevel}
-        />
-      )} */}
       {isBuyPlotModalShown && selectedCoords && (
         <PlotModal
           title="Buy land plot? 💸"
@@ -613,22 +556,6 @@ const PlotActionModals: React.FC = () => {
       ) : (
         <div />
       )}
-
-      {/* {isHarvestModalShown && selectedCoords && (
-        <HarvestModal
-          title="Harvest? 👨‍🌾"
-          description={`You are about to harvest at [X : ${selectedCoords.x} | Y : ${selectedCoords.y}]`}
-          confirmText={isLoading ? <Spinner /> : 'Harvest'}
-          cancelText="Cancel"
-          onConfirm={() => onHarvestConfirm(selectedCoords)}
-          onCancel={() => hideModal()}
-          currentBlock={currentBlock}
-          plotInfo={currentPlotInfo}
-          seasonSeedTypes={seasonSeedTypes}
-          waterLevel={waterLevel}
-          // TODO: Should really move this logic to it's own component... Too many checks if variables are defined
-        />
-      )} */}
     </>
   )
 }

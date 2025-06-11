@@ -13,13 +13,6 @@ import { mappedPlotInfosActions, mappedPlotInfosStore, RawPlotsAtCenter } from '
 import { uiActionCompletedStore } from '@/stores/uiActionCompleted'
 import { blockchainStore } from '@/stores/blockchain'
 import { teleportStore } from '@/stores/teleport'
-import {
-  getAccountInfos,
-  getFarmId,
-  getFarmPlotMintAtaOwnerId,
-  getPlotMintAtaId,
-  getPlotMintId,
-} from '@/services/web3Utils'
 import { reloadPlotsAtActions } from '@/stores/reloadPlotsAt'
 import { appRouteStore, Route } from '@/stores/appRoute'
 import { centerPlotCoordsStore, centerPlotCoordsActions } from '../../stores/centerPlotCoords'
@@ -39,20 +32,9 @@ import { getAllPlotCoordinatesAround } from './utils/plots'
 // services
 import { getPlotIdFromCoordinates } from '../../services/utils'
 
-// import { useGame } from '../../context/game'
 import { INITIAL_PLOT_CENTER_COORDS, PLOT_SIZE } from './utils/constants'
-// import { walletStore, mappedPlotInfosStore } from '../../stores'
-// import { getContract } from '../../services/web3Utils'
-// import { CONTRACT_TYPE } from '../../utils/constants'
-// import { useBlockchain } from '../../context/blockchain'
 
 const { publicRuntimeConfig } = getConfig()
-
-// TODO: test why more splitting causes re-renders of parent
-// const CanvasWrapper = dynamic(
-//   () => import('./game/canvasWrapper'),
-//   { suspense: true, ssr: false }
-// );
 
 const Game = () => {
   console.info('Rendering game')
